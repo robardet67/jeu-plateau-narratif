@@ -1,5 +1,6 @@
 const { execFile } = require('child_process');
 const path = require('path');
+const { regenererExportContenu } = require('./exportContenu');
 
 const DEPOT = path.join(__dirname, '..');
 
@@ -23,9 +24,13 @@ async function cibleDePush() {
   return `https://x-access-token:${token}@${sansProtocole}`;
 }
 
-// Ajoute, commit et pousse les changements du depot (ex. images uploadees par l'admin).
-// N'echoue jamais bruyamment : renvoie { pushed, raison } pour affichage cote client.
+// Ajoute, commit et pousse les changements du depot (images uploadees + l'instantane
+// JSON du contenu texte, voir exportContenu.js). N'echoue jamais bruyamment : renvoie
+// { pushed, raison } pour affichage cote client.
 async function commiterEtPousser(message) {
+  // Toujours regenere, meme si le push est desactive : le fichier local reste a jour.
+  regenererExportContenu();
+
   if (process.env.AUTO_GIT_PUSH === 'false') {
     return { pushed: false, raison: 'synchronisation desactivee (AUTO_GIT_PUSH=false)' };
   }
