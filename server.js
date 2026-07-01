@@ -11,6 +11,14 @@ const { parse } = require('csv-parse/sync');
 
 const db = require('./database/db');
 const { commiterEtPousser } = require('./utils/gitSync');
+const {
+  obtenirParametre,
+  deverrouillerRang,
+  verifierDeverrouillages,
+  verifierDevoilementPosition3,
+  validerObjectif,
+  obtenirEtatJoueur
+} = require('./utils/grille');
 
 const PORT = process.env.PORT || 3000;
 
@@ -201,7 +209,7 @@ app.delete('/api/races/:id/fond', exigerAdmin, gerer(async (req, res) => {
 
 app.get('/api/races/:raceId/representants', (req, res) => {
   res.json(
-    db.prepare('SELECT * FROM representants WHERE race_id = ? ORDER BY id').all(req.params.raceId)
+    db.prepare('SELECT * FROM representants WHERE race_id = ? ORDER BY rang').all(req.params.raceId)
   );
 });
 
@@ -216,10 +224,12 @@ app.post(
     const race = db.prepare('SELECT * FROM races WHERE id = ?').get(req.params.raceId);
     if (!race) return res.status(404).json({ error: 'Race introuvable' });
 
-    const { count } = db
-      .prepare('SELECT COUNT(*) AS count FROM representants WHERE race_id = ?')
-      .get(race.id);
-    if (count >= 3) {
+    const rangsExistants = db
+      .prepare('SELECT rang FROM representants WHERE race_id = ?')
+      .all(race.id)
+      .map((r) => r.rang);
+    const rang = [1, 2, 3].find((r) => !rangsExistants.includes(r));
+    if (!rang) {
       return res.status(400).json({ error: 'Cette race possede deja 3 representants (maximum)' });
     }
 
@@ -235,9 +245,9 @@ app.post(
 
     const result = db
       .prepare(
-        'INSERT INTO representants (race_id, nom, description, image_depart, image_sourire) VALUES (?, ?, ?, ?, ?)'
+        'INSERT INTO representants (race_id, rang, nom, description, image_depart, image_sourire) VALUES (?, ?, ?, ?, ?, ?)'
       )
-      .run(race.id, nom, description || null, imageDepart, imageSourire);
+      .run(race.id, rang, nom, description || null, imageDepart, imageSourire);
 
     const synchronisation = await commiterEtPousser(`Admin : ajout du representant "${nom}"`);
     res.status(201).json({ id: result.lastInsertRowid, synchronisation });
@@ -503,6 +513,57 @@ app.delete('/api/scenario/:id', exigerAdmin, gerer(async (req, res) => {
   res.json({ ok: true, synchronisation });
 }));
 
+// --- API : parametres globaux ---
+
+app.get('/api/parametres', (req, res) => {
+  res.json({ tableau_de_bord_actif: obtenirParametre(db, 'tableau_de_bord_actif') === 'true' });
+});
+
+app.post('/api/admin/parametres', exigerAdmin, gerer(async (req, res) => {
+  const { tableau_de_bord_actif: actif } = req.body;
+  db.prepare('INSERT INTO parametres (cle, valeur) VALUES (?, ?) ON CONFLICT(cle) DO UPDATE SET valeur = ?').run(
+    'tableau_de_bord_actif',
+    actif ? 'true' : 'false',
+    actif ? 'true' : 'false'
+  );
+
+  const synchronisation = await commiterEtPousser('Admin : mise a jour des parametres');
+  res.json({ ok: true, synchronisation });
+}));
+
+// --- API : grille de progression / tableau de bord ---
+
+app.get('/api/joueurs/:id/etat', (req, res) => {
+  const etat = obtenirEtatJoueur(db, Number(req.params.id));
+  if (!etat) return res.status(404).json({ error: 'Joueur introuvable' });
+  res.json(etat);
+});
+
+app.get('/api/parties/:code/tableau-de-bord', (req, res) => {
+  if (obtenirParametre(db, 'tableau_de_bord_actif') !== 'true') {
+    return res.status(403).json({ error: 'Tableau de bord desactive' });
+  }
+
+  const partie = db.prepare('SELECT * FROM parties WHERE code = ?').get(req.params.code.toUpperCase());
+  if (!partie) return res.status(404).json({ error: 'Partie introuvable' });
+
+  const joueurs = db.prepare('SELECT id, pseudo FROM joueurs WHERE partie_id = ?').all(partie.id);
+  const resultat = joueurs.map((j) => ({
+    joueurId: j.id,
+    pseudo: j.pseudo,
+    objectifsValides: db
+      .prepare(
+        `SELECT g.rang, g.position, g.completed_at, o.description, o.niveau, o.type, o.categorie
+         FROM grille_objectifs g JOIN objectifs o ON o.id = g.objectif_id
+         WHERE g.joueur_id = ? AND g.statut = 'valide'
+         ORDER BY g.completed_at`
+      )
+      .all(j.id)
+  }));
+
+  res.json(resultat);
+});
+
 // --- API : parties ---
 
 app.post('/api/parties', (req, res) => {
@@ -587,14 +648,34 @@ io.on('connection', (socket) => {
     io.to(code.toUpperCase()).emit('etat_partie', { partie, joueurs });
   });
 
-  socket.on('choix_personnage', ({ joueurId, raceId, representantId }) => {
+  // Le joueur ne choisit que sa race : ses 3 representants (rangs 1-3) se debloquent
+  // progressivement avec ses objectifs valides (voir utils/grille.js).
+  socket.on('choix_race', ({ joueurId, raceId }) => {
+    const race = db.prepare('SELECT * FROM races WHERE id = ?').get(raceId);
+    if (!race) return socket.emit('erreur', { message: 'Race introuvable' });
+
+    const joueurActuel = db.prepare('SELECT * FROM joueurs WHERE id = ?').get(joueurId);
+    if (!joueurActuel) return socket.emit('erreur', { message: 'Joueur introuvable' });
+
+    const dejaPrise = db
+      .prepare('SELECT id FROM joueurs WHERE partie_id = ? AND race_id = ? AND id != ?')
+      .get(joueurActuel.partie_id, raceId, joueurId);
+    if (dejaPrise) {
+      return socket.emit('erreur', { message: 'Cette race est deja jouee par un autre joueur de la partie' });
+    }
+
+    const rangUn = db.prepare('SELECT id FROM representants WHERE race_id = ? AND rang = 1').get(raceId);
     db.prepare('UPDATE joueurs SET race_id = ?, representant_id = ? WHERE id = ?').run(
       raceId,
-      representantId,
+      rangUn ? rangUn.id : null,
       joueurId
     );
+
+    deverrouillerRang(db, joueurId, joueurActuel.partie_id, 1);
+
+    socket.emit('etat_joueur', obtenirEtatJoueur(db, joueurId));
     if (socket.data.code) {
-      io.to(socket.data.code).emit('joueur_maj', { joueurId, raceId, representantId });
+      io.to(socket.data.code).emit('joueur_maj', { joueurId, raceId });
     }
   });
 
@@ -605,18 +686,63 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('objectif_complete', ({ joueurId, objectifId }) => {
-    const objectif = db.prepare('SELECT * FROM objectifs WHERE id = ?').get(objectifId);
-    if (!objectif) return;
+  // Ouvre l'enveloppe d'un objectif (affiche sa description sans le valider).
+  socket.on('grille_ouvrir', ({ joueurId, ligneId }) => {
+    const ligne = db
+      .prepare('SELECT * FROM grille_objectifs WHERE id = ? AND joueur_id = ?')
+      .get(ligneId, joueurId);
+    if (!ligne || ligne.statut !== 'ferme') return;
 
-    db.prepare(
-      `INSERT INTO joueurs_objectifs (joueur_id, objectif_id, statut, completed_at)
-       VALUES (?, ?, 'termine', datetime('now'))
-       ON CONFLICT(joueur_id, objectif_id) DO UPDATE SET statut = 'termine', completed_at = datetime('now')`
-    ).run(joueurId, objectifId);
+    db.prepare("UPDATE grille_objectifs SET statut = 'ouvert' WHERE id = ?").run(ligne.id);
+    socket.emit('etat_joueur', obtenirEtatJoueur(db, joueurId));
+  });
 
-    if (socket.data.code) {
-      io.to(socket.data.code).emit('objectif_maj', { joueurId, objectifId });
+  // Valide un objectif : propage aux autres joueurs (cooperatif = valide aussi,
+  // belliqueux = remplace leur objectif + notification), verifie la fin de partie.
+  socket.on('grille_valider', ({ joueurId, ligneId }) => {
+    let resultat;
+    try {
+      resultat = validerObjectif(db, { joueurId, ligneId });
+    } catch (erreur) {
+      return socket.emit('erreur', { message: erreur.message });
+    }
+
+    verifierDevoilementPosition3(db, joueurId, resultat.ligne.rang);
+    verifierDeverrouillages(db, joueurId, resultat.partieId);
+    socket.emit('etat_joueur', obtenirEtatJoueur(db, joueurId));
+
+    resultat.affectes.forEach((affecte) => {
+      if (affecte.action === 'valide') {
+        verifierDevoilementPosition3(db, affecte.joueurId, resultat.ligne.rang);
+        verifierDeverrouillages(db, affecte.joueurId, resultat.partieId);
+      }
+      const autreJoueur = db.prepare('SELECT * FROM joueurs WHERE id = ?').get(affecte.joueurId);
+      if (autreJoueur && autreJoueur.socket_id) {
+        io.to(autreJoueur.socket_id).emit('etat_joueur', obtenirEtatJoueur(db, affecte.joueurId));
+        if (affecte.action === 'remplace') {
+          io.to(autreJoueur.socket_id).emit('notification', {
+            message: "Un objectif a ete remplace suite a l'action d'un autre joueur !"
+          });
+        }
+      }
+    });
+
+    if (socket.data.code && obtenirParametre(db, 'tableau_de_bord_actif') === 'true') {
+      io.to(socket.data.code).emit('tableau_de_bord_maj');
+    }
+
+    if (resultat.partieTerminee && socket.data.code) {
+      db.prepare("UPDATE parties SET statut = 'terminee' WHERE id = ?").run(resultat.partieId);
+      const classement = db
+        .prepare(
+          `SELECT j.id, j.pseudo, COUNT(g.id) AS valides
+           FROM joueurs j LEFT JOIN grille_objectifs g ON g.joueur_id = j.id AND g.statut = 'valide'
+           WHERE j.partie_id = ?
+           GROUP BY j.id
+           ORDER BY valides DESC`
+        )
+        .all(resultat.partieId);
+      io.to(socket.data.code).emit('partie_terminee', { classement });
     }
   });
 

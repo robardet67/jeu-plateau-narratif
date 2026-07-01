@@ -15,7 +15,7 @@ function regenererExportContenu() {
     races: db.prepare('SELECT id, nom, image_fond, created_at FROM races ORDER BY id').all(),
     representants: db
       .prepare(
-        'SELECT id, race_id, nom, description, image_depart, image_sourire, created_at FROM representants ORDER BY id'
+        'SELECT id, race_id, rang, nom, description, image_depart, image_sourire, created_at FROM representants ORDER BY race_id, rang'
       )
       .all(),
     dialogues: db

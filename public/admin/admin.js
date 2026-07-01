@@ -211,7 +211,7 @@ function creerElementRepresentant(rep) {
       ${rep.image_depart ? `<img src="${rep.image_depart}" alt="depart" />` : ''}
       ${rep.image_sourire ? `<img src="${rep.image_sourire}" alt="sourire" />` : ''}
       <div>
-        <strong>${rep.nom}</strong>
+        <strong>Rang ${rep.rang} - ${rep.nom}</strong>
         <div>${rep.description || ''}</div>
       </div>
     </div>
@@ -646,6 +646,22 @@ document.getElementById('form-scenario').addEventListener('submit', async (e) =>
   await chargerScenario();
 });
 
+// --- Parametres globaux ---
+
+async function chargerParametres() {
+  const parametres = await requeteJSON('/api/parametres');
+  document.getElementById('case-tableau-de-bord').checked = parametres.tableau_de_bord_actif;
+}
+
+document.getElementById('case-tableau-de-bord').addEventListener('change', async (e) => {
+  const resultat = await requeteJSON('/api/admin/parametres', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tableau_de_bord_actif: e.target.checked })
+  });
+  afficherSync(resultat.synchronisation);
+});
+
 // --- Chargement global ---
 // Chaque mutation (races, representants, dialogues...) appelle chargerTout() afin que
 // tous les selects/listes dependants (ex. Dialogues -> representants) restent synchronises,
@@ -658,6 +674,7 @@ async function chargerTout() {
   await chargerObjectifs();
   chargerFond();
   await chargerScenario();
+  await chargerParametres();
 }
 
 vérifierSession();

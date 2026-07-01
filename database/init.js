@@ -41,6 +41,7 @@ function initDatabase() {
     CREATE TABLE IF NOT EXISTS representants (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       race_id INTEGER NOT NULL,
+      rang INTEGER NOT NULL DEFAULT 1 CHECK (rang IN (1, 2, 3)),
       nom TEXT NOT NULL,
       description TEXT,
       image_depart TEXT,
@@ -108,25 +109,40 @@ function initDatabase() {
       FOREIGN KEY (representant_id) REFERENCES representants(id) ON DELETE SET NULL
     );
 
-    CREATE TABLE IF NOT EXISTS joueurs_objectifs (
+    CREATE TABLE IF NOT EXISTS parametres (
+      cle TEXT PRIMARY KEY,
+      valeur TEXT
+    );
+
+    -- Grille de progression : pour chaque joueur, 3 rangs de representant (celui de sa
+    -- race) x 3 positions d'objectif = 9 cases. Le rang+position (pas le representant,
+    -- puisque deux joueurs n'ont jamais la meme race) est la cle de partage entre joueurs
+    -- pour les objectifs cooperatifs/belliqueux.
+    CREATE TABLE IF NOT EXISTS grille_objectifs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       joueur_id INTEGER NOT NULL,
+      partie_id INTEGER NOT NULL,
+      rang INTEGER NOT NULL CHECK (rang IN (1, 2, 3)),
+      position INTEGER NOT NULL CHECK (position IN (1, 2, 3)),
       objectif_id INTEGER NOT NULL,
-      statut TEXT NOT NULL DEFAULT 'en_cours' CHECK (statut IN ('en_cours', 'termine', 'echoue')),
+      statut TEXT NOT NULL DEFAULT 'masque' CHECK (statut IN ('masque', 'ferme', 'ouvert', 'valide')),
       completed_at TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (joueur_id) REFERENCES joueurs(id) ON DELETE CASCADE,
+      FOREIGN KEY (partie_id) REFERENCES parties(id) ON DELETE CASCADE,
       FOREIGN KEY (objectif_id) REFERENCES objectifs(id) ON DELETE CASCADE,
-      UNIQUE (joueur_id, objectif_id)
+      UNIQUE (joueur_id, rang, position)
     );
 
     CREATE INDEX IF NOT EXISTS idx_representants_race ON representants(race_id);
     CREATE INDEX IF NOT EXISTS idx_dialogues_representant ON dialogues(representant_id);
     CREATE INDEX IF NOT EXISTS idx_joueurs_partie ON joueurs(partie_id);
-    CREATE INDEX IF NOT EXISTS idx_joueurs_objectifs_joueur ON joueurs_objectifs(joueur_id);
-    CREATE INDEX IF NOT EXISTS idx_joueurs_objectifs_objectif ON joueurs_objectifs(objectif_id);
+    CREATE INDEX IF NOT EXISTS idx_grille_joueur ON grille_objectifs(joueur_id);
+    CREATE INDEX IF NOT EXISTS idx_grille_partie_coord ON grille_objectifs(partie_id, rang, position);
     CREATE INDEX IF NOT EXISTS idx_parties_code ON parties(code);
   `);
+
+  db.exec('DROP TABLE IF EXISTS joueurs_objectifs');
 
   // Migrations pour les bases deja existantes (schema races/objectifs modifie, colonnes ajoutees)
   retirerColonne(db, 'races', 'description');
@@ -145,6 +161,27 @@ function initDatabase() {
   }
 
   assurerColonne(db, 'parties', 'scenario_index', "INTEGER NOT NULL DEFAULT 0");
+
+  const rangExistaitDeja = colonneExiste(db, 'representants', 'rang');
+  assurerColonne(db, 'representants', 'rang', 'INTEGER NOT NULL DEFAULT 1');
+  if (!rangExistaitDeja) {
+    const representantsParRace = db
+      .prepare('SELECT id, race_id FROM representants ORDER BY race_id, id')
+      .all();
+    const compteurs = {};
+    const majRang = db.prepare('UPDATE representants SET rang = ? WHERE id = ?');
+    for (const r of representantsParRace) {
+      compteurs[r.race_id] = (compteurs[r.race_id] || 0) + 1;
+      majRang.run(compteurs[r.race_id], r.id);
+    }
+  }
+  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_representants_race_rang ON representants(race_id, rang)');
+
+  const parametresParDefaut = { tableau_de_bord_actif: 'false' };
+  const insererParametre = db.prepare('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)');
+  for (const [cle, valeur] of Object.entries(parametresParDefaut)) {
+    insererParametre.run(cle, valeur);
+  }
 
   const bcrypt = require('bcrypt');
   const adminExiste = db.prepare('SELECT id FROM admin WHERE id = 1').get();

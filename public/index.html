@@ -8,6 +8,7 @@
 </head>
 <body>
   <div id="app">
+    <!-- Accueil heroique -->
     <section id="accueil" class="ecran-hero">
       <a href="/admin" class="lien-admin">Administration</a>
 
@@ -23,34 +24,88 @@
       </div>
     </section>
 
-    <section id="jeu" class="ecran cachee">
+    <!-- Choix de la race (une seule fois, apres creation/connexion) -->
+    <section id="ecran-choix-race" class="ecran cachee">
+      <div class="carte">
+        <h2>Choisissez votre race</h2>
+        <p class="astuce">Chaque race ne peut etre jouee que par un seul joueur dans la partie.</p>
+        <div id="liste-choix-races" class="liste-choix-races"></div>
+      </div>
+    </section>
+
+    <!-- Etape 1 : les 3 representants -->
+    <section id="ecran-representants" class="ecran-plein cachee">
       <div class="entete-jeu">
         <span>Code : <strong id="code-partie-affiche"></strong></span>
-        <button id="btn-scenario">Scenario</button>
+        <div class="entete-jeu-actions">
+          <button id="btn-tableau-de-bord-representants" class="bouton-secondaire cachee">Tableau de bord</button>
+          <button id="btn-scenario">Scenario</button>
+        </div>
       </div>
 
       <div id="village" class="village">
-        <div id="selection-personnage" class="carte">
-          <h2>Choisissez votre race et votre representant</h2>
-          <select id="select-ma-race"></select>
-          <div id="liste-mes-representants" class="liste-representants-choix"></div>
-          <button id="btn-valider-personnage" disabled>Valider mon choix</button>
-        </div>
+        <div class="grille-representants" id="grille-representants"></div>
+      </div>
 
-        <div id="village-contenu" class="cachee">
-          <div class="zone-jeu">
-            <div id="plateau"></div>
-            <aside id="panneau-joueurs">
-              <h3>Joueurs</h3>
-              <ul id="liste-joueurs"></ul>
-            </aside>
-          </div>
+      <div class="bas-de-page">
+        <aside id="panneau-joueurs">
+          <h3>Joueurs</h3>
+          <ul id="liste-joueurs"></ul>
+        </aside>
+
+        <div id="chat">
+          <ul id="messages-chat"></ul>
+          <input id="chat-input" type="text" placeholder="Votre message..." />
+        </div>
+      </div>
+    </section>
+
+    <!-- Etape 2 : page individuelle d'un representant -->
+    <section id="ecran-representant-individuel" class="ecran-plein cachee">
+      <div class="entete-jeu">
+        <button id="btn-retour-representants" class="bouton-secondaire">&larr; Retour</button>
+        <div class="entete-jeu-actions">
+          <button id="btn-tableau-de-bord-individuel" class="bouton-secondaire cachee">Tableau de bord</button>
         </div>
       </div>
 
-      <div id="chat">
-        <ul id="messages-chat"></ul>
-        <input id="chat-input" type="text" placeholder="Votre message..." />
+      <div class="carte carte-representant-individuel">
+        <img id="image-representant-individuel" src="" alt="representant" />
+        <div id="couronne-representant-individuel" class="couronne cachee">&#128081;</div>
+        <div id="dialogues-representant-individuel" class="dialogues"></div>
+
+        <div id="enveloppes-objectifs" class="enveloppes-objectifs"></div>
+      </div>
+    </section>
+
+    <!-- Etape 3 : detail d'un objectif -->
+    <section id="ecran-objectif-detail" class="ecran-plein cachee">
+      <div class="carte carte-objectif-detail">
+        <h2>Objectif</h2>
+        <p id="texte-objectif-detail" class="texte-objectif"></p>
+        <p id="objectif-deja-valide" class="message-info cachee">&#9989; Objectif deja valide.</p>
+        <div class="element-actions">
+          <button id="btn-valider-objectif">Valider</button>
+          <button id="btn-retour-objectif" class="bouton-secondaire">&larr; Retour</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tableau de bord global -->
+    <section id="ecran-tableau-de-bord" class="ecran-plein cachee">
+      <div class="entete-jeu">
+        <h2>Tableau de bord</h2>
+        <button id="btn-retour-tableau-de-bord" class="bouton-secondaire">&larr; Retour</button>
+      </div>
+      <div id="contenu-tableau-de-bord" class="contenu-tableau-de-bord"></div>
+    </section>
+
+    <!-- Fin de partie -->
+    <section id="ecran-fin-partie" class="ecran-plein cachee">
+      <div class="hero-contenu">
+        <h1 class="titre-hero">Partie terminee !</h1>
+        <ol id="classement-final" class="classement-final"></ol>
+        <button id="btn-retour-accueil-fin">Retour a l'accueil</button>
       </div>
     </section>
   </div>
@@ -87,6 +142,9 @@
       </div>
     </div>
   </div>
+
+  <div id="zone-notifications" class="zone-notifications"></div>
+  <div id="zone-confettis" class="zone-confettis"></div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/app.js"></script>
