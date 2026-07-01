@@ -1,0 +1,98 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #1c1b29;
+  color: #f0f0f0;
+}
+
+header {
+  padding: 1rem 2rem;
+  background: #12111c;
+}
+
+.ecran {
+  padding: 2rem;
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.cachee {
+  display: none;
+}
+
+.carte {
+  background: #2a2840;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  min-width: 260px;
+  flex: 1;
+}
+
+.carte h2 {
+  margin-top: 0;
+}
+
+input {
+  display: block;
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 0.75rem;
+  border-radius: 0.4rem;
+  border: 1px solid #444;
+  background: #1c1b29;
+  color: #fff;
+}
+
+button {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 0.4rem;
+  background: #6c5ce7;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background: #5a4bd4;
+}
+
+.zone-jeu {
+  display: flex;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+#plateau {
+  flex: 3;
+  min-height: 400px;
+  background: #2a2840;
+  border-radius: 0.75rem;
+}
+
+#panneau-joueurs {
+  flex: 1;
+  background: #2a2840;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+#chat {
+  width: 100%;
+  margin-top: 1rem;
+  background: #2a2840;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+#messages-chat {
+  list-style: none;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}

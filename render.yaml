@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: jeu-plateau-narratif
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install && npm run init-db
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
+    disk:
+      name: jeu-plateau-narratif-data
+      mountPath: /opt/render/project/src/database
+      sizeGB: 1

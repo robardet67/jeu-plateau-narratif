@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jeu de plateau narratif</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Jeu de plateau narratif</h1>
+    </header>
+
+    <section id="accueil" class="ecran">
+      <div class="carte">
+        <h2>Creer une partie</h2>
+        <input id="creer-pseudo" type="text" placeholder="Votre pseudo" />
+        <input id="creer-nom-partie" type="text" placeholder="Nom de la partie (optionnel)" />
+        <button id="btn-creer-partie">Creer</button>
+      </div>
+
+      <div class="carte">
+        <h2>Rejoindre une partie</h2>
+        <input id="rejoindre-code" type="text" placeholder="Code de la partie" maxlength="6" />
+        <input id="rejoindre-pseudo" type="text" placeholder="Votre pseudo" />
+        <button id="btn-rejoindre-partie">Rejoindre</button>
+      </div>
+    </section>
+
+    <section id="jeu" class="ecran cachee">
+      <div class="info-partie">
+        <span>Code : <strong id="code-partie-affiche"></strong></span>
+      </div>
+
+      <div class="zone-jeu">
+        <div id="plateau"></div>
+        <aside id="panneau-joueurs">
+          <h3>Joueurs</h3>
+          <ul id="liste-joueurs"></ul>
+        </aside>
+      </div>
+
+      <div id="chat">
+        <ul id="messages-chat"></ul>
+        <input id="chat-input" type="text" placeholder="Votre message..." />
+      </div>
+    </section>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
