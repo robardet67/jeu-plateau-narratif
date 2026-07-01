@@ -42,8 +42,16 @@ function fermerModal(id) {
   document.getElementById(id).classList.add('cachee');
 }
 
-document.getElementById('btn-ouvrir-creer').addEventListener('click', () => ouvrirModal('modal-creer'));
-document.getElementById('btn-ouvrir-rejoindre').addEventListener('click', () => ouvrirModal('modal-rejoindre'));
+document.getElementById('btn-ouvrir-rejoindre').addEventListener('click', async () => {
+  const partie = await requeteJSON('/api/partie-active').catch(() => ({ active: false }));
+  if (!partie.active) {
+    return alert("Aucune partie n'est configuree par le maitre du jeu pour le moment.");
+  }
+  if (partie.statut !== 'en_attente') {
+    return alert('La partie a deja demarre, impossible de la rejoindre.');
+  }
+  ouvrirModal('modal-rejoindre');
+});
 
 document.querySelectorAll('.btn-fermer-modal').forEach((bouton) => {
   bouton.addEventListener('click', () => fermerModal(bouton.dataset.cible));
@@ -55,45 +63,31 @@ document.querySelectorAll('.modal').forEach((modal) => {
   });
 });
 
-// --- Creation / connexion a une partie ---
-
-async function creerPartie() {
-  const pseudo = document.getElementById('creer-pseudo').value.trim();
-  const nom = document.getElementById('creer-nom-partie').value.trim();
-  if (!pseudo) return alert('Entrez un pseudo');
-
-  const data = await requeteJSON('/api/parties', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pseudo, nom })
-  }).catch((err) => alert(err.message));
-  if (!data) return;
-
-  demarrerPartie(data.code, data.joueurId, pseudo);
-}
+// --- Connexion a la partie active (unique, sans code : creee/configuree par le MJ) ---
 
 async function rejoindrePartie() {
-  const code = document.getElementById('rejoindre-code').value.trim();
   const pseudo = document.getElementById('rejoindre-pseudo').value.trim();
-  if (!code || !pseudo) return alert('Entrez un code et un pseudo');
+  const erreurEl = document.getElementById('erreur-rejoindre');
+  erreurEl.classList.add('cachee');
+  if (!pseudo) return alert('Entrez un pseudo');
 
-  const data = await requeteJSON(`/api/parties/${code}/join`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pseudo })
-  }).catch((err) => alert(err.message));
-  if (!data) return;
-
-  demarrerPartie(code, data.joueurId, pseudo);
+  try {
+    const data = await requeteJSON('/api/partie-active/rejoindre', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pseudo })
+    });
+    demarrerPartie(data.code, data.joueurId, pseudo);
+  } catch (err) {
+    erreurEl.textContent = err.message;
+    erreurEl.classList.remove('cachee');
+  }
 }
 
-document.getElementById('btn-creer-partie').addEventListener('click', creerPartie);
 document.getElementById('btn-rejoindre-partie').addEventListener('click', rejoindrePartie);
 
 async function demarrerPartie(code, joueurId, pseudo) {
   etatCourant = { code, joueurId, pseudo, estHote: false };
-  document.getElementById('code-partie-affiche').textContent = code;
-  fermerModal('modal-creer');
   fermerModal('modal-rejoindre');
 
   racesEnCache = await requeteJSON('/api/races');
@@ -423,13 +417,19 @@ function afficherFinDePartie({ classement }) {
 
 socket.on('etat_partie', ({ partie, joueurs }) => {
   scenarioIndexActuel = partie.scenario_index || 0;
+  etatCourant.partieStatut = partie.statut;
   afficherJoueurs(joueurs);
 
   const moi = joueurs.find((j) => j.id === etatCourant.joueurId);
-  if (moi && moi.race_id) {
+  if (!moi || !moi.race_id) {
+    afficherChoixRace();
+    return;
+  }
+
+  if (partie.statut === 'en_cours') {
     socket.emit('choix_race', { joueurId: etatCourant.joueurId, raceId: moi.race_id });
   } else {
-    afficherChoixRace();
+    afficherVue('ecran-attente-lancement');
   }
 });
 
@@ -437,6 +437,15 @@ socket.on('joueur_maj', () => refreshJoueurs());
 socket.on('joueur_deconnecte', () => refreshJoueurs());
 socket.on('erreur', ({ message }) => alert(message));
 socket.on('notification', ({ message }) => afficherNotification(message));
+
+// Le MJ (admin) a lance la partie : les objectifs viennent d'etre distribues.
+socket.on('partie_lancee', () => {
+  etatCourant.partieStatut = 'en_cours';
+  const moi = joueursPartieEnCache.find((j) => j.id === etatCourant.joueurId);
+  if (moi && moi.race_id) {
+    socket.emit('choix_race', { joueurId: etatCourant.joueurId, raceId: moi.race_id });
+  }
+});
 
 socket.on('etat_joueur', (nouvelEtat) => {
   etatJoueur = nouvelEtat;
@@ -448,8 +457,18 @@ socket.on('etat_joueur', (nouvelEtat) => {
 
   if (nouvelEtat.partieTerminee) return; // partie_terminee gere l'affichage final
 
-  if (!vueActuelle || vueActuelle.id === 'ecran-choix-race' || vueActuelle.id === 'accueil') {
-    afficherPageRepresentants();
+  const enAttenteDeLancement = [
+    'ecran-choix-race',
+    'accueil',
+    'ecran-attente-lancement'
+  ].includes(vueActuelle && vueActuelle.id);
+
+  if (!vueActuelle || enAttenteDeLancement) {
+    if (etatCourant.partieStatut === 'en_cours') {
+      afficherPageRepresentants();
+    } else {
+      afficherVue('ecran-attente-lancement');
+    }
   } else if (vueActuelle.id === 'ecran-representants') {
     afficherPageRepresentants();
   } else if (vueActuelle.id === 'ecran-representant-individuel' && rangAffiche) {

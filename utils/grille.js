@@ -3,6 +3,8 @@
 // le partage cooperatif/belliqueux se fait par coordonnee (rang, position), commune a
 // tous les joueurs d'une partie quelle que soit leur race.
 
+const { normaliser } = require('./texte');
+
 function obtenirParametre(db, cle) {
   const ligne = db.prepare('SELECT valeur FROM parametres WHERE cle = ?').get(cle);
   return ligne ? ligne.valeur : null;
@@ -18,14 +20,23 @@ function estJoueurTermine(db, joueurId) {
   return compterValide(db, joueurId) >= 9;
 }
 
-// Cree la case (joueur, rang, position) si elle n'existe pas encore. Si un autre joueur
-// de la meme partie a deja cette coordonnee, on reprend son objectif/statut (partage) ;
-// sinon on pioche un objectif au hasard, jamais deja utilise par ce joueur.
+// Reveille (masque -> statut demande) la case (joueur, rang, position) si elle a deja
+// ete pre-distribuee par le MJ (Phase 4, voir utils/distribution.js). Si elle n'existe
+// pas du tout (partie non configuree/lancee via l'admin), reste sur l'ancien
+// comportement : partage avec un autre joueur deja present a cette coordonnee, sinon
+// pioche aleatoire jamais utilisee par ce joueur.
 function assurerLigneGrille(db, joueurId, partieId, rang, position, statutParDefaut) {
   const existante = db
     .prepare('SELECT * FROM grille_objectifs WHERE joueur_id = ? AND rang = ? AND position = ?')
     .get(joueurId, rang, position);
-  if (existante) return existante;
+
+  if (existante) {
+    if (existante.statut === 'masque' && statutParDefaut !== 'masque') {
+      db.prepare('UPDATE grille_objectifs SET statut = ? WHERE id = ?').run(statutParDefaut, existante.id);
+      return { ...existante, statut: statutParDefaut };
+    }
+    return existante;
+  }
 
   const partagee = db
     .prepare(
@@ -133,7 +144,7 @@ function validerObjectif(db, { joueurId, ligneId }) {
   );
 
   const affectes = [];
-  const type = (objectif.type || '').trim().toLowerCase();
+  const type = normaliser(objectif.type);
 
   if (type === 'cooperatif' || type === 'belliqueux') {
     const autres = db

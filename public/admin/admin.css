@@ -238,3 +238,20 @@ button:hover {
 select[multiple] {
   min-height: 100px;
 }
+
+.table-emplacements {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.table-emplacements th,
+.table-emplacements td {
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid #3a3856;
+}
+
+.table-emplacements select {
+  width: 100%;
+}

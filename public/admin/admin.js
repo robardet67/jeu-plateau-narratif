@@ -662,6 +662,159 @@ document.getElementById('case-tableau-de-bord').addEventListener('change', async
   afficherSync(resultat.synchronisation);
 });
 
+// --- Configuration de partie (Phase 4) ---
+
+const NIVEAUX_FIXES = ['facile', 'moyen', 'difficile'];
+const TYPES_FIXES = ['standard', 'coopératif', 'belliqueux'];
+let intervalSuivi = null;
+
+function optionsAvecVide(valeurs, valeurSelectionnee) {
+  const options = ['<option value="">--</option>']
+    .concat(valeurs.map((v) => `<option value="${v}" ${v === valeurSelectionnee ? 'selected' : ''}>${v}</option>`));
+  return options.join('');
+}
+
+function construireTableEmplacements(emplacements) {
+  const corps = document.getElementById('corps-table-emplacements');
+  corps.innerHTML = '';
+  const categories = valeursDistinctes('categorie');
+
+  for (const rang of [1, 2, 3]) {
+    for (const position of [1, 2, 3]) {
+      const existant = emplacements.find((e) => e.rang === rang && e.position === position) || {};
+      const tr = document.createElement('tr');
+      tr.dataset.rang = rang;
+      tr.dataset.position = position;
+      tr.innerHTML = `
+        <td>Rang ${rang} - Position ${position}</td>
+        <td><select class="emplacement-niveau">${optionsAvecVide(NIVEAUX_FIXES, existant.niveau)}</select></td>
+        <td><select class="emplacement-type">${optionsAvecVide(TYPES_FIXES, existant.type)}</select></td>
+        <td><select class="emplacement-categorie">${optionsAvecVide(categories, existant.categorie)}</select></td>
+      `;
+      corps.appendChild(tr);
+    }
+  }
+}
+
+function lireEmplacementsDepuisTable() {
+  return [...document.querySelectorAll('#corps-table-emplacements tr')].map((tr) => ({
+    rang: Number(tr.dataset.rang),
+    position: Number(tr.dataset.position),
+    niveau: tr.querySelector('.emplacement-niveau').value || null,
+    type: tr.querySelector('.emplacement-type').value || null,
+    categorie: tr.querySelector('.emplacement-categorie').value || null
+  }));
+}
+
+async function chargerPartieActive() {
+  const partie = await requeteJSON('/api/admin/partie-active');
+
+  document.getElementById('partie-aucune').classList.toggle('cachee', partie.active);
+  document.getElementById('partie-configuration').classList.toggle('cachee', !partie.active || partie.statut !== 'en_attente');
+  document.getElementById('partie-suivi').classList.toggle('cachee', !partie.active || partie.statut !== 'en_cours');
+
+  if (intervalSuivi) {
+    clearInterval(intervalSuivi);
+    intervalSuivi = null;
+  }
+
+  if (!partie.active) return;
+
+  if (partie.statut === 'en_attente') {
+    document.getElementById('partie-statut-badge').textContent = `(code interne : ${partie.code})`;
+    document.getElementById('config-nombre-joueurs').value = partie.nombre_joueurs_prevu || 4;
+    document.getElementById('config-nombre-coop').value = partie.nombre_coop_par_joueur || 0;
+
+    const listeJoueursConfig = document.getElementById('liste-joueurs-config');
+    listeJoueursConfig.innerHTML = partie.joueurs
+      .map((j) => `<li>${j.pseudo}${j.race_id ? '' : ' (race non choisie)'}</li>`)
+      .join('') || '<li>Aucun joueur pour le moment</li>';
+
+    construireTableEmplacements(partie.emplacements || []);
+  } else if (partie.statut === 'en_cours') {
+    await chargerSuiviPartie();
+    intervalSuivi = setInterval(chargerSuiviPartie, 5000);
+  }
+}
+
+async function chargerSuiviPartie() {
+  const suivi = await requeteJSON('/api/admin/partie-active/suivi');
+  const liste = document.getElementById('liste-suivi-joueurs');
+  liste.innerHTML = suivi.joueurs
+    .map(
+      (j) =>
+        `<li>${j.pseudo} - ${j.race_nom || 'sans race'} - ${j.connecte ? 'en ligne' : 'hors ligne'} - ${j.valides}/9 objectifs valides</li>`
+    )
+    .join('');
+}
+
+document.getElementById('btn-creer-partie-active').addEventListener('click', async () => {
+  await requeteJSON('/api/admin/partie-active/creer', { method: 'POST' });
+  await chargerPartieActive();
+});
+
+document.getElementById('btn-enregistrer-config').addEventListener('click', async () => {
+  const messageEl = document.getElementById('message-config-partie');
+  messageEl.classList.add('cachee');
+
+  const nombreJoueursPrevu = Number(document.getElementById('config-nombre-joueurs').value);
+  const nombreCoopParJoueur = Number(document.getElementById('config-nombre-coop').value);
+  const emplacements = lireEmplacementsDepuisTable();
+
+  try {
+    const resultat = await requeteJSON('/api/admin/partie-active/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombreJoueursPrevu, nombreCoopParJoueur, emplacements })
+    });
+    afficherSync(resultat.synchronisation);
+    messageEl.textContent = 'Configuration enregistree.';
+    messageEl.classList.remove('message-erreur');
+    messageEl.classList.add('message-info');
+    messageEl.classList.remove('cachee');
+  } catch (err) {
+    messageEl.textContent = err.message;
+    messageEl.classList.remove('message-info');
+    messageEl.classList.add('message-erreur');
+    messageEl.classList.remove('cachee');
+  }
+});
+
+document.getElementById('btn-verifier-pool').addEventListener('click', async () => {
+  const messageEl = document.getElementById('message-verification-pool');
+  try {
+    const resultat = await requeteJSON('/api/admin/partie-active/verifier-pool', { method: 'POST' });
+    messageEl.textContent = resultat.suffisant
+      ? 'Le pool est suffisant pour tous les emplacements.'
+      : resultat.message;
+    messageEl.classList.remove('cachee');
+  } catch (err) {
+    messageEl.textContent = err.message;
+    messageEl.classList.remove('cachee');
+  }
+});
+
+document.getElementById('btn-lancer-partie').addEventListener('click', async () => {
+  if (!confirm('Lancer la partie ? La distribution des objectifs sera definitive.')) return;
+
+  const messageEl = document.getElementById('message-lancement');
+  messageEl.classList.add('cachee');
+  try {
+    const resultat = await requeteJSON('/api/admin/partie-active/lancer', { method: 'POST' });
+    afficherSync(resultat.synchronisation);
+    await chargerPartieActive();
+  } catch (err) {
+    messageEl.textContent = err.message;
+    messageEl.classList.remove('cachee');
+  }
+});
+
+document.getElementById('btn-terminer-partie').addEventListener('click', async () => {
+  if (!confirm('Terminer la partie manuellement pour tous les joueurs ?')) return;
+  await requeteJSON('/api/admin/partie-active/terminer', { method: 'POST' });
+  await chargerPartieActive();
+});
+
 // --- Chargement global ---
 // Chaque mutation (races, representants, dialogues...) appelle chargerTout() afin que
 // tous les selects/listes dependants (ex. Dialogues -> representants) restent synchronises,
@@ -675,6 +828,7 @@ async function chargerTout() {
   chargerFond();
   await chargerScenario();
   await chargerParametres();
+  await chargerPartieActive();
 }
 
 vérifierSession();

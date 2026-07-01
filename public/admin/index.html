@@ -46,6 +46,7 @@
       <button class="onglet" data-onglet="fonds">Fonds</button>
       <button class="onglet" data-onglet="scenario">Scenario</button>
       <button class="onglet" data-onglet="parametres">Parametres</button>
+      <button class="onglet" data-onglet="partie">Configuration de partie</button>
     </nav>
 
     <section id="onglet-races" class="contenu-onglet">
@@ -205,6 +206,55 @@
           <input type="checkbox" id="case-tableau-de-bord" />
           Activer le tableau de bord pour toutes les parties
         </label>
+      </div>
+    </section>
+
+    <section id="onglet-partie" class="contenu-onglet cachee">
+      <div id="partie-aucune" class="carte">
+        <h2>Aucune partie active</h2>
+        <button id="btn-creer-partie-active">Creer une nouvelle partie</button>
+      </div>
+
+      <div id="partie-configuration" class="carte cachee">
+        <h2>Configuration de la partie <span id="partie-statut-badge" class="compteur"></span></h2>
+        <div class="formulaire-ligne">
+          <label>Nombre de joueurs
+            <input id="config-nombre-joueurs" type="number" min="2" max="6" value="4" />
+          </label>
+          <label>Objectifs cooperatifs par joueur
+            <input id="config-nombre-coop" type="number" min="0" value="0" />
+          </label>
+          <button id="btn-enregistrer-config">Enregistrer la configuration</button>
+        </div>
+        <p id="message-config-partie" class="message-erreur cachee"></p>
+
+        <h3>Joueurs presents</h3>
+        <ul id="liste-joueurs-config" class="liste-elements"></ul>
+
+        <h3>Les 9 emplacements (rang x position)</h3>
+        <p class="astuce">
+          Rang = quel representant (1, 2 ou 3) ; Position = quel objectif de ce
+          representant (1, 2 ou 3, le 3e se devoilant apres les 2 premiers).
+        </p>
+        <table class="table-emplacements">
+          <thead>
+            <tr><th>Emplacement</th><th>Niveau</th><th>Type</th><th>Categorie</th></tr>
+          </thead>
+          <tbody id="corps-table-emplacements"></tbody>
+        </table>
+
+        <div class="formulaire-ligne">
+          <button id="btn-verifier-pool" class="bouton-secondaire">Verifier le pool</button>
+          <button id="btn-lancer-partie">Lancer la partie</button>
+        </div>
+        <p id="message-verification-pool" class="message-info cachee"></p>
+        <p id="message-lancement" class="message-erreur cachee"></p>
+      </div>
+
+      <div id="partie-suivi" class="carte cachee">
+        <h2>Suivi en cours de partie</h2>
+        <ul id="liste-suivi-joueurs" class="liste-elements"></ul>
+        <button id="btn-terminer-partie" class="bouton-danger">Terminer la partie manuellement</button>
       </div>
     </section>
   </div>

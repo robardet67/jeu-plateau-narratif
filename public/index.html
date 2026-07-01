@@ -17,14 +17,13 @@
         <p class="sous-titre-hero">Une aventure fantasy a vivre a plusieurs</p>
 
         <div class="boutons-hero">
-          <button id="btn-ouvrir-creer">Commencer une partie</button>
-          <button id="btn-ouvrir-rejoindre">Rejoindre une partie</button>
+          <button id="btn-ouvrir-rejoindre">Rejoindre la partie</button>
           <button id="btn-scenario-accueil" class="bouton-secondaire">Scenario</button>
         </div>
       </div>
     </section>
 
-    <!-- Choix de la race (une seule fois, apres creation/connexion) -->
+    <!-- Choix de la race (une seule fois, apres connexion) -->
     <section id="ecran-choix-race" class="ecran cachee">
       <div class="carte">
         <h2>Choisissez votre race</h2>
@@ -33,10 +32,17 @@
       </div>
     </section>
 
+    <!-- Attente du lancement par le maitre du jeu -->
+    <section id="ecran-attente-lancement" class="ecran cachee">
+      <div class="carte">
+        <h2>En attente du lancement</h2>
+        <p>Le maitre du jeu prepare la partie. Restez sur cette page, elle demarrera automatiquement.</p>
+      </div>
+    </section>
+
     <!-- Etape 1 : les 3 representants -->
     <section id="ecran-representants" class="ecran-plein cachee">
       <div class="entete-jeu">
-        <span>Code : <strong id="code-partie-affiche"></strong></span>
         <div class="entete-jeu-actions">
           <button id="btn-tableau-de-bord-representants" class="bouton-secondaire cachee">Tableau de bord</button>
           <button id="btn-scenario">Scenario</button>
@@ -103,23 +109,13 @@
     </section>
   </div>
 
-  <div id="modal-creer" class="modal cachee">
-    <div class="modal-contenu modal-contenu-etroit">
-      <button class="bouton-secondaire btn-fermer-modal" data-cible="modal-creer">Fermer</button>
-      <h2>Commencer une partie</h2>
-      <input id="creer-pseudo" type="text" placeholder="Votre pseudo" />
-      <input id="creer-nom-partie" type="text" placeholder="Nom de la partie (optionnel)" />
-      <button id="btn-creer-partie">Creer</button>
-    </div>
-  </div>
-
   <div id="modal-rejoindre" class="modal cachee">
     <div class="modal-contenu modal-contenu-etroit">
       <button class="bouton-secondaire btn-fermer-modal" data-cible="modal-rejoindre">Fermer</button>
-      <h2>Rejoindre une partie</h2>
-      <input id="rejoindre-code" type="text" placeholder="Code de la partie" maxlength="6" />
+      <h2>Rejoindre la partie</h2>
       <input id="rejoindre-pseudo" type="text" placeholder="Votre pseudo" />
       <button id="btn-rejoindre-partie">Rejoindre</button>
+      <p id="erreur-rejoindre" class="message-erreur cachee"></p>
     </div>
   </div>
 

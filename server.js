@@ -20,6 +20,7 @@ const {
   validerObjectif,
   obtenirEtatJoueur
 } = require('./utils/grille');
+const { validerNombreCooperatifs, verifierPool, distribuer } = require('./utils/distribution');
 
 // Sur un serveur fraichement deploye (base SQLite vide, non versionnee), recharge le
 // contenu admin depuis la sauvegarde JSON versionnee sur GitHub (voir utils/exportContenu.js).
@@ -572,63 +573,216 @@ app.get('/api/parties/:code/tableau-de-bord', (req, res) => {
   res.json(resultat);
 });
 
-// --- API : parties ---
+// --- API : partie active (une seule partie a la fois, creee/configuree/lancee par le MJ) ---
 
-app.post('/api/parties', (req, res) => {
-  const { nom, pseudo, password } = req.body;
+function obtenirPartieActive(db) {
+  return db
+    .prepare("SELECT * FROM parties WHERE statut IN ('en_attente', 'en_cours') ORDER BY id DESC LIMIT 1")
+    .get();
+}
+
+function joueursDeLaPartie(partieId) {
+  return db
+    .prepare(
+      'SELECT id, pseudo, race_id, representant_id, position, score, connecte, est_hote FROM joueurs WHERE partie_id = ?'
+    )
+    .all(partieId);
+}
+
+// --- Cote joueur ---
+
+app.get('/api/partie-active', (req, res) => {
+  const partie = obtenirPartieActive(db);
+  if (!partie) return res.json({ active: false });
+  res.json({ active: true, ...partie, joueurs: joueursDeLaPartie(partie.id) });
+});
+
+app.post('/api/partie-active/rejoindre', (req, res) => {
+  const { pseudo, password } = req.body;
   if (!pseudo) return res.status(400).json({ error: 'Le pseudo est requis' });
+
+  const partie = obtenirPartieActive(db);
+  if (!partie) return res.status(404).json({ error: 'Aucune partie configuree par le maitre du jeu pour le moment' });
+  if (partie.statut !== 'en_attente') {
+    return res.status(400).json({ error: 'La partie a deja demarre, impossible de la rejoindre' });
+  }
+
+  const premierJoueur = !db.prepare('SELECT id FROM joueurs WHERE partie_id = ? LIMIT 1').get(partie.id);
+  const passwordHash = password ? bcrypt.hashSync(password, 10) : null;
+  const joueur = db
+    .prepare('INSERT INTO joueurs (partie_id, pseudo, password_hash, est_hote) VALUES (?, ?, ?, ?)')
+    .run(partie.id, pseudo, passwordHash, premierJoueur ? 1 : 0);
+
+  res.status(201).json({ partieId: partie.id, code: partie.code, joueurId: joueur.lastInsertRowid });
+});
+
+// --- Cote MJ (admin) ---
+
+app.get('/api/admin/partie-active', exigerAdmin, (req, res) => {
+  const partie = obtenirPartieActive(db);
+  if (!partie) return res.json({ active: false });
+
+  const emplacements = db
+    .prepare('SELECT * FROM configuration_emplacements WHERE partie_id = ? ORDER BY rang, position')
+    .all(partie.id);
+
+  res.json({ active: true, ...partie, joueurs: joueursDeLaPartie(partie.id), emplacements });
+});
+
+app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
+  const existante = obtenirPartieActive(db);
+  if (existante) {
+    return res.json({ active: true, ...existante, joueurs: joueursDeLaPartie(existante.id) });
+  }
 
   let code;
   do {
     code = genererCodePartie();
   } while (db.prepare('SELECT id FROM parties WHERE code = ?').get(code));
 
-  const partie = db
-    .prepare('INSERT INTO parties (code, nom) VALUES (?, ?)')
-    .run(code, nom || `Partie ${code}`);
+  const partie = db.prepare('INSERT INTO parties (code, nom) VALUES (?, ?)').run(code, `Partie ${code}`);
+  const nouvelle = db.prepare('SELECT * FROM parties WHERE id = ?').get(partie.lastInsertRowid);
+  res.status(201).json({ active: true, ...nouvelle, joueurs: [] });
+});
 
-  const passwordHash = password ? bcrypt.hashSync(password, 10) : null;
-  const joueur = db
-    .prepare(
-      'INSERT INTO joueurs (partie_id, pseudo, password_hash, est_hote) VALUES (?, ?, ?, 1)'
-    )
-    .run(partie.lastInsertRowid, pseudo, passwordHash);
+app.post('/api/admin/partie-active/config', exigerAdmin, gerer(async (req, res) => {
+  const partie = obtenirPartieActive(db);
+  if (!partie) return res.status(404).json({ error: 'Aucune partie active. Creez-en une dabord.' });
+  if (partie.statut !== 'en_attente') {
+    return res.status(400).json({ error: 'La partie a deja demarre, configuration verrouillee' });
+  }
 
-  res.status(201).json({
-    partieId: partie.lastInsertRowid,
-    code,
-    joueurId: joueur.lastInsertRowid
+  const { nombreJoueursPrevu, nombreCoopParJoueur, emplacements } = req.body;
+  const validation = validerNombreCooperatifs(nombreJoueursPrevu, nombreCoopParJoueur);
+  if (!validation.valide) {
+    return res.status(400).json({ error: validation.message });
+  }
+
+  db.prepare(
+    'UPDATE parties SET nombre_joueurs_prevu = ?, nombre_coop_par_joueur = ? WHERE id = ?'
+  ).run(nombreJoueursPrevu, nombreCoopParJoueur, partie.id);
+
+  const upsert = db.prepare(
+    `INSERT INTO configuration_emplacements (partie_id, rang, position, niveau, type, categorie)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(partie_id, rang, position) DO UPDATE SET niveau = ?, type = ?, categorie = ?`
+  );
+  (emplacements || []).forEach((e) => {
+    upsert.run(
+      partie.id,
+      e.rang,
+      e.position,
+      e.niveau || null,
+      e.type || null,
+      e.categorie || null,
+      e.niveau || null,
+      e.type || null,
+      e.categorie || null
+    );
   });
+
+  const synchronisation = await commiterEtPousser('Admin : configuration de la partie');
+  res.json({ ok: true, synchronisation });
+}));
+
+app.post('/api/admin/partie-active/verifier-pool', exigerAdmin, (req, res) => {
+  const partie = obtenirPartieActive(db);
+  if (!partie) return res.status(404).json({ error: 'Aucune partie active' });
+
+  const emplacements = db
+    .prepare('SELECT * FROM configuration_emplacements WHERE partie_id = ?')
+    .all(partie.id);
+  if (emplacements.length < 9) {
+    return res.status(400).json({ error: 'Les 9 emplacements ne sont pas encore tous configures' });
+  }
+
+  const resultat = verifierPool(db, partie.nombre_joueurs_prevu, emplacements);
+  res.json(resultat);
 });
 
-app.post('/api/parties/:code/join', (req, res) => {
-  const { pseudo, password } = req.body;
-  if (!pseudo) return res.status(400).json({ error: 'Le pseudo est requis' });
+app.post('/api/admin/partie-active/lancer', exigerAdmin, gerer(async (req, res) => {
+  const partie = obtenirPartieActive(db);
+  if (!partie) return res.status(404).json({ error: 'Aucune partie active' });
+  if (partie.statut !== 'en_attente') {
+    return res.status(400).json({ error: 'La partie est deja lancee' });
+  }
 
-  const partie = db
-    .prepare('SELECT * FROM parties WHERE code = ?')
-    .get(req.params.code.toUpperCase());
-  if (!partie) return res.status(404).json({ error: 'Partie introuvable' });
+  const joueurs = joueursDeLaPartie(partie.id);
+  if (joueurs.length !== partie.nombre_joueurs_prevu) {
+    return res.status(400).json({
+      error: `${joueurs.length} joueur(s) present(s), ${partie.nombre_joueurs_prevu} attendu(s) selon la configuration`
+    });
+  }
+  if (joueurs.some((j) => !j.race_id)) {
+    return res.status(400).json({ error: "Tous les joueurs n'ont pas encore choisi leur race" });
+  }
+  const racesDistinctes = new Set(joueurs.map((j) => j.race_id));
+  if (racesDistinctes.size !== joueurs.length) {
+    return res.status(400).json({ error: 'Deux joueurs ont choisi la meme race' });
+  }
 
-  const passwordHash = password ? bcrypt.hashSync(password, 10) : null;
-  const joueur = db
-    .prepare('INSERT INTO joueurs (partie_id, pseudo, password_hash) VALUES (?, ?, ?)')
-    .run(partie.id, pseudo, passwordHash);
+  const emplacements = db
+    .prepare('SELECT * FROM configuration_emplacements WHERE partie_id = ?')
+    .all(partie.id);
+  if (emplacements.length < 9) {
+    return res.status(400).json({ error: 'Les 9 emplacements ne sont pas encore tous configures' });
+  }
 
-  res.status(201).json({ partieId: partie.id, joueurId: joueur.lastInsertRowid });
-});
+  const verification = verifierPool(db, partie.nombre_joueurs_prevu, emplacements);
+  if (!verification.suffisant) {
+    return res.status(400).json({ error: verification.message });
+  }
 
-app.get('/api/parties/:code', (req, res) => {
-  const partie = db
-    .prepare('SELECT * FROM parties WHERE code = ?')
-    .get(req.params.code.toUpperCase());
-  if (!partie) return res.status(404).json({ error: 'Partie introuvable' });
+  try {
+    distribuer(db, { partieId: partie.id, joueurIds: joueurs.map((j) => j.id), emplacements });
+  } catch (erreur) {
+    return res.status(400).json({ error: erreur.message });
+  }
 
-  const joueurs = db
-    .prepare('SELECT id, pseudo, race_id, representant_id, position, score, connecte, est_hote FROM joueurs WHERE partie_id = ?')
+  db.prepare("UPDATE parties SET statut = 'en_cours' WHERE id = ?").run(partie.id);
+
+  joueurs.forEach((j) => deverrouillerRang(db, j.id, partie.id, 1));
+
+  io.to(partie.code).emit('partie_lancee');
+
+  const synchronisation = await commiterEtPousser('Admin : lancement de la partie');
+  res.json({ ok: true, synchronisation });
+}));
+
+app.post('/api/admin/partie-active/terminer', exigerAdmin, (req, res) => {
+  const partie = obtenirPartieActive(db);
+  if (!partie) return res.status(404).json({ error: 'Aucune partie active' });
+
+  db.prepare("UPDATE parties SET statut = 'terminee' WHERE id = ?").run(partie.id);
+
+  const classement = db
+    .prepare(
+      `SELECT j.id, j.pseudo, COUNT(g.id) AS valides
+       FROM joueurs j LEFT JOIN grille_objectifs g ON g.joueur_id = j.id AND g.statut = 'valide'
+       WHERE j.partie_id = ?
+       GROUP BY j.id
+       ORDER BY valides DESC`
+    )
     .all(partie.id);
 
-  res.json({ ...partie, joueurs });
+  io.to(partie.code).emit('partie_terminee', { classement });
+  res.json({ ok: true, classement });
+});
+
+app.get('/api/admin/partie-active/suivi', exigerAdmin, (req, res) => {
+  const partie = obtenirPartieActive(db);
+  if (!partie) return res.status(404).json({ error: 'Aucune partie active' });
+
+  const joueurs = db
+    .prepare(
+      `SELECT j.id, j.pseudo, j.connecte, j.race_id, r.nom AS race_nom,
+              (SELECT COUNT(*) FROM grille_objectifs g WHERE g.joueur_id = j.id AND g.statut = 'valide') AS valides
+       FROM joueurs j LEFT JOIN races r ON r.id = j.race_id
+       WHERE j.partie_id = ?`
+    )
+    .all(partie.id);
+
+  res.json({ partie, joueurs });
 });
 
 // --- Socket.IO : temps reel ---
@@ -679,7 +833,13 @@ io.on('connection', (socket) => {
       joueurId
     );
 
-    deverrouillerRang(db, joueurId, joueurActuel.partie_id, 1);
+    // Les cases de grille (les 9 emplacements) sont creees par le MJ au lancement de la
+    // partie (voir utils/distribution.js), pas ici : tant que la partie est 'en_attente',
+    // il n'y a rien a deverrouiller.
+    const partieDuJoueur = db.prepare('SELECT * FROM parties WHERE id = ?').get(joueurActuel.partie_id);
+    if (partieDuJoueur && partieDuJoueur.statut === 'en_cours') {
+      deverrouillerRang(db, joueurId, joueurActuel.partie_id, 1);
+    }
 
     socket.emit('etat_joueur', obtenirEtatJoueur(db, joueurId));
     if (socket.data.code) {

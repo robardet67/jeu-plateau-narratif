@@ -87,8 +87,25 @@ function initDatabase() {
       statut TEXT NOT NULL DEFAULT 'en_attente' CHECK (statut IN ('en_attente', 'en_cours', 'terminee')),
       tour_actuel INTEGER NOT NULL DEFAULT 0,
       scenario_index INTEGER NOT NULL DEFAULT 0,
+      nombre_joueurs_prevu INTEGER,
+      nombre_coop_par_joueur INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    -- Configuration MJ des 9 emplacements (3 rangs x 3 positions) avant lancement d'une
+    -- partie : niveau/type/categorie a piocher dans le pool CSV pour chaque emplacement.
+    CREATE TABLE IF NOT EXISTS configuration_emplacements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      partie_id INTEGER NOT NULL,
+      rang INTEGER NOT NULL CHECK (rang IN (1, 2, 3)),
+      position INTEGER NOT NULL CHECK (position IN (1, 2, 3)),
+      niveau TEXT,
+      type TEXT,
+      categorie TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (partie_id) REFERENCES parties(id) ON DELETE CASCADE,
+      UNIQUE (partie_id, rang, position)
     );
 
     CREATE TABLE IF NOT EXISTS joueurs (
@@ -161,6 +178,8 @@ function initDatabase() {
   }
 
   assurerColonne(db, 'parties', 'scenario_index', "INTEGER NOT NULL DEFAULT 0");
+  assurerColonne(db, 'parties', 'nombre_joueurs_prevu', 'INTEGER');
+  assurerColonne(db, 'parties', 'nombre_coop_par_joueur', 'INTEGER NOT NULL DEFAULT 0');
 
   const rangExistaitDeja = colonneExiste(db, 'representants', 'rang');
   assurerColonne(db, 'representants', 'rang', 'INTEGER NOT NULL DEFAULT 1');
