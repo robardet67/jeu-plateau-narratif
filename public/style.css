@@ -58,24 +58,10 @@ button:hover {
 }
 
 #panneau-joueurs {
-  flex: 1;
-  background: #2a2840;
+  background: rgba(42, 40, 64, 0.85);
   border-radius: 0.75rem;
   padding: 1rem;
-}
-
-#chat {
-  flex: 2;
-  background: #2a2840;
-  border-radius: 0.75rem;
-  padding: 1rem;
-}
-
-#messages-chat {
-  list-style: none;
-  padding: 0;
-  max-height: 200px;
-  overflow-y: auto;
+  align-self: flex-start;
 }
 
 .ecran-plein {
@@ -106,19 +92,18 @@ button:hover {
   background: #46446a;
 }
 
-.village {
-  width: 100%;
-  border-radius: 0.75rem;
+#ecran-representants {
   background-size: cover;
   background-position: center;
-  background-color: #2a2840;
-  padding: 2rem;
+  background-color: #1c1b29;
 }
 
-.bas-de-page {
-  display: flex;
-  gap: 1.5rem;
+.village {
   width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* --- Choix de la race --- */
@@ -138,16 +123,20 @@ button:hover {
 
 .grille-representants {
   display: flex;
-  gap: 2rem;
+  gap: 1.5rem;
   justify-content: center;
+  align-items: flex-end;
+  width: 100%;
   flex-wrap: wrap;
 }
 
 .slot-representant {
-  background: rgba(28, 27, 41, 0.75);
+  background: rgba(18, 17, 28, 0.4);
+  backdrop-filter: blur(2px);
   border-radius: 0.75rem;
-  padding: 1.5rem;
-  width: 180px;
+  padding: 1rem;
+  width: 30%;
+  min-width: 220px;
   text-align: center;
 }
 
@@ -161,47 +150,49 @@ button:hover {
 }
 
 .slot-representant img {
-  width: 120px;
-  height: 120px;
-  object-fit: cover;
+  width: 100%;
+  height: 60vh;
+  object-fit: contain;
   border-radius: 0.5rem;
 }
 
 .silhouette {
-  width: 120px;
-  height: 120px;
+  width: 100%;
+  height: 60vh;
   border-radius: 0.5rem;
-  background: #12111c;
+  background: rgba(18, 17, 28, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.5rem;
-  margin: 0 auto;
-  opacity: 0.6;
+  font-size: 4rem;
+  opacity: 0.7;
 }
 
 .nom-slot {
   margin-top: 0.75rem;
   font-weight: bold;
+  font-size: 1.1rem;
 }
 
 .couronne {
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   margin-top: 0.5rem;
 }
 
 /* --- Etape 2 : page individuelle --- */
 
 .carte-representant-individuel {
-  max-width: 560px;
+  max-width: 900px;
   margin: 0 auto;
   text-align: center;
 }
 
 .carte-representant-individuel img {
-  max-width: 260px;
-  max-height: 260px;
-  object-fit: cover;
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: 75vh;
+  object-fit: contain;
   border-radius: 0.75rem;
 }
 

@@ -769,12 +769,6 @@ io.on('connection', (socket) => {
     io.to(socket.data.code).emit('scenario_maj', { index });
   });
 
-  socket.on('message_chat', ({ pseudo, texte }) => {
-    if (socket.data.code) {
-      io.to(socket.data.code).emit('message_chat', { pseudo, texte, date: Date.now() });
-    }
-  });
-
   socket.on('disconnect', () => {
     if (socket.data.joueurId) {
       db.prepare('UPDATE joueurs SET connecte = 0 WHERE id = ?').run(socket.data.joueurId);

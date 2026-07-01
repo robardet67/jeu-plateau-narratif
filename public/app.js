@@ -135,6 +135,9 @@ function afficherChoixRace() {
 function afficherPageRepresentants() {
   if (!etatJoueur) return;
 
+  const ecranRepresentants = document.getElementById('ecran-representants');
+  ecranRepresentants.style.backgroundImage = etatJoueur.imageFond ? `url(${etatJoueur.imageFond})` : '';
+
   const grille = document.getElementById('grille-representants');
   grille.innerHTML = '';
 
@@ -311,25 +314,6 @@ function lancerConfettis() {
   }
 }
 
-// --- Chat ---
-
-const messagesChat = document.getElementById('messages-chat');
-const chatInput = document.getElementById('chat-input');
-
-function ajouterMessageChat({ pseudo, texte }) {
-  const li = document.createElement('li');
-  li.textContent = `${pseudo}: ${texte}`;
-  messagesChat.appendChild(li);
-  messagesChat.scrollTop = messagesChat.scrollHeight;
-}
-
-chatInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && chatInput.value.trim()) {
-    socket.emit('message_chat', { pseudo: etatCourant.pseudo, texte: chatInput.value.trim() });
-    chatInput.value = '';
-  }
-});
-
 // --- Liste des joueurs ---
 
 function afficherJoueurs(joueurs) {
@@ -375,11 +359,16 @@ function afficherImageScenario() {
   scenarioVide.classList.add('cachee');
   imageScenarioActuelle.src = scenarioImages[scenarioIndexActuel].image;
   scenarioPosition.textContent = `${scenarioIndexActuel + 1} / ${scenarioImages.length}`;
-  controlesScenarioHote.classList.toggle('cachee', !etatCourant.estHote);
+
+  // Hors partie (page d'accueil), tout le monde peut naviguer librement. Dans une partie,
+  // le defilement synchronise reste reserve au maitre du jeu.
+  const controlesMasques = !!etatCourant.code && !etatCourant.estHote;
+  controlesScenarioHote.classList.toggle('cachee', controlesMasques);
 }
 
 async function ouvrirScenario() {
   scenarioImages = await requeteJSON('/api/scenario');
+  if (!etatCourant.code) scenarioIndexActuel = 0;
   afficherImageScenario();
   fermerTousLesModaux();
   modalScenario.classList.remove('cachee');
@@ -393,13 +382,23 @@ document.getElementById('btn-fermer-scenario').addEventListener('click', () => {
 });
 
 document.getElementById('btn-scenario-precedent').addEventListener('click', () => {
-  if (!etatCourant.estHote || scenarioIndexActuel <= 0) return;
-  socket.emit('scenario_naviguer', { index: scenarioIndexActuel - 1 });
+  if (scenarioIndexActuel <= 0) return;
+  if (!etatCourant.code) {
+    scenarioIndexActuel--;
+    afficherImageScenario();
+  } else if (etatCourant.estHote) {
+    socket.emit('scenario_naviguer', { index: scenarioIndexActuel - 1 });
+  }
 });
 
 document.getElementById('btn-scenario-suivant').addEventListener('click', () => {
-  if (!etatCourant.estHote || scenarioIndexActuel >= scenarioImages.length - 1) return;
-  socket.emit('scenario_naviguer', { index: scenarioIndexActuel + 1 });
+  if (scenarioIndexActuel >= scenarioImages.length - 1) return;
+  if (!etatCourant.code) {
+    scenarioIndexActuel++;
+    afficherImageScenario();
+  } else if (etatCourant.estHote) {
+    socket.emit('scenario_naviguer', { index: scenarioIndexActuel + 1 });
+  }
 });
 
 // --- Fin de partie ---
@@ -436,7 +435,6 @@ socket.on('etat_partie', ({ partie, joueurs }) => {
 
 socket.on('joueur_maj', () => refreshJoueurs());
 socket.on('joueur_deconnecte', () => refreshJoueurs());
-socket.on('message_chat', ajouterMessageChat);
 socket.on('erreur', ({ message }) => alert(message));
 socket.on('notification', ({ message }) => afficherNotification(message));
 
