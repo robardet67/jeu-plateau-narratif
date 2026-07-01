@@ -146,23 +146,34 @@ function genererEmplacements(db, nombreJoueurs, nombreCoopParJoueur) {
     for (const position of [1, 2, 3]) {
       const estCoop = coopChoisis.has(`${rang}-${position}`);
       const niveauCible = NIVEAU_CIBLE_PAR_POSITION[position];
-      const typeCible = estCoop ? 'cooperatif' : 'standard';
+      // Pour une case non-cooperative, essaie "standard" en priorite, puis se rabat sur
+      // "belliqueux" si le pool n'a pas assez de "standard" pour ce niveau (ex: un pool
+      // ou "difficile" n'existe qu'en belliqueux) : mieux vaut varier le type que
+      // d'echouer alors qu'un contenu utilisable existe.
+      const typesEssayes = estCoop ? ['cooperatif'] : ['standard', 'belliqueux'];
       const requis = estCoop ? Math.ceil(nombreJoueurs / 2) : nombreJoueurs;
 
-      const candidats = poolBrut
-        .filter((c) => normaliser(c.niveau) === niveauCible && normaliser(c.type) === typeCible)
-        .map((c) => ({ ...c, disponible: c.n - (reserve.get(cleReserve(c.niveau, c.type, c.categorie)) || 0) }))
-        .filter((c) => c.disponible >= requis);
+      let choisi = null;
+      for (const typeCible of typesEssayes) {
+        const candidats = poolBrut
+          .filter((c) => normaliser(c.niveau) === niveauCible && normaliser(c.type) === typeCible)
+          .map((c) => ({ ...c, disponible: c.n - (reserve.get(cleReserve(c.niveau, c.type, c.categorie)) || 0) }))
+          .filter((c) => c.disponible >= requis);
 
-      if (!candidats.length) {
+        if (candidats.length) {
+          choisi = candidats[Math.floor(Math.random() * candidats.length)];
+          break;
+        }
+      }
+
+      if (!choisi) {
         manques.push(
-          `Rang ${rang} - Position ${position} (${niveauCible}/${typeCible}) : aucune categorie du pool n'a ${requis} objectif(s) disponible(s)`
+          `Rang ${rang} - Position ${position} (${niveauCible}/${typesEssayes.join(' ou ')}) : aucune categorie du pool n'a ${requis} objectif(s) disponible(s)`
         );
-        emplacements.push({ rang, position, niveau: niveauCible, type: typeCible, categorie: null });
+        emplacements.push({ rang, position, niveau: niveauCible, type: typesEssayes[0], categorie: null });
         continue;
       }
 
-      const choisi = candidats[Math.floor(Math.random() * candidats.length)];
       const cle = cleReserve(choisi.niveau, choisi.type, choisi.categorie);
       reserve.set(cle, (reserve.get(cle) || 0) + requis);
 
