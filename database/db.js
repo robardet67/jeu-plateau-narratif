@@ -1,10 +1,8 @@
-const fs = require('fs');
 const Database = require('better-sqlite3');
 const { initDatabase, DB_PATH } = require('./init');
 
-if (!fs.existsSync(DB_PATH)) {
-  initDatabase();
-}
+// Idempotent : cree les tables manquantes et seme le mot de passe admin par defaut si besoin.
+initDatabase();
 
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');

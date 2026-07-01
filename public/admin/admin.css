@@ -1,0 +1,215 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #1c1b29;
+  color: #f0f0f0;
+}
+
+.cachee {
+  display: none !important;
+}
+
+.ecran-connexion {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.carte-connexion {
+  width: 320px;
+}
+
+.carte {
+  background: #2a2840;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  margin: 1rem 2rem;
+}
+
+.entete-admin {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: #12111c;
+}
+
+.entete-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.indicateur-sync {
+  font-size: 0.85rem;
+  color: #9a9a9a;
+}
+
+.indicateur-sync.succes {
+  color: #4caf50;
+}
+
+.indicateur-sync.echec {
+  color: #e57373;
+}
+
+.onglets {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 2rem;
+}
+
+.onglet {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 0.4rem 0.4rem 0 0;
+  background: #22213a;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.onglet.actif {
+  background: #6c5ce7;
+  color: white;
+}
+
+.formulaire,
+.formulaire-ligne {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.formulaire-ligne {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+input,
+textarea,
+select {
+  padding: 0.5rem;
+  border-radius: 0.4rem;
+  border: 1px solid #444;
+  background: #1c1b29;
+  color: #fff;
+  font-family: inherit;
+}
+
+textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.champ-fichier {
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+button {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 0.4rem;
+  background: #6c5ce7;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background: #5a4bd4;
+}
+
+.bouton-secondaire {
+  background: #3a3856;
+}
+
+.bouton-secondaire:hover {
+  background: #46446a;
+}
+
+.bouton-danger {
+  background: #c0392b;
+}
+
+.bouton-danger:hover {
+  background: #a93226;
+}
+
+.message-erreur {
+  color: #e57373;
+}
+
+.message-info {
+  color: #4caf50;
+}
+
+.astuce {
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+.astuce code {
+  background: #1c1b29;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.3rem;
+}
+
+.compteur {
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+.liste-elements {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.element-carte {
+  background: #1c1b29;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.element-infos {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.element-infos img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 0.4rem;
+  background: #333;
+}
+
+.element-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.element-actions button {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+.apercu-dialogue {
+  font-style: italic;
+  color: #b8b8ff;
+}

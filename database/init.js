@@ -28,9 +28,24 @@ function initDatabase() {
       race_id INTEGER NOT NULL,
       nom TEXT NOT NULL,
       description TEXT,
-      image TEXT,
+      image_depart TEXT,
+      image_sourire TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (race_id) REFERENCES races(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS dialogues (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      representant_id INTEGER NOT NULL,
+      contexte TEXT NOT NULL,
+      texte TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (representant_id) REFERENCES representants(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS admin (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      password_hash TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS objectifs (
@@ -82,11 +97,20 @@ function initDatabase() {
     );
 
     CREATE INDEX IF NOT EXISTS idx_representants_race ON representants(race_id);
+    CREATE INDEX IF NOT EXISTS idx_dialogues_representant ON dialogues(representant_id);
     CREATE INDEX IF NOT EXISTS idx_joueurs_partie ON joueurs(partie_id);
     CREATE INDEX IF NOT EXISTS idx_joueurs_objectifs_joueur ON joueurs_objectifs(joueur_id);
     CREATE INDEX IF NOT EXISTS idx_joueurs_objectifs_objectif ON joueurs_objectifs(objectif_id);
     CREATE INDEX IF NOT EXISTS idx_parties_code ON parties(code);
   `);
+
+  const bcrypt = require('bcrypt');
+  const adminExiste = db.prepare('SELECT id FROM admin WHERE id = 1').get();
+  if (!adminExiste) {
+    const hash = bcrypt.hashSync('admin123', 10);
+    db.prepare('INSERT INTO admin (id, password_hash) VALUES (1, ?)').run(hash);
+    console.log('Mot de passe admin par defaut initialise (admin123)');
+  }
 
   console.log(`Base de donnees initialisee : ${DB_PATH}`);
   db.close();

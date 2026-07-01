@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administration - Jeu de plateau narratif</title>
+  <link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+  <div id="ecran-connexion" class="ecran-connexion">
+    <form id="form-connexion" class="carte carte-connexion">
+      <h1>Administration</h1>
+      <p>Entrez le mot de passe administrateur pour continuer.</p>
+      <input id="champ-mot-de-passe" type="password" placeholder="Mot de passe" autocomplete="current-password" required />
+      <button type="submit">Se connecter</button>
+      <p id="erreur-connexion" class="message-erreur cachee"></p>
+    </form>
+  </div>
+
+  <div id="ecran-admin" class="cachee">
+    <header class="entete-admin">
+      <h1>Administration du jeu</h1>
+      <div class="entete-actions">
+        <span id="indicateur-sync" class="indicateur-sync"></span>
+        <button id="btn-afficher-mdp" class="bouton-secondaire">Changer le mot de passe</button>
+        <button id="btn-deconnexion" class="bouton-secondaire">Se deconnecter</button>
+      </div>
+    </header>
+
+    <section id="panneau-mot-de-passe" class="carte cachee">
+      <h2>Changer le mot de passe administrateur</h2>
+      <form id="form-mot-de-passe" class="formulaire-ligne">
+        <input id="ancien-mdp" type="password" placeholder="Ancien mot de passe" required />
+        <input id="nouveau-mdp" type="password" placeholder="Nouveau mot de passe" required />
+        <button type="submit">Enregistrer</button>
+      </form>
+      <p id="message-mdp" class="message-info cachee"></p>
+    </section>
+
+    <nav class="onglets">
+      <button class="onglet actif" data-onglet="races">Races</button>
+      <button class="onglet" data-onglet="representants">Representants</button>
+      <button class="onglet" data-onglet="dialogues">Dialogues</button>
+    </nav>
+
+    <section id="onglet-races" class="contenu-onglet">
+      <div class="carte">
+        <h2>Ajouter une race</h2>
+        <form id="form-nouvelle-race" class="formulaire" enctype="multipart/form-data">
+          <input name="nom" type="text" placeholder="Nom de la race" required />
+          <textarea name="description" placeholder="Description (optionnel)"></textarea>
+          <label class="champ-fichier">Image (optionnel)
+            <input name="image" type="file" accept="image/*" />
+          </label>
+          <button type="submit">Creer la race</button>
+        </form>
+      </div>
+
+      <div class="carte">
+        <h2>Races existantes</h2>
+        <ul id="liste-races" class="liste-elements"></ul>
+      </div>
+    </section>
+
+    <section id="onglet-representants" class="contenu-onglet cachee">
+      <div class="carte">
+        <h2>Choisir une race</h2>
+        <select id="select-race-representants"></select>
+      </div>
+
+      <div class="carte">
+        <h2>Ajouter un representant <span id="compteur-representants" class="compteur"></span></h2>
+        <form id="form-nouveau-representant" class="formulaire" enctype="multipart/form-data">
+          <input name="nom" type="text" placeholder="Nom du representant" required />
+          <textarea name="description" placeholder="Description (optionnel)"></textarea>
+          <label class="champ-fichier">Image de depart (PNG)
+            <input name="image_depart" type="file" accept="image/png" required />
+          </label>
+          <label class="champ-fichier">Image de sourire (PNG)
+            <input name="image_sourire" type="file" accept="image/png" required />
+          </label>
+          <button type="submit">Creer le representant</button>
+        </form>
+      </div>
+
+      <div class="carte">
+        <h2>Representants de cette race</h2>
+        <ul id="liste-representants" class="liste-elements"></ul>
+      </div>
+    </section>
+
+    <section id="onglet-dialogues" class="contenu-onglet cachee">
+      <div class="carte">
+        <h2>Choisir un representant</h2>
+        <select id="select-race-dialogues"></select>
+        <select id="select-representant-dialogues"></select>
+      </div>
+
+      <div class="carte">
+        <h2>Ajouter un dialogue</h2>
+        <p class="astuce">Utilisez <code>{nom}</code> dans le texte : il sera remplace par le prenom du joueur.</p>
+        <form id="form-nouveau-dialogue" class="formulaire">
+          <input name="contexte" type="text" placeholder="Contexte (ex: accueil, victoire, defi)" required />
+          <textarea name="texte" placeholder="Texte du dialogue, ex: Bienvenue {nom} !" required></textarea>
+          <button type="submit">Ajouter le dialogue</button>
+        </form>
+      </div>
+
+      <div class="carte">
+        <h2>Apercu avec un prenom de test</h2>
+        <input id="champ-prenom-test" type="text" placeholder="Prenom de test (ex: Alice)" value="Alice" />
+      </div>
+
+      <div class="carte">
+        <h2>Dialogues existants</h2>
+        <ul id="liste-dialogues" class="liste-elements"></ul>
+      </div>
+    </section>
+  </div>
+
+  <script src="/admin/admin.js"></script>
+</body>
+</html>

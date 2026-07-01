@@ -6,8 +6,8 @@ database/*.sqlite
 database/*.sqlite3
 database/*.db
 
-# Fichiers uploades
-public/uploads/
+# Les images uploadees via l'admin (races/representants) sont versionnees
+# volontairement : c'est ce que le push automatique synchronise sur GitHub.
 
 # Environnement
 .env

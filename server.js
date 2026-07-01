@@ -6,8 +6,10 @@ const { Server } = require('socket.io');
 const multer = require('multer');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const session = require('express-session');
 
 const db = require('./database/db');
+const { commiterEtPousser } = require('./utils/gitSync');
 
 const PORT = process.env.PORT || 3000;
 
@@ -16,49 +18,313 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 app.use(express.json());
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
+    resave: false,
+    saveUninitialized: false,
+    cookie: { httpOnly: true, maxAge: 1000 * 60 * 60 * 8 }
+  })
+);
+// Route explicite avant express.static pour eviter la redirection /admin -> /admin/
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 const UPLOAD_DIR = path.join(__dirname, 'public', 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-    filename: (req, file, cb) => {
-      const suffix = crypto.randomBytes(8).toString('hex');
-      cb(null, `${Date.now()}-${suffix}${path.extname(file.originalname)}`);
-    }
-  })
+
+function nommerFichier(req, file, cb) {
+  const suffixe = crypto.randomBytes(8).toString('hex');
+  cb(null, `${Date.now()}-${suffixe}${path.extname(file.originalname)}`);
+}
+
+const stockage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+  filename: nommerFichier
 });
+
+const uploadImageRace = multer({
+  storage: stockage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) return cb(null, true);
+    cb(new Error('Le fichier doit etre une image'));
+  }
+});
+
+const uploadImagesRepresentant = multer({
+  storage: stockage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'image/png') return cb(null, true);
+    cb(new Error('Seuls les fichiers PNG sont acceptes pour les representants'));
+  }
+});
+
+function supprimerFichierUpload(urlRelative) {
+  if (!urlRelative) return;
+  const chemin = path.join(__dirname, 'public', urlRelative);
+  fs.unlink(chemin, () => {});
+}
 
 function genererCodePartie() {
   return crypto.randomBytes(3).toString('hex').toUpperCase();
 }
 
+function exigerAdmin(req, res, next) {
+  if (req.session && req.session.estAdmin) return next();
+  res.status(401).json({ error: 'Authentification administrateur requise' });
+}
+
+// Les routes admin sont async (elles attendent commiterEtPousser). Sans ce wrapper,
+// une erreur levee dans un handler async devient une promesse rejetee non geree,
+// ce qui termine le processus Node entier (comportement par defaut depuis Node 15).
+function gerer(fn) {
+  return (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+}
+
+// --- API : administration ---
+
+app.post('/api/admin/connexion', (req, res) => {
+  const { motDePasse } = req.body;
+  const admin = db.prepare('SELECT * FROM admin WHERE id = 1').get();
+  if (!admin || !motDePasse || !bcrypt.compareSync(motDePasse, admin.password_hash)) {
+    return res.status(401).json({ error: 'Mot de passe incorrect' });
+  }
+  req.session.estAdmin = true;
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/deconnexion', (req, res) => {
+  req.session.destroy(() => res.json({ ok: true }));
+});
+
+app.get('/api/admin/session', (req, res) => {
+  res.json({ connecte: !!(req.session && req.session.estAdmin) });
+});
+
+app.post('/api/admin/mot-de-passe', exigerAdmin, (req, res) => {
+  const { ancien, nouveau } = req.body;
+  const admin = db.prepare('SELECT * FROM admin WHERE id = 1').get();
+  if (!ancien || !bcrypt.compareSync(ancien, admin.password_hash)) {
+    return res.status(401).json({ error: 'Ancien mot de passe incorrect' });
+  }
+  if (!nouveau || nouveau.length < 4) {
+    return res.status(400).json({ error: 'Le nouveau mot de passe doit contenir au moins 4 caracteres' });
+  }
+  db.prepare('UPDATE admin SET password_hash = ? WHERE id = 1').run(bcrypt.hashSync(nouveau, 10));
+  res.json({ ok: true });
+});
+
 // --- API : races ---
 
 app.get('/api/races', (req, res) => {
-  const races = db.prepare('SELECT * FROM races ORDER BY nom').all();
-  res.json(races);
+  res.json(db.prepare('SELECT * FROM races ORDER BY nom').all());
 });
 
-app.get('/api/races/:id/representants', (req, res) => {
-  const representants = db
-    .prepare('SELECT * FROM representants WHERE race_id = ? ORDER BY nom')
-    .all(req.params.id);
-  res.json(representants);
-});
-
-app.post('/api/races', upload.single('image'), (req, res) => {
+app.post('/api/races', exigerAdmin, uploadImageRace.single('image'), gerer(async (req, res) => {
   const { nom, description } = req.body;
   if (!nom) return res.status(400).json({ error: 'Le nom est requis' });
+
   const image = req.file ? `/uploads/${req.file.filename}` : null;
   const result = db
     .prepare('INSERT INTO races (nom, description, image) VALUES (?, ?, ?)')
     .run(nom, description || null, image);
-  res.status(201).json({ id: result.lastInsertRowid });
+
+  const synchronisation = await commiterEtPousser(`Admin : ajout de la race "${nom}"`);
+  res.status(201).json({ id: result.lastInsertRowid, synchronisation });
+}));
+
+app.put('/api/races/:id', exigerAdmin, uploadImageRace.single('image'), gerer(async (req, res) => {
+  const race = db.prepare('SELECT * FROM races WHERE id = ?').get(req.params.id);
+  if (!race) return res.status(404).json({ error: 'Race introuvable' });
+
+  const { nom, description } = req.body;
+  let image = race.image;
+  if (req.file) {
+    supprimerFichierUpload(race.image);
+    image = `/uploads/${req.file.filename}`;
+  }
+
+  db.prepare('UPDATE races SET nom = ?, description = ?, image = ? WHERE id = ?').run(
+    nom || race.nom,
+    description ?? race.description,
+    image,
+    race.id
+  );
+
+  const synchronisation = await commiterEtPousser(`Admin : modification de la race "${nom || race.nom}"`);
+  res.json({ ok: true, synchronisation });
+}));
+
+app.delete('/api/races/:id', exigerAdmin, gerer(async (req, res) => {
+  const race = db.prepare('SELECT * FROM races WHERE id = ?').get(req.params.id);
+  if (!race) return res.status(404).json({ error: 'Race introuvable' });
+
+  const representants = db.prepare('SELECT * FROM representants WHERE race_id = ?').all(race.id);
+  db.prepare('DELETE FROM races WHERE id = ?').run(race.id);
+
+  supprimerFichierUpload(race.image);
+  representants.forEach((r) => {
+    supprimerFichierUpload(r.image_depart);
+    supprimerFichierUpload(r.image_sourire);
+  });
+
+  const synchronisation = await commiterEtPousser(`Admin : suppression de la race "${race.nom}"`);
+  res.json({ ok: true, synchronisation });
+}));
+
+// --- API : representants (3 par race, images depart/sourire) ---
+
+app.get('/api/races/:raceId/representants', (req, res) => {
+  res.json(
+    db.prepare('SELECT * FROM representants WHERE race_id = ? ORDER BY id').all(req.params.raceId)
+  );
 });
+
+app.post(
+  '/api/races/:raceId/representants',
+  exigerAdmin,
+  uploadImagesRepresentant.fields([
+    { name: 'image_depart', maxCount: 1 },
+    { name: 'image_sourire', maxCount: 1 }
+  ]),
+  gerer(async (req, res) => {
+    const race = db.prepare('SELECT * FROM races WHERE id = ?').get(req.params.raceId);
+    if (!race) return res.status(404).json({ error: 'Race introuvable' });
+
+    const { count } = db
+      .prepare('SELECT COUNT(*) AS count FROM representants WHERE race_id = ?')
+      .get(race.id);
+    if (count >= 3) {
+      return res.status(400).json({ error: 'Cette race possede deja 3 representants (maximum)' });
+    }
+
+    const { nom, description } = req.body;
+    if (!nom) return res.status(400).json({ error: 'Le nom est requis' });
+
+    const imageDepart = req.files?.image_depart?.[0]
+      ? `/uploads/${req.files.image_depart[0].filename}`
+      : null;
+    const imageSourire = req.files?.image_sourire?.[0]
+      ? `/uploads/${req.files.image_sourire[0].filename}`
+      : null;
+
+    const result = db
+      .prepare(
+        'INSERT INTO representants (race_id, nom, description, image_depart, image_sourire) VALUES (?, ?, ?, ?, ?)'
+      )
+      .run(race.id, nom, description || null, imageDepart, imageSourire);
+
+    const synchronisation = await commiterEtPousser(`Admin : ajout du representant "${nom}"`);
+    res.status(201).json({ id: result.lastInsertRowid, synchronisation });
+  })
+);
+
+app.put(
+  '/api/representants/:id',
+  exigerAdmin,
+  uploadImagesRepresentant.fields([
+    { name: 'image_depart', maxCount: 1 },
+    { name: 'image_sourire', maxCount: 1 }
+  ]),
+  gerer(async (req, res) => {
+    const representant = db.prepare('SELECT * FROM representants WHERE id = ?').get(req.params.id);
+    if (!representant) return res.status(404).json({ error: 'Representant introuvable' });
+
+    const { nom, description } = req.body;
+    let imageDepart = representant.image_depart;
+    let imageSourire = representant.image_sourire;
+
+    if (req.files?.image_depart?.[0]) {
+      supprimerFichierUpload(representant.image_depart);
+      imageDepart = `/uploads/${req.files.image_depart[0].filename}`;
+    }
+    if (req.files?.image_sourire?.[0]) {
+      supprimerFichierUpload(representant.image_sourire);
+      imageSourire = `/uploads/${req.files.image_sourire[0].filename}`;
+    }
+
+    db.prepare(
+      'UPDATE representants SET nom = ?, description = ?, image_depart = ?, image_sourire = ? WHERE id = ?'
+    ).run(nom || representant.nom, description ?? representant.description, imageDepart, imageSourire, representant.id);
+
+    const synchronisation = await commiterEtPousser(
+      `Admin : modification du representant "${nom || representant.nom}"`
+    );
+    res.json({ ok: true, synchronisation });
+  })
+);
+
+app.delete('/api/representants/:id', exigerAdmin, gerer(async (req, res) => {
+  const representant = db.prepare('SELECT * FROM representants WHERE id = ?').get(req.params.id);
+  if (!representant) return res.status(404).json({ error: 'Representant introuvable' });
+
+  db.prepare('DELETE FROM representants WHERE id = ?').run(representant.id);
+  supprimerFichierUpload(representant.image_depart);
+  supprimerFichierUpload(representant.image_sourire);
+
+  const synchronisation = await commiterEtPousser(`Admin : suppression du representant "${representant.nom}"`);
+  res.json({ ok: true, synchronisation });
+}));
+
+// --- API : dialogues (variantes avec {nom}) ---
+
+app.get('/api/representants/:id/dialogues', (req, res) => {
+  res.json(
+    db
+      .prepare('SELECT * FROM dialogues WHERE representant_id = ? ORDER BY contexte, id')
+      .all(req.params.id)
+  );
+});
+
+app.post('/api/representants/:id/dialogues', exigerAdmin, gerer(async (req, res) => {
+  const representant = db.prepare('SELECT * FROM representants WHERE id = ?').get(req.params.id);
+  if (!representant) return res.status(404).json({ error: 'Representant introuvable' });
+
+  const { contexte, texte } = req.body;
+  if (!contexte || !texte) {
+    return res.status(400).json({ error: 'Le contexte et le texte sont requis' });
+  }
+
+  const result = db
+    .prepare('INSERT INTO dialogues (representant_id, contexte, texte) VALUES (?, ?, ?)')
+    .run(representant.id, contexte, texte);
+
+  const synchronisation = await commiterEtPousser(
+    `Admin : ajout d'un dialogue pour "${representant.nom}"`
+  );
+  res.status(201).json({ id: result.lastInsertRowid, synchronisation });
+}));
+
+app.put('/api/dialogues/:id', exigerAdmin, gerer(async (req, res) => {
+  const dialogue = db.prepare('SELECT * FROM dialogues WHERE id = ?').get(req.params.id);
+  if (!dialogue) return res.status(404).json({ error: 'Dialogue introuvable' });
+
+  const { contexte, texte } = req.body;
+  db.prepare('UPDATE dialogues SET contexte = ?, texte = ? WHERE id = ?').run(
+    contexte || dialogue.contexte,
+    texte || dialogue.texte,
+    dialogue.id
+  );
+
+  const synchronisation = await commiterEtPousser(`Admin : modification d'un dialogue (id ${dialogue.id})`);
+  res.json({ ok: true, synchronisation });
+}));
+
+app.delete('/api/dialogues/:id', exigerAdmin, gerer(async (req, res) => {
+  const dialogue = db.prepare('SELECT * FROM dialogues WHERE id = ?').get(req.params.id);
+  if (!dialogue) return res.status(404).json({ error: 'Dialogue introuvable' });
+
+  db.prepare('DELETE FROM dialogues WHERE id = ?').run(dialogue.id);
+  const synchronisation = await commiterEtPousser(`Admin : suppression d'un dialogue (id ${dialogue.id})`);
+  res.json({ ok: true, synchronisation });
+}));
 
 // --- API : objectifs ---
 
@@ -211,6 +477,16 @@ io.on('connection', (socket) => {
       }
     }
   });
+});
+
+// Gestionnaire d'erreurs (ex. rejet multer sur un fichier non-PNG, contrainte SQLite)
+app.use((err, req, res, next) => {
+  if (!err) return next();
+  console.error(err.message);
+  if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    return res.status(409).json({ error: 'Cette valeur existe deja (nom en double)' });
+  }
+  res.status(400).json({ error: err.message || 'Erreur serveur' });
 });
 
 server.listen(PORT, () => {
