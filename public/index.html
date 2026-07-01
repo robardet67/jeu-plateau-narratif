@@ -8,23 +8,18 @@
 </head>
 <body>
   <div id="app">
-    <header>
-      <h1>Jeu de plateau narratif</h1>
-    </header>
+    <section id="accueil" class="ecran-hero">
+      <a href="/admin" class="lien-admin">Administration</a>
 
-    <section id="accueil" class="ecran">
-      <div class="carte">
-        <h2>Creer une partie</h2>
-        <input id="creer-pseudo" type="text" placeholder="Votre pseudo" />
-        <input id="creer-nom-partie" type="text" placeholder="Nom de la partie (optionnel)" />
-        <button id="btn-creer-partie">Creer</button>
-      </div>
+      <div class="hero-contenu">
+        <h1 class="titre-hero">Jeu de Plateau Narratif</h1>
+        <p class="sous-titre-hero">Une aventure fantasy a vivre a plusieurs</p>
 
-      <div class="carte">
-        <h2>Rejoindre une partie</h2>
-        <input id="rejoindre-code" type="text" placeholder="Code de la partie" maxlength="6" />
-        <input id="rejoindre-pseudo" type="text" placeholder="Votre pseudo" />
-        <button id="btn-rejoindre-partie">Rejoindre</button>
+        <div class="boutons-hero">
+          <button id="btn-ouvrir-creer">Commencer une partie</button>
+          <button id="btn-ouvrir-rejoindre">Rejoindre une partie</button>
+          <button id="btn-scenario-accueil" class="bouton-secondaire">Scenario</button>
+        </div>
       </div>
     </section>
 
@@ -58,6 +53,26 @@
         <input id="chat-input" type="text" placeholder="Votre message..." />
       </div>
     </section>
+  </div>
+
+  <div id="modal-creer" class="modal cachee">
+    <div class="modal-contenu modal-contenu-etroit">
+      <button class="bouton-secondaire btn-fermer-modal" data-cible="modal-creer">Fermer</button>
+      <h2>Commencer une partie</h2>
+      <input id="creer-pseudo" type="text" placeholder="Votre pseudo" />
+      <input id="creer-nom-partie" type="text" placeholder="Nom de la partie (optionnel)" />
+      <button id="btn-creer-partie">Creer</button>
+    </div>
+  </div>
+
+  <div id="modal-rejoindre" class="modal cachee">
+    <div class="modal-contenu modal-contenu-etroit">
+      <button class="bouton-secondaire btn-fermer-modal" data-cible="modal-rejoindre">Fermer</button>
+      <h2>Rejoindre une partie</h2>
+      <input id="rejoindre-code" type="text" placeholder="Code de la partie" maxlength="6" />
+      <input id="rejoindre-pseudo" type="text" placeholder="Votre pseudo" />
+      <button id="btn-rejoindre-partie">Rejoindre</button>
+    </div>
   </div>
 
   <div id="modal-scenario" class="modal cachee">

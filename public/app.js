@@ -59,6 +59,8 @@ async function rejoindrePartie() {
 async function demarrerPartie(code, joueurId, pseudo) {
   etatCourant = { code, joueurId, pseudo, estHote: false };
   codePartieAffiche.textContent = code;
+  fermerModal('modal-creer');
+  fermerModal('modal-rejoindre');
   ecranAccueil.classList.add('cachee');
   ecranJeu.classList.remove('cachee');
 
@@ -77,6 +79,29 @@ async function demarrerPartie(code, joueurId, pseudo) {
 
 document.getElementById('btn-creer-partie').addEventListener('click', creerPartie);
 document.getElementById('btn-rejoindre-partie').addEventListener('click', rejoindrePartie);
+
+// --- Modaux de la page d'accueil (creer / rejoindre) ---
+
+function ouvrirModal(id) {
+  document.getElementById(id).classList.remove('cachee');
+}
+
+function fermerModal(id) {
+  document.getElementById(id).classList.add('cachee');
+}
+
+document.getElementById('btn-ouvrir-creer').addEventListener('click', () => ouvrirModal('modal-creer'));
+document.getElementById('btn-ouvrir-rejoindre').addEventListener('click', () => ouvrirModal('modal-rejoindre'));
+
+document.querySelectorAll('.btn-fermer-modal').forEach((bouton) => {
+  bouton.addEventListener('click', () => fermerModal(bouton.dataset.cible));
+});
+
+document.querySelectorAll('.modal').forEach((modal) => {
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.classList.add('cachee');
+  });
+});
 
 // --- Selection race / representant ---
 
@@ -194,11 +219,17 @@ function afficherImageScenario() {
   controlesScenarioHote.classList.toggle('cachee', !etatCourant.estHote);
 }
 
-document.getElementById('btn-scenario').addEventListener('click', async () => {
+async function ouvrirScenario() {
   scenarioImages = await fetch('/api/scenario').then((r) => r.json());
   afficherImageScenario();
   modalScenario.classList.remove('cachee');
-});
+}
+
+// Le bouton de la page d'accueil et celui du village ouvrent le meme visualiseur.
+// Sans partie active, etatCourant.estHote reste a false : la navigation demeure
+// reservee au maitre du jeu d'une partie en cours (le bouton d'accueil est en lecture seule).
+document.getElementById('btn-scenario').addEventListener('click', ouvrirScenario);
+document.getElementById('btn-scenario-accueil').addEventListener('click', ouvrirScenario);
 
 document.getElementById('btn-fermer-scenario').addEventListener('click', () => {
   modalScenario.classList.add('cachee');
