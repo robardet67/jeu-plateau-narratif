@@ -1,11 +1,9 @@
-// Phase 4 : validation, verification du pool et algorithme de distribution des
-// objectifs pour une partie configuree par le maitre du jeu (9 emplacements :
-// rang 1-3 x position 1-3, chacun avec un niveau/type/categorie a piocher dans le pool CSV).
-
-const { normaliser } = require('./texte');
-
-const RANGS = [1, 2, 3];
-const POSITIONS = [1, 2, 3];
+// Configuration d'une partie par le maitre du jeu : 9 emplacements (rang 1-3 x position
+// 1-3). Le MJ choisit seulement le nombre de joueurs (N) et le nombre d'objectifs
+// cooperatifs par joueur (K) ; le niveau (facile/moyen/difficile) suit la position et les
+// emplacements cooperatifs sont repartis selon K. Au lancement, chaque case pioche
+// simplement un objectif au hasard dans tout le pool CSV du niveau demande (voir
+// distribuer ci-dessous) : pas de verification de stock, pas de blocage possible.
 
 function melanger(tableau) {
   const copie = [...tableau];
@@ -16,16 +14,7 @@ function melanger(tableau) {
   return copie;
 }
 
-// Un objectif "cooperatif" est partage par une paire (ceil(N/2) objectifs distincts
-// suffisent, le joueur esseule eventuel ayant sa propre case). Un objectif "belliqueux"
-// oppose 2 joueurs avec des contenus differents des le depart (N distincts). Un
-// objectif "standard" n'a pas de partenaire (N distincts, un par joueur).
-function objectifsRequisPourEmplacement(type, nombreJoueurs) {
-  if (normaliser(type) === 'cooperatif') return Math.ceil(nombreJoueurs / 2);
-  return nombreJoueurs;
-}
-
-// --- Validation mathematique du nombre de cooperatifs par joueur (point 2) ---
+// --- Validation mathematique du nombre de cooperatifs par joueur ---
 //
 // Chaque objectif cooperatif relie 2 joueurs (une arete). "Chaque joueur a exactement K
 // cooperatifs, jamais le meme partenaire deux fois" revient a construire un graphe
@@ -57,69 +46,11 @@ function validerNombreCooperatifs(nombreJoueurs, nombreCoopParJoueur) {
   return { valide: true, message: 'Configuration valide.' };
 }
 
-// --- Verification de suffisance du pool CSV (point 4) ---
-
-function verifierPool(db, nombreJoueurs, emplacements) {
-  // Les emplacements avec les memes niveau/type/categorie puisent dans le meme pool
-  // (exclusion globale dans distribuer()) : leurs besoins doivent donc etre cumules,
-  // pas verifies independamment.
-  const besoinsParCombo = new Map();
-
-  for (const emp of emplacements) {
-    const cle = `${emp.niveau || ''}|${emp.type || ''}|${emp.categorie || ''}`;
-    const requis = objectifsRequisPourEmplacement(emp.type, nombreJoueurs);
-    const existant = besoinsParCombo.get(cle) || {
-      niveau: emp.niveau,
-      type: emp.type,
-      categorie: emp.categorie,
-      requis: 0,
-      emplacements: []
-    };
-    existant.requis += requis;
-    existant.emplacements.push(`Rang ${emp.rang} - position ${emp.position}`);
-    besoinsParCombo.set(cle, existant);
-  }
-
-  const manques = [];
-  for (const besoin of besoinsParCombo.values()) {
-    const disponibles = db
-      .prepare('SELECT COUNT(*) AS n FROM objectifs WHERE niveau IS ? AND type IS ? AND categorie IS ?')
-      .get(besoin.niveau || null, besoin.type || null, besoin.categorie || null).n;
-
-    if (disponibles < besoin.requis) {
-      manques.push({
-        emplacement: besoin.emplacements.join(', '),
-        niveau: besoin.niveau,
-        type: besoin.type,
-        categorie: besoin.categorie,
-        requis: besoin.requis,
-        disponibles
-      });
-    }
-  }
-
-  if (!manques.length) {
-    return { suffisant: true, manques: [] };
-  }
-
-  const message = manques
-    .map(
-      (m) =>
-        `${m.emplacement} (${[m.niveau, m.type, m.categorie].filter(Boolean).join('/')}) : ${m.disponibles} disponible(s), ${m.requis} requis`
-    )
-    .join(' | ');
-
-  return { suffisant: false, manques, message: `Objectifs insuffisants dans le pool : ${message}` };
-}
-
-// --- Generation automatique des 9 emplacements (minimum d'intervention du MJ) ---
+// --- Les 9 emplacements (apercu, sans acces a la base) ---
 //
-// A partir du nombre de joueurs et du nombre de cooperatifs voulus, choisit pour chaque
-// emplacement (rang, position) un niveau (croissant par position : facile/moyen/
-// difficile), un type (cooperatif reparti selon K, reste en standard) et pioche au
-// hasard une categorie du pool ayant assez d'objectifs disponibles (en tenant compte de
-// ce que les emplacements precedents ont deja reserve dans le meme combo niveau/type/
-// categorie). Ne modifie pas la base ; l'appelant est responsable de sauvegarder.
+// Position determine toujours le niveau. K determine combien d'emplacements (parmi les 9)
+// sont cooperatifs, en remplissant en priorite les 3 emplacements "position 2", puis
+// "position 1", puis "position 3".
 const NIVEAU_CIBLE_PAR_POSITION = { 1: 'facile', 2: 'moyen', 3: 'difficile' };
 const ORDRE_PRIORITE_COOP = [
   { rang: 1, position: 2 }, { rang: 2, position: 2 }, { rang: 3, position: 2 },
@@ -127,61 +58,24 @@ const ORDRE_PRIORITE_COOP = [
   { rang: 1, position: 3 }, { rang: 2, position: 3 }, { rang: 3, position: 3 }
 ];
 
-function genererEmplacements(db, nombreJoueurs, nombreCoopParJoueur) {
+function genererEmplacements(nombreCoopParJoueur) {
   const coopChoisis = new Set(
     ORDRE_PRIORITE_COOP.slice(0, nombreCoopParJoueur).map((e) => `${e.rang}-${e.position}`)
   );
 
-  const poolBrut = db
-    .prepare('SELECT niveau, type, categorie, COUNT(*) AS n FROM objectifs GROUP BY niveau, type, categorie')
-    .all();
-
-  const reserve = new Map();
-  const cleReserve = (niveau, type, categorie) => `${niveau}|${type}|${categorie}`;
-
   const emplacements = [];
-  const manques = [];
-
   for (const rang of [1, 2, 3]) {
     for (const position of [1, 2, 3]) {
       const estCoop = coopChoisis.has(`${rang}-${position}`);
-      const niveauCible = NIVEAU_CIBLE_PAR_POSITION[position];
-      // Pour une case non-cooperative, essaie "standard" en priorite, puis se rabat sur
-      // "belliqueux" si le pool n'a pas assez de "standard" pour ce niveau (ex: un pool
-      // ou "difficile" n'existe qu'en belliqueux) : mieux vaut varier le type que
-      // d'echouer alors qu'un contenu utilisable existe.
-      const typesEssayes = estCoop ? ['cooperatif'] : ['standard', 'belliqueux'];
-      const requis = estCoop ? Math.ceil(nombreJoueurs / 2) : nombreJoueurs;
-
-      let choisi = null;
-      for (const typeCible of typesEssayes) {
-        const candidats = poolBrut
-          .filter((c) => normaliser(c.niveau) === niveauCible && normaliser(c.type) === typeCible)
-          .map((c) => ({ ...c, disponible: c.n - (reserve.get(cleReserve(c.niveau, c.type, c.categorie)) || 0) }))
-          .filter((c) => c.disponible >= requis);
-
-        if (candidats.length) {
-          choisi = candidats[Math.floor(Math.random() * candidats.length)];
-          break;
-        }
-      }
-
-      if (!choisi) {
-        manques.push(
-          `Rang ${rang} - Position ${position} (${niveauCible}/${typesEssayes.join(' ou ')}) : aucune categorie du pool n'a ${requis} objectif(s) disponible(s)`
-        );
-        emplacements.push({ rang, position, niveau: niveauCible, type: typesEssayes[0], categorie: null });
-        continue;
-      }
-
-      const cle = cleReserve(choisi.niveau, choisi.type, choisi.categorie);
-      reserve.set(cle, (reserve.get(cle) || 0) + requis);
-
-      emplacements.push({ rang, position, niveau: choisi.niveau, type: choisi.type, categorie: choisi.categorie });
+      emplacements.push({
+        rang,
+        position,
+        niveau: NIVEAU_CIBLE_PAR_POSITION[position],
+        type: estCoop ? 'cooperatif' : 'standard'
+      });
     }
   }
-
-  return { emplacements, manques };
+  return emplacements;
 }
 
 // --- Pairage (partage entre 2 joueurs, jamais deux fois la meme paire) ---
@@ -233,37 +127,41 @@ function genererPairage(joueurIds, pairesDejaUtilisees) {
   return meilleur;
 }
 
-// Choisit `count` objectifs distincts correspondant a niveau/type/categorie, en excluant
-// ceux deja utilises dans cette distribution (pour eviter les repetitions).
-function piocherObjectifs(db, emplacement, count, exclus) {
-  const exclusion = exclus.size ? [...exclus] : [0];
-  const placeholders = exclusion.map(() => '?').join(',');
-  const lignes = db
-    .prepare(
-      `SELECT * FROM objectifs WHERE niveau IS ? AND type IS ? AND categorie IS ? AND id NOT IN (${placeholders}) ORDER BY RANDOM() LIMIT ?`
-    )
-    .all(emplacement.niveau || null, emplacement.type || null, emplacement.categorie || null, ...exclusion, count);
+// Pioche un objectif au hasard dans le pool. Essaie d'abord le niveau et le type
+// demandes ; si le pool n'a rien pour cette combinaison precise (ex: un niveau qui
+// n'existe qu'en un seul type), se rabat progressivement plutot que d'echouer : le but
+// est qu'une configuration ne bloque jamais, quelle que soit la taille du pool CSV.
+function piocherUnObjectif(db, niveau, typeVoulu) {
+  if (typeVoulu) {
+    const exact = db
+      .prepare('SELECT * FROM objectifs WHERE niveau IS ? AND type IS ? ORDER BY RANDOM() LIMIT 1')
+      .get(niveau, typeVoulu);
+    if (exact) return exact;
 
-  if (lignes.length < count) {
-    const criteres = [emplacement.niveau, emplacement.type, emplacement.categorie].filter(Boolean).join('/');
-    throw new Error(
-      `Pool insuffisant pour l'emplacement rang ${emplacement.rang}/position ${emplacement.position} (${criteres}) : ${lignes.length} disponible(s), ${count} necessaire(s)`
-    );
+    const memeType = db
+      .prepare('SELECT * FROM objectifs WHERE type IS ? ORDER BY RANDOM() LIMIT 1')
+      .get(typeVoulu);
+    if (memeType) return memeType;
   }
 
-  lignes.forEach((l) => exclus.add(l.id));
-  return lignes;
+  const memeNiveau = db
+    .prepare('SELECT * FROM objectifs WHERE niveau IS ? ORDER BY RANDOM() LIMIT 1')
+    .get(niveau);
+  if (memeNiveau) return memeNiveau;
+
+  return db.prepare('SELECT * FROM objectifs ORDER BY RANDOM() LIMIT 1').get() || null;
 }
 
-// --- Distribution complete (point 5) ---
+// --- Distribution complete ---
 //
-// Pour chaque emplacement (rang, position), pioche les objectifs necessaires selon le
-// type (cooperatif = partage par paire, belliqueux = paire avec contenus differents,
-// standard = un par joueur) et cree les cases de grille_objectifs de chaque joueur.
-function distribuer(db, { partieId, joueurIds, emplacements }) {
-  const objectifsUtilisesGlobalement = new Set();
+// Pour chaque emplacement (rang, position), pioche un objectif au hasard dans le pool du
+// bon niveau. Les emplacements cooperatifs partagent le meme objectif entre 2 joueurs
+// (jamais le meme partenaire deux fois) ; les autres emplacements sont tires
+// independamment pour chaque joueur (repetitions autorisees, le pool CSV etant souvent
+// trop restreint pour garantir des objectifs tous distincts).
+function distribuer(db, { partieId, joueurIds, nombreCoopParJoueur }) {
+  const emplacements = genererEmplacements(nombreCoopParJoueur);
   const pairesCoopUtilisees = new Set();
-  const pairesBelliqueuxUtilisees = new Set();
 
   const insererCase = db.prepare(
     `INSERT INTO grille_objectifs (joueur_id, partie_id, rang, position, objectif_id, statut)
@@ -273,54 +171,35 @@ function distribuer(db, { partieId, joueurIds, emplacements }) {
   const transaction = db.transaction(() => {
     for (const emp of emplacements) {
       const statutInitial = emp.rang === 1 && emp.position !== 3 ? 'ferme' : 'masque';
-      const type = normaliser(emp.type);
 
-      if (type === 'cooperatif') {
+      if (emp.type === 'cooperatif') {
         const { paires, solo } = genererPairage(joueurIds, pairesCoopUtilisees);
-        const objectifsNecessaires = paires.length + solo.length;
-        const objectifs = piocherObjectifs(db, emp, objectifsNecessaires, objectifsUtilisesGlobalement);
 
-        let indexObjectif = 0;
         for (const [a, b] of paires) {
-          const objectif = objectifs[indexObjectif++];
+          const objectif = piocherUnObjectif(db, emp.niveau, 'cooperatif');
           insererCase.run(a, partieId, emp.rang, emp.position, objectif.id, statutInitial);
           insererCase.run(b, partieId, emp.rang, emp.position, objectif.id, statutInitial);
         }
         for (const solitaire of solo) {
-          const objectif = objectifs[indexObjectif++];
+          const objectif = piocherUnObjectif(db, emp.niveau, 'cooperatif');
           insererCase.run(solitaire, partieId, emp.rang, emp.position, objectif.id, statutInitial);
         }
-      } else if (type === 'belliqueux') {
-        const { paires, solo } = genererPairage(joueurIds, pairesBelliqueuxUtilisees);
-        const objectifsNecessaires = paires.length * 2 + solo.length;
-        const objectifs = piocherObjectifs(db, emp, objectifsNecessaires, objectifsUtilisesGlobalement);
-
-        let indexObjectif = 0;
-        for (const [a, b] of paires) {
-          insererCase.run(a, partieId, emp.rang, emp.position, objectifs[indexObjectif++].id, statutInitial);
-          insererCase.run(b, partieId, emp.rang, emp.position, objectifs[indexObjectif++].id, statutInitial);
-        }
-        for (const solitaire of solo) {
-          insererCase.run(solitaire, partieId, emp.rang, emp.position, objectifs[indexObjectif++].id, statutInitial);
-        }
       } else {
-        const objectifs = piocherObjectifs(db, emp, joueurIds.length, objectifsUtilisesGlobalement);
-        joueurIds.forEach((joueurId, index) => {
-          insererCase.run(joueurId, partieId, emp.rang, emp.position, objectifs[index].id, statutInitial);
-        });
+        for (const joueurId of joueurIds) {
+          const objectif = piocherUnObjectif(db, emp.niveau, null);
+          insererCase.run(joueurId, partieId, emp.rang, emp.position, objectif.id, statutInitial);
+        }
       }
     }
   });
 
   transaction();
+  return emplacements;
 }
 
 module.exports = {
-  RANGS,
-  POSITIONS,
-  objectifsRequisPourEmplacement,
   validerNombreCooperatifs,
-  verifierPool,
   genererEmplacements,
+  genererPairage,
   distribuer
 };

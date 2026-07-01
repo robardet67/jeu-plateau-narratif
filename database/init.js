@@ -93,8 +93,10 @@ function initDatabase() {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
-    -- Configuration MJ des 9 emplacements (3 rangs x 3 positions) avant lancement d'une
-    -- partie : niveau/type/categorie a piocher dans le pool CSV pour chaque emplacement.
+    -- Apercu (lecture seule) des 9 emplacements (3 rangs x 3 positions) d'une partie :
+    -- niveau et statut cooperatif, deduits automatiquement du nombre de joueurs/
+    -- cooperatifs choisi par le MJ. Le tirage reel de l'objectif se fait au lancement
+    -- (voir utils/distribution.js), directement dans tout le pool CSV du bon niveau.
     CREATE TABLE IF NOT EXISTS configuration_emplacements (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       partie_id INTEGER NOT NULL,
@@ -102,7 +104,6 @@ function initDatabase() {
       position INTEGER NOT NULL CHECK (position IN (1, 2, 3)),
       niveau TEXT,
       type TEXT,
-      categorie TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (partie_id) REFERENCES parties(id) ON DELETE CASCADE,
       UNIQUE (partie_id, rang, position)
@@ -180,6 +181,10 @@ function initDatabase() {
   assurerColonne(db, 'parties', 'scenario_index', "INTEGER NOT NULL DEFAULT 0");
   assurerColonne(db, 'parties', 'nombre_joueurs_prevu', 'INTEGER');
   assurerColonne(db, 'parties', 'nombre_coop_par_joueur', 'INTEGER NOT NULL DEFAULT 0');
+
+  // Le tirage n'impose plus de categorie precise (tire au hasard dans tout le pool du
+  // niveau) : cette colonne n'est plus utilisee.
+  retirerColonne(db, 'configuration_emplacements', 'categorie');
 
   const rangExistaitDeja = colonneExiste(db, 'representants', 'rang');
   assurerColonne(db, 'representants', 'rang', 'INTEGER NOT NULL DEFAULT 1');

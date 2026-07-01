@@ -668,54 +668,34 @@ document.getElementById('case-tableau-de-bord').addEventListener('change', async
 
 // --- Configuration de partie (Phase 4) ---
 
-const NIVEAUX_FIXES = ['facile', 'moyen', 'difficile'];
-const TYPES_FIXES = ['standard', 'coopératif', 'belliqueux'];
 let intervalSuivi = null;
 let intervalJoueursConfig = null;
 
-function optionsAvecVide(valeurs, valeurSelectionnee) {
-  const options = ['<option value="">--</option>']
-    .concat(valeurs.map((v) => `<option value="${v}" ${v === valeurSelectionnee ? 'selected' : ''}>${v}</option>`));
-  return options.join('');
-}
-
+// Simple apercu en lecture seule : niveau (deduit de la position) et statut cooperatif
+// (deduit de K). Le tirage reel de l'objectif de chaque case se fait au lancement de la
+// partie, directement dans tout le pool CSV du niveau demande.
 function construireTableEmplacements(emplacements) {
   const corps = document.getElementById('corps-table-emplacements');
   corps.innerHTML = '';
-  const categories = valeursDistinctes('categorie');
 
   for (const rang of [1, 2, 3]) {
     for (const position of [1, 2, 3]) {
       const existant = emplacements.find((e) => e.rang === rang && e.position === position) || {};
       const tr = document.createElement('tr');
-      tr.dataset.rang = rang;
-      tr.dataset.position = position;
       tr.innerHTML = `
         <td>Rang ${rang} - Position ${position}</td>
-        <td><select class="emplacement-niveau">${optionsAvecVide(NIVEAUX_FIXES, existant.niveau)}</select></td>
-        <td><select class="emplacement-type">${optionsAvecVide(TYPES_FIXES, existant.type)}</select></td>
-        <td><select class="emplacement-categorie">${optionsAvecVide(categories, existant.categorie)}</select></td>
+        <td>${existant.niveau || '--'}</td>
+        <td>${existant.type === 'cooperatif' ? 'Cooperatif' : 'Normal'}</td>
       `;
       corps.appendChild(tr);
     }
   }
 }
 
-function lireEmplacementsDepuisTable() {
-  return [...document.querySelectorAll('#corps-table-emplacements tr')].map((tr) => ({
-    rang: Number(tr.dataset.rang),
-    position: Number(tr.dataset.position),
-    niveau: tr.querySelector('.emplacement-niveau').value || null,
-    type: tr.querySelector('.emplacement-type').value || null,
-    categorie: tr.querySelector('.emplacement-categorie').value || null
-  }));
-}
-
 // Minimum d'intervention du MJ : des que N et K sont renseignes (y compris les valeurs
-// par defaut a l'ouverture), le serveur genere ET enregistre automatiquement les 9
-// emplacements en piochant reellement dans le pool CSV (niveau croissant par position,
-// K cooperatifs repartis, categories aleatoires parmi celles disponibles). Le bouton
-// "Lancer la partie" est donc utilisable immediatement ; modifier reste optionnel.
+// par defaut a l'ouverture), le serveur deduit ET enregistre automatiquement les 9
+// emplacements (niveau croissant par position, K cooperatifs repartis). Le bouton
+// "Lancer la partie" est donc utilisable immediatement.
 async function genererConfigurationAutomatique() {
   const messageEl = document.getElementById('message-config-partie');
   messageEl.classList.add('cachee');
@@ -732,23 +712,24 @@ async function genererConfigurationAutomatique() {
     });
     construireTableEmplacements(resultat.emplacements);
     afficherSync(resultat.synchronisation);
+
+    if (resultat.lancement?.lance) {
+      messageEl.textContent = 'Configuration enregistree. Effectif complet : la partie vient de demarrer !';
+      messageEl.classList.remove('message-erreur');
+      messageEl.classList.add('message-info');
+      messageEl.classList.remove('cachee');
+      await chargerPartieActive();
+    }
   } catch (err) {
     messageEl.textContent = err.message;
     messageEl.classList.remove('message-info');
     messageEl.classList.add('message-erreur');
     messageEl.classList.remove('cachee');
-
-    // Meme en echec (pool insuffisant), affiche ce qui a pu etre genere : le MJ voit
-    // quelles cases fonctionnent et complete manuellement le reste, au lieu de faire
-    // face a un tableau entierement vide sans indice.
-    construireTableEmplacements(err.donnees?.emplacements || []);
   }
 }
 
 document.getElementById('config-nombre-joueurs').addEventListener('change', genererConfigurationAutomatique);
 document.getElementById('config-nombre-coop').addEventListener('change', genererConfigurationAutomatique);
-// Le meme bouton sert de "regenerer" (nouveau tirage aleatoire) si le MJ n'aime pas le resultat.
-document.getElementById('btn-proposer-config').addEventListener('click', genererConfigurationAutomatique);
 
 async function chargerPartieActive() {
   const partie = await requeteJSON('/api/admin/partie-active');
@@ -825,81 +806,12 @@ document.getElementById('btn-creer-partie-active').addEventListener('click', asy
   await chargerPartieActive();
 });
 
-document.getElementById('btn-enregistrer-config').addEventListener('click', async () => {
-  const messageEl = document.getElementById('message-config-partie');
-  messageEl.classList.add('cachee');
-
-  const nombreJoueursPrevu = Number(document.getElementById('config-nombre-joueurs').value);
-  const nombreCoopParJoueur = Number(document.getElementById('config-nombre-coop').value);
-  const emplacements = lireEmplacementsDepuisTable();
-
-  try {
-    const resultat = await requeteJSON('/api/admin/partie-active/config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombreJoueursPrevu, nombreCoopParJoueur, emplacements })
-    });
-    afficherSync(resultat.synchronisation);
-
-    if (resultat.lancement?.lance) {
-      messageEl.textContent = 'Configuration enregistree. Effectif complet : la partie vient de demarrer !';
-    } else {
-      messageEl.textContent = 'Configuration enregistree.';
-    }
-    messageEl.classList.remove('message-erreur');
-    messageEl.classList.add('message-info');
-    messageEl.classList.remove('cachee');
-
-    // Rafraichit la vue (bascule automatiquement sur le suivi si la partie a demarre).
-    await chargerPartieActive();
-  } catch (err) {
-    messageEl.textContent = err.message;
-    messageEl.classList.remove('message-info');
-    messageEl.classList.add('message-erreur');
-    messageEl.classList.remove('cachee');
-  }
-});
-
-document.getElementById('btn-verifier-pool').addEventListener('click', async () => {
-  const messageEl = document.getElementById('message-verification-pool');
-  // Verifie les valeurs actuellement affichees a l'ecran, pas la derniere config
-  // enregistree en base (sinon "Verifier" avant tout "Enregistrer" controle du vide).
-  const nombreJoueursPrevu = Number(document.getElementById('config-nombre-joueurs').value);
-  const emplacements = lireEmplacementsDepuisTable();
-
-  try {
-    const resultat = await requeteJSON('/api/admin/partie-active/verifier-pool', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombreJoueursPrevu, emplacements })
-    });
-    messageEl.textContent = resultat.suffisant
-      ? 'Le pool est suffisant pour tous les emplacements.'
-      : resultat.message;
-    messageEl.classList.remove('cachee');
-  } catch (err) {
-    messageEl.textContent = err.message;
-    messageEl.classList.remove('cachee');
-  }
-});
-
 document.getElementById('btn-lancer-partie').addEventListener('click', async () => {
   if (!confirm('Lancer la partie ? La distribution des objectifs sera definitive.')) return;
 
   const messageEl = document.getElementById('message-lancement');
   messageEl.classList.add('cachee');
   try {
-    // Sauvegarde d'abord l'etat actuel de la table (capture d'eventuels ajustements
-    // manuels du MJ), puis lance : aucune action prealable n'est requise sinon.
-    const nombreJoueursPrevu = Number(document.getElementById('config-nombre-joueurs').value);
-    const nombreCoopParJoueur = Number(document.getElementById('config-nombre-coop').value);
-    const emplacements = lireEmplacementsDepuisTable();
-    await requeteJSON('/api/admin/partie-active/config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombreJoueursPrevu, nombreCoopParJoueur, emplacements })
-    });
-
     const resultat = await requeteJSON('/api/admin/partie-active/lancer', { method: 'POST' });
     afficherSync(resultat.synchronisation);
     await chargerPartieActive();

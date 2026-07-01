@@ -20,7 +20,7 @@ const {
   validerObjectif,
   obtenirEtatJoueur
 } = require('./utils/grille');
-const { validerNombreCooperatifs, verifierPool, genererEmplacements, distribuer } = require('./utils/distribution');
+const { validerNombreCooperatifs, genererEmplacements, distribuer } = require('./utils/distribution');
 
 // Sur un serveur fraichement deploye (base SQLite vide, non versionnee), recharge le
 // contenu admin depuis la sauvegarde JSON versionnee sur GitHub (voir utils/exportContenu.js).
@@ -618,20 +618,19 @@ function tenterLancementPartie(partieId) {
     return { lance: false, raison: 'Deux joueurs ont choisi la meme race' };
   }
 
-  const emplacements = db
-    .prepare('SELECT * FROM configuration_emplacements WHERE partie_id = ?')
-    .all(partieId);
-  if (emplacements.length < 9) {
-    return { lance: false, raison: 'Les 9 emplacements ne sont pas encore tous configures' };
-  }
-
-  const verification = verifierPool(db, partie.nombre_joueurs_prevu, emplacements);
-  if (!verification.suffisant) {
-    return { lance: false, raison: verification.message };
+  const nombreEmplacements = db
+    .prepare('SELECT COUNT(*) AS n FROM configuration_emplacements WHERE partie_id = ?')
+    .get(partieId).n;
+  if (nombreEmplacements < 9) {
+    return { lance: false, raison: 'Les 9 emplacements ne sont pas encore configures' };
   }
 
   try {
-    distribuer(db, { partieId, joueurIds: joueurs.map((j) => j.id), emplacements });
+    distribuer(db, {
+      partieId,
+      joueurIds: joueurs.map((j) => j.id),
+      nombreCoopParJoueur: partie.nombre_coop_par_joueur
+    });
   } catch (erreur) {
     return { lance: false, raison: erreur.message };
   }
@@ -700,9 +699,10 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
 });
 
 // Minimum d'intervention du MJ : il saisit juste N et K, tout le reste (les 9
-// emplacements) est genere et sauvegarde automatiquement, pret a lancer sans autre
-// action. Le MJ peut ensuite modifier des cases si besoin (formulaire /config), mais ce
-// n'est pas obligatoire.
+// emplacements : niveau croissant par position, cooperatifs repartis selon K) est deduit
+// et sauvegarde automatiquement, pret a lancer sans autre action. Le tirage reel de
+// l'objectif de chaque case se fait au lancement (voir distribuer), pas ici : il ne peut
+// donc jamais echouer faute de stock.
 app.post('/api/admin/partie-active/generer', exigerAdmin, gerer(async (req, res) => {
   const partie = obtenirPartieActive(db);
   if (!partie) return res.status(404).json({ error: 'Aucune partie active. Creez-en une dabord.' });
@@ -716,97 +716,28 @@ app.post('/api/admin/partie-active/generer', exigerAdmin, gerer(async (req, res)
     return res.status(400).json({ error: validation.message });
   }
 
-  const { emplacements, manques } = genererEmplacements(db, nombreJoueursPrevu, nombreCoopParJoueur);
-  if (manques.length) {
-    // Renvoie aussi les emplacements partiels (les cases en echec ont categorie=null) :
-    // le MJ voit ce qui a fonctionne et peut completer manuellement le reste plutot que
-    // de se retrouver face a un tableau entierement vide.
-    return res.status(400).json({
-      error: `Pool CSV insuffisant : ${manques.join(' | ')}`,
-      emplacements
-    });
-  }
+  const emplacements = genererEmplacements(nombreCoopParJoueur);
 
   db.prepare(
     'UPDATE parties SET nombre_joueurs_prevu = ?, nombre_coop_par_joueur = ? WHERE id = ?'
   ).run(nombreJoueursPrevu, nombreCoopParJoueur, partie.id);
 
   const upsert = db.prepare(
-    `INSERT INTO configuration_emplacements (partie_id, rang, position, niveau, type, categorie)
-     VALUES (?, ?, ?, ?, ?, ?)
-     ON CONFLICT(partie_id, rang, position) DO UPDATE SET niveau = ?, type = ?, categorie = ?`
+    `INSERT INTO configuration_emplacements (partie_id, rang, position, niveau, type)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(partie_id, rang, position) DO UPDATE SET niveau = ?, type = ?`
   );
   emplacements.forEach((e) => {
-    upsert.run(partie.id, e.rang, e.position, e.niveau, e.type, e.categorie, e.niveau, e.type, e.categorie);
+    upsert.run(partie.id, e.rang, e.position, e.niveau, e.type, e.niveau, e.type);
   });
 
-  const synchronisation = await commiterEtPousser('Admin : generation automatique de la configuration');
-  res.json({ ok: true, emplacements, synchronisation });
-}));
-
-app.post('/api/admin/partie-active/config', exigerAdmin, gerer(async (req, res) => {
-  const partie = obtenirPartieActive(db);
-  if (!partie) return res.status(404).json({ error: 'Aucune partie active. Creez-en une dabord.' });
-  if (partie.statut !== 'en_attente') {
-    return res.status(400).json({ error: 'La partie a deja demarre, configuration verrouillee' });
-  }
-
-  const { nombreJoueursPrevu, nombreCoopParJoueur, emplacements } = req.body;
-  const validation = validerNombreCooperatifs(nombreJoueursPrevu, nombreCoopParJoueur);
-  if (!validation.valide) {
-    return res.status(400).json({ error: validation.message });
-  }
-
-  db.prepare(
-    'UPDATE parties SET nombre_joueurs_prevu = ?, nombre_coop_par_joueur = ? WHERE id = ?'
-  ).run(nombreJoueursPrevu, nombreCoopParJoueur, partie.id);
-
-  const upsert = db.prepare(
-    `INSERT INTO configuration_emplacements (partie_id, rang, position, niveau, type, categorie)
-     VALUES (?, ?, ?, ?, ?, ?)
-     ON CONFLICT(partie_id, rang, position) DO UPDATE SET niveau = ?, type = ?, categorie = ?`
-  );
-  (emplacements || []).forEach((e) => {
-    upsert.run(
-      partie.id,
-      e.rang,
-      e.position,
-      e.niveau || null,
-      e.type || null,
-      e.categorie || null,
-      e.niveau || null,
-      e.type || null,
-      e.categorie || null
-    );
-  });
-
-  // Si l'effectif (re)configure correspond deja aux joueurs presents (ex: le MJ reduit
-  // le nombre de joueurs suite a une absence), la partie peut se lancer immediatement.
+  // Si l'effectif configure correspond deja aux joueurs presents (ex: le MJ reduit le
+  // nombre de joueurs suite a une absence), la partie peut se lancer immediatement.
   const lancement = tenterLancementPartie(partie.id);
 
   const synchronisation = await commiterEtPousser('Admin : configuration de la partie');
-  res.json({ ok: true, synchronisation, lancement });
+  res.json({ ok: true, emplacements, lancement, synchronisation });
 }));
-
-// Verifie les valeurs actuellement affichees a l'ecran (envoyees dans le corps), pas la
-// derniere configuration enregistree en base : sinon "Verifier" avant tout
-// "Enregistrer" controlerait une configuration vide/perimee.
-app.post('/api/admin/partie-active/verifier-pool', exigerAdmin, (req, res) => {
-  const partie = obtenirPartieActive(db);
-  if (!partie) return res.status(404).json({ error: 'Aucune partie active' });
-
-  const nombreJoueursPrevu = req.body?.nombreJoueursPrevu ?? partie.nombre_joueurs_prevu;
-  const emplacements =
-    req.body?.emplacements ||
-    db.prepare('SELECT * FROM configuration_emplacements WHERE partie_id = ?').all(partie.id);
-
-  if (!emplacements || emplacements.length < 9) {
-    return res.status(400).json({ error: 'Les 9 emplacements ne sont pas encore tous configures' });
-  }
-
-  const resultat = verifierPool(db, nombreJoueursPrevu, emplacements);
-  res.json(resultat);
-});
 
 // Bouton manuel de secours (l'admin peut forcer une tentative de lancement, ex. apres
 // avoir reconfigure). En temps normal la partie se lance toute seule (voir

@@ -224,17 +224,12 @@
           <label>Objectifs cooperatifs par joueur
             <input id="config-nombre-coop" type="number" min="0" value="0" />
           </label>
-          <button id="btn-proposer-config" class="bouton-secondaire">Regenerer aleatoirement</button>
-          <button id="btn-enregistrer-config">Enregistrer la configuration</button>
         </div>
         <p class="astuce">
-          Des que ces deux valeurs sont renseignees (y compris par defaut), les 9
-          emplacements ci-dessous sont generes ET enregistres automatiquement en piochant
-          au hasard dans le pool CSV (niveau croissant par position : facile/moyen/
-          difficile, cooperatifs repartis selon le nombre demande, reste en standard).
-          Vous n'etes pas oblige de les modifier : le bouton "Lancer la partie" plus bas
-          est utilisable immediatement. "Regenerer aleatoirement" refait un tirage si le
-          resultat ne vous convient pas ; vous pouvez aussi ajuster chaque case a la main.
+          Ces deux valeurs suffisent : le reste (les 9 emplacements ci-dessous) est deduit
+          et enregistre automatiquement (niveau croissant par position : facile/moyen/
+          difficile, cooperatifs repartis selon le nombre demande). L'objectif precis de
+          chaque case est tire au hasard dans le pool CSV au moment du lancement.
         </p>
         <p id="message-config-partie" class="message-erreur cachee"></p>
 
@@ -248,7 +243,7 @@
         </p>
         <table class="table-emplacements">
           <thead>
-            <tr><th>Emplacement</th><th>Niveau</th><th>Type</th><th>Categorie</th></tr>
+            <tr><th>Emplacement</th><th>Niveau</th><th>Type</th></tr>
           </thead>
           <tbody id="corps-table-emplacements"></tbody>
         </table>
@@ -260,10 +255,8 @@
           avoir reduit le nombre de joueurs suite a une absence).
         </p>
         <div class="formulaire-ligne">
-          <button id="btn-verifier-pool" class="bouton-secondaire">Verifier le pool</button>
           <button id="btn-lancer-partie" class="bouton-secondaire">Lancer la partie manuellement</button>
         </div>
-        <p id="message-verification-pool" class="message-info cachee"></p>
         <p id="message-lancement" class="message-erreur cachee"></p>
       </div>
 
