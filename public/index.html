@@ -29,16 +29,28 @@
     </section>
 
     <section id="jeu" class="ecran cachee">
-      <div class="info-partie">
+      <div class="entete-jeu">
         <span>Code : <strong id="code-partie-affiche"></strong></span>
+        <button id="btn-scenario">Scenario</button>
       </div>
 
-      <div class="zone-jeu">
-        <div id="plateau"></div>
-        <aside id="panneau-joueurs">
-          <h3>Joueurs</h3>
-          <ul id="liste-joueurs"></ul>
-        </aside>
+      <div id="village" class="village">
+        <div id="selection-personnage" class="carte">
+          <h2>Choisissez votre race et votre representant</h2>
+          <select id="select-ma-race"></select>
+          <div id="liste-mes-representants" class="liste-representants-choix"></div>
+          <button id="btn-valider-personnage" disabled>Valider mon choix</button>
+        </div>
+
+        <div id="village-contenu" class="cachee">
+          <div class="zone-jeu">
+            <div id="plateau"></div>
+            <aside id="panneau-joueurs">
+              <h3>Joueurs</h3>
+              <ul id="liste-joueurs"></ul>
+            </aside>
+          </div>
+        </div>
       </div>
 
       <div id="chat">
@@ -46,6 +58,19 @@
         <input id="chat-input" type="text" placeholder="Votre message..." />
       </div>
     </section>
+  </div>
+
+  <div id="modal-scenario" class="modal cachee">
+    <div class="modal-contenu">
+      <button id="btn-fermer-scenario" class="bouton-secondaire">Fermer</button>
+      <img id="image-scenario-actuelle" src="" alt="scenario" />
+      <p id="scenario-vide" class="cachee">Aucune image de scenario n'a ete ajoutee par l'administrateur.</p>
+      <div id="controles-scenario-hote" class="controles-scenario cachee">
+        <button id="btn-scenario-precedent">Precedent</button>
+        <span id="scenario-position"></span>
+        <button id="btn-scenario-suivant">Suivant</button>
+      </div>
+    </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>

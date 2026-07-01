@@ -7,6 +7,7 @@ const multer = require('multer');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const session = require('express-session');
+const { parse } = require('csv-parse/sync');
 
 const db = require('./database/db');
 const { commiterEtPousser } = require('./utils/gitSync');
@@ -48,7 +49,8 @@ const stockage = multer.diskStorage({
   filename: nommerFichier
 });
 
-const uploadImageRace = multer({
+// Utilisee pour les fonds de race et les images de scenario (n'importe quel format image)
+const uploadImageGenerique = multer({
   storage: stockage,
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) return cb(null, true);
@@ -63,6 +65,8 @@ const uploadImagesRepresentant = multer({
     cb(new Error('Seuls les fichiers PNG sont acceptes pour les representants'));
   }
 });
+
+const uploadCsv = multer({ storage: multer.memoryStorage() });
 
 function supprimerFichierUpload(urlRelative) {
   if (!urlRelative) return;
@@ -127,38 +131,26 @@ app.get('/api/races', (req, res) => {
   res.json(db.prepare('SELECT * FROM races ORDER BY nom').all());
 });
 
-app.post('/api/races', exigerAdmin, uploadImageRace.single('image'), gerer(async (req, res) => {
-  const { nom, description } = req.body;
+app.post('/api/races', exigerAdmin, gerer(async (req, res) => {
+  const { nom } = req.body;
   if (!nom) return res.status(400).json({ error: 'Le nom est requis' });
 
-  const image = req.file ? `/uploads/${req.file.filename}` : null;
-  const result = db
-    .prepare('INSERT INTO races (nom, description, image) VALUES (?, ?, ?)')
-    .run(nom, description || null, image);
+  const result = db.prepare('INSERT INTO races (nom) VALUES (?)').run(nom);
 
   const synchronisation = await commiterEtPousser(`Admin : ajout de la race "${nom}"`);
   res.status(201).json({ id: result.lastInsertRowid, synchronisation });
 }));
 
-app.put('/api/races/:id', exigerAdmin, uploadImageRace.single('image'), gerer(async (req, res) => {
+app.put('/api/races/:id', exigerAdmin, gerer(async (req, res) => {
   const race = db.prepare('SELECT * FROM races WHERE id = ?').get(req.params.id);
   if (!race) return res.status(404).json({ error: 'Race introuvable' });
 
-  const { nom, description } = req.body;
-  let image = race.image;
-  if (req.file) {
-    supprimerFichierUpload(race.image);
-    image = `/uploads/${req.file.filename}`;
-  }
+  const { nom } = req.body;
+  if (!nom) return res.status(400).json({ error: 'Le nom est requis' });
 
-  db.prepare('UPDATE races SET nom = ?, description = ?, image = ? WHERE id = ?').run(
-    nom || race.nom,
-    description ?? race.description,
-    image,
-    race.id
-  );
+  db.prepare('UPDATE races SET nom = ? WHERE id = ?').run(nom, race.id);
 
-  const synchronisation = await commiterEtPousser(`Admin : modification de la race "${nom || race.nom}"`);
+  const synchronisation = await commiterEtPousser(`Admin : modification de la race "${nom}"`);
   res.json({ ok: true, synchronisation });
 }));
 
@@ -169,13 +161,39 @@ app.delete('/api/races/:id', exigerAdmin, gerer(async (req, res) => {
   const representants = db.prepare('SELECT * FROM representants WHERE race_id = ?').all(race.id);
   db.prepare('DELETE FROM races WHERE id = ?').run(race.id);
 
-  supprimerFichierUpload(race.image);
+  supprimerFichierUpload(race.image_fond);
   representants.forEach((r) => {
     supprimerFichierUpload(r.image_depart);
     supprimerFichierUpload(r.image_sourire);
   });
 
   const synchronisation = await commiterEtPousser(`Admin : suppression de la race "${race.nom}"`);
+  res.json({ ok: true, synchronisation });
+}));
+
+// --- API : fonds (image de village par race) ---
+
+app.put('/api/races/:id/fond', exigerAdmin, uploadImageGenerique.single('image'), gerer(async (req, res) => {
+  const race = db.prepare('SELECT * FROM races WHERE id = ?').get(req.params.id);
+  if (!race) return res.status(404).json({ error: 'Race introuvable' });
+  if (!req.file) return res.status(400).json({ error: 'Une image est requise' });
+
+  supprimerFichierUpload(race.image_fond);
+  const imageFond = `/uploads/${req.file.filename}`;
+  db.prepare('UPDATE races SET image_fond = ? WHERE id = ?').run(imageFond, race.id);
+
+  const synchronisation = await commiterEtPousser(`Admin : mise a jour du fond de "${race.nom}"`);
+  res.json({ ok: true, image_fond: imageFond, synchronisation });
+}));
+
+app.delete('/api/races/:id/fond', exigerAdmin, gerer(async (req, res) => {
+  const race = db.prepare('SELECT * FROM races WHERE id = ?').get(req.params.id);
+  if (!race) return res.status(404).json({ error: 'Race introuvable' });
+
+  supprimerFichierUpload(race.image_fond);
+  db.prepare('UPDATE races SET image_fond = NULL WHERE id = ?').run(race.id);
+
+  const synchronisation = await commiterEtPousser(`Admin : suppression du fond de "${race.nom}"`);
   res.json({ ok: true, synchronisation });
 }));
 
@@ -326,20 +344,164 @@ app.delete('/api/dialogues/:id', exigerAdmin, gerer(async (req, res) => {
   res.json({ ok: true, synchronisation });
 }));
 
-// --- API : objectifs ---
+// --- API : objectifs (description, niveau, type, categorie) ---
 
 app.get('/api/objectifs', (req, res) => {
-  res.json(db.prepare('SELECT * FROM objectifs ORDER BY id').all());
+  const { niveau, type, categorie } = req.query;
+  let sql = 'SELECT * FROM objectifs WHERE 1 = 1';
+  const params = [];
+  if (niveau) {
+    sql += ' AND niveau = ?';
+    params.push(niveau);
+  }
+  if (type) {
+    sql += ' AND type = ?';
+    params.push(type);
+  }
+  if (categorie) {
+    sql += ' AND categorie = ?';
+    params.push(categorie);
+  }
+  sql += ' ORDER BY id DESC';
+  res.json(db.prepare(sql).all(...params));
 });
 
-app.post('/api/objectifs', (req, res) => {
-  const { titre, description, points } = req.body;
-  if (!titre) return res.status(400).json({ error: 'Le titre est requis' });
+app.post('/api/objectifs', exigerAdmin, gerer(async (req, res) => {
+  const { description, niveau, type, categorie } = req.body;
+  if (!description) return res.status(400).json({ error: 'La description est requise' });
+
   const result = db
-    .prepare('INSERT INTO objectifs (titre, description, points) VALUES (?, ?, ?)')
-    .run(titre, description || null, points || 0);
-  res.status(201).json({ id: result.lastInsertRowid });
+    .prepare('INSERT INTO objectifs (description, niveau, type, categorie) VALUES (?, ?, ?, ?)')
+    .run(description, niveau || null, type || null, categorie || null);
+
+  const synchronisation = await commiterEtPousser("Admin : ajout d'un objectif");
+  res.status(201).json({ id: result.lastInsertRowid, synchronisation });
+}));
+
+app.put('/api/objectifs/:id', exigerAdmin, gerer(async (req, res) => {
+  const objectif = db.prepare('SELECT * FROM objectifs WHERE id = ?').get(req.params.id);
+  if (!objectif) return res.status(404).json({ error: 'Objectif introuvable' });
+
+  const { description, niveau, type, categorie } = req.body;
+  db.prepare('UPDATE objectifs SET description = ?, niveau = ?, type = ?, categorie = ? WHERE id = ?').run(
+    description || objectif.description,
+    niveau ?? objectif.niveau,
+    type ?? objectif.type,
+    categorie ?? objectif.categorie,
+    objectif.id
+  );
+
+  const synchronisation = await commiterEtPousser(`Admin : modification d'un objectif (id ${objectif.id})`);
+  res.json({ ok: true, synchronisation });
+}));
+
+app.delete('/api/objectifs/:id', exigerAdmin, gerer(async (req, res) => {
+  const objectif = db.prepare('SELECT * FROM objectifs WHERE id = ?').get(req.params.id);
+  if (!objectif) return res.status(404).json({ error: 'Objectif introuvable' });
+
+  db.prepare('DELETE FROM objectifs WHERE id = ?').run(objectif.id);
+
+  const synchronisation = await commiterEtPousser(`Admin : suppression d'un objectif (id ${objectif.id})`);
+  res.json({ ok: true, synchronisation });
+}));
+
+app.post('/api/objectifs/import', exigerAdmin, uploadCsv.single('fichier'), gerer(async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Un fichier CSV est requis' });
+
+  let lignes;
+  try {
+    lignes = parse(req.file.buffer, { columns: true, skip_empty_lines: true, trim: true, bom: true });
+  } catch (erreur) {
+    return res.status(400).json({ error: `Fichier CSV invalide : ${erreur.message}` });
+  }
+
+  const lignesNormalisees = lignes.map((ligne) => {
+    const normalisee = {};
+    for (const [cle, valeur] of Object.entries(ligne)) {
+      normalisee[cle.trim().toLowerCase()] = typeof valeur === 'string' ? valeur.trim() : valeur;
+    }
+    return normalisee;
+  });
+
+  const insertion = db.prepare(
+    'INSERT INTO objectifs (description, niveau, type, categorie) VALUES (?, ?, ?, ?)'
+  );
+  const importerTout = db.transaction((rows) => {
+    let compteur = 0;
+    for (const ligne of rows) {
+      if (!ligne.description) continue;
+      insertion.run(ligne.description, ligne.niveau || null, ligne.type || null, ligne.categorie || null);
+      compteur++;
+    }
+    return compteur;
+  });
+
+  const importes = importerTout(lignesNormalisees);
+
+  const synchronisation = await commiterEtPousser(`Admin : import CSV de ${importes} objectifs`);
+  res.json({ ok: true, importes, synchronisation });
+}));
+
+// --- API : scenario (images ordonnees, defilees par le maitre du jeu) ---
+
+app.get('/api/scenario', (req, res) => {
+  res.json(db.prepare('SELECT * FROM scenario_images ORDER BY ordre ASC').all());
 });
+
+app.post('/api/scenario', exigerAdmin, uploadImageGenerique.single('image'), gerer(async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Une image est requise' });
+
+  const { max } = db.prepare('SELECT COALESCE(MAX(ordre), 0) AS max FROM scenario_images').get();
+  const image = `/uploads/${req.file.filename}`;
+  const result = db.prepare('INSERT INTO scenario_images (ordre, image) VALUES (?, ?)').run(max + 1, image);
+
+  const synchronisation = await commiterEtPousser("Admin : ajout d'une image de scenario");
+  res.status(201).json({ id: result.lastInsertRowid, synchronisation });
+}));
+
+app.post('/api/scenario/:id/deplacer', exigerAdmin, gerer(async (req, res) => {
+  const image = db.prepare('SELECT * FROM scenario_images WHERE id = ?').get(req.params.id);
+  if (!image) return res.status(404).json({ error: 'Image introuvable' });
+
+  const { direction } = req.body;
+  const voisin =
+    direction === 'haut'
+      ? db.prepare('SELECT * FROM scenario_images WHERE ordre < ? ORDER BY ordre DESC LIMIT 1').get(image.ordre)
+      : db.prepare('SELECT * FROM scenario_images WHERE ordre > ? ORDER BY ordre ASC LIMIT 1').get(image.ordre);
+
+  if (!voisin) return res.json({ ok: true });
+
+  // Passe par une valeur temporaire negative : un echange direct viole momentanement
+  // la contrainte UNIQUE(ordre) puisque les deux lignes existent encore simultanement.
+  const echanger = db.transaction(() => {
+    db.prepare('UPDATE scenario_images SET ordre = -1 WHERE id = ?').run(image.id);
+    db.prepare('UPDATE scenario_images SET ordre = ? WHERE id = ?').run(image.ordre, voisin.id);
+    db.prepare('UPDATE scenario_images SET ordre = ? WHERE id = ?').run(voisin.ordre, image.id);
+  });
+  echanger();
+
+  const synchronisation = await commiterEtPousser('Admin : reordonnancement du scenario');
+  res.json({ ok: true, synchronisation });
+}));
+
+app.delete('/api/scenario/:id', exigerAdmin, gerer(async (req, res) => {
+  const image = db.prepare('SELECT * FROM scenario_images WHERE id = ?').get(req.params.id);
+  if (!image) return res.status(404).json({ error: 'Image introuvable' });
+
+  db.prepare('DELETE FROM scenario_images WHERE id = ?').run(image.id);
+  supprimerFichierUpload(image.image);
+
+  const restantes = db.prepare('SELECT * FROM scenario_images ORDER BY ordre ASC').all();
+  const renumeroter = db.transaction((images) => {
+    images.forEach((img, index) => {
+      db.prepare('UPDATE scenario_images SET ordre = ? WHERE id = ?').run(index + 1, img.id);
+    });
+  });
+  renumeroter(restantes);
+
+  const synchronisation = await commiterEtPousser("Admin : suppression d'une image de scenario");
+  res.json({ ok: true, synchronisation });
+}));
 
 // --- API : parties ---
 
@@ -394,7 +556,7 @@ app.get('/api/parties/:code', (req, res) => {
   if (!partie) return res.status(404).json({ error: 'Partie introuvable' });
 
   const joueurs = db
-    .prepare('SELECT id, pseudo, race_id, representant_id, position, score, connecte FROM joueurs WHERE partie_id = ?')
+    .prepare('SELECT id, pseudo, race_id, representant_id, position, score, connecte, est_hote FROM joueurs WHERE partie_id = ?')
     .all(partie.id);
 
   res.json({ ...partie, joueurs });
@@ -418,7 +580,7 @@ io.on('connection', (socket) => {
 
     const joueurs = db
       .prepare(
-        'SELECT id, pseudo, race_id, representant_id, position, score, connecte FROM joueurs WHERE partie_id = ?'
+        'SELECT id, pseudo, race_id, representant_id, position, score, connecte, est_hote FROM joueurs WHERE partie_id = ?'
       )
       .all(partie.id);
 
@@ -453,14 +615,24 @@ io.on('connection', (socket) => {
        ON CONFLICT(joueur_id, objectif_id) DO UPDATE SET statut = 'termine', completed_at = datetime('now')`
     ).run(joueurId, objectifId);
 
-    db.prepare('UPDATE joueurs SET score = score + ? WHERE id = ?').run(
-      objectif.points,
-      joueurId
-    );
-
     if (socket.data.code) {
-      io.to(socket.data.code).emit('objectif_maj', { joueurId, objectifId, points: objectif.points });
+      io.to(socket.data.code).emit('objectif_maj', { joueurId, objectifId });
     }
+  });
+
+  // Seul le maitre du jeu (est_hote) peut faire defiler les images du scenario ;
+  // tous les joueurs de la partie voient la meme image en temps reel.
+  socket.on('scenario_naviguer', ({ index }) => {
+    if (!socket.data.code || !socket.data.joueurId) return;
+
+    const joueur = db.prepare('SELECT * FROM joueurs WHERE id = ?').get(socket.data.joueurId);
+    if (!joueur || !joueur.est_hote) return;
+
+    const partie = db.prepare('SELECT * FROM parties WHERE code = ?').get(socket.data.code);
+    if (!partie) return;
+
+    db.prepare('UPDATE parties SET scenario_index = ? WHERE id = ?').run(index, partie.id);
+    io.to(socket.data.code).emit('scenario_maj', { index });
   });
 
   socket.on('message_chat', ({ pseudo, texte }) => {

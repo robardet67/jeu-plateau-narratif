@@ -4,6 +4,7 @@ const indicateurSync = document.getElementById('indicateur-sync');
 
 let racesEnCache = [];
 let representantsEnCache = [];
+let objectifsEnCache = [];
 
 async function requeteJSON(url, options = {}) {
   const reponse = await fetch(url, options);
@@ -62,6 +63,10 @@ document.getElementById('btn-deconnexion').addEventListener('click', async () =>
   await vérifierSession();
 });
 
+document.getElementById('btn-quitter-admin').addEventListener('click', () => {
+  window.location.href = '/';
+});
+
 document.getElementById('btn-afficher-mdp').addEventListener('click', () => {
   document.getElementById('panneau-mot-de-passe').classList.toggle('cachee');
 });
@@ -108,7 +113,8 @@ async function chargerRaces() {
 
   const selects = [
     document.getElementById('select-race-representants'),
-    document.getElementById('select-race-dialogues')
+    document.getElementById('select-race-dialogues'),
+    document.getElementById('select-race-fond')
   ];
   selects.forEach((select) => {
     const valeurPrecedente = select.value;
@@ -124,11 +130,7 @@ function creerElementRace(race) {
   li.className = 'element-carte';
   li.innerHTML = `
     <div class="element-infos">
-      ${race.image ? `<img src="${race.image}" alt="${race.nom}" />` : ''}
-      <div>
-        <strong>${race.nom}</strong>
-        <div>${race.description || ''}</div>
-      </div>
+      <strong>${race.nom}</strong>
     </div>
     <div class="element-actions">
       <button class="btn-modifier">Modifier</button>
@@ -149,12 +151,8 @@ function creerElementRace(race) {
 
 function afficherFormulaireModifRace(li, race) {
   li.innerHTML = `
-    <form class="formulaire" style="width:100%">
+    <form class="formulaire-ligne" style="width:100%">
       <input name="nom" type="text" value="${race.nom}" required />
-      <textarea name="description">${race.description || ''}</textarea>
-      <label class="champ-fichier">Nouvelle image (optionnel)
-        <input name="image" type="file" accept="image/*" />
-      </label>
       <div class="element-actions">
         <button type="submit">Enregistrer</button>
         <button type="button" class="bouton-secondaire btn-annuler">Annuler</button>
@@ -164,9 +162,11 @@ function afficherFormulaireModifRace(li, race) {
   li.querySelector('.btn-annuler').addEventListener('click', () => chargerRaces());
   li.querySelector('form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const nom = new FormData(e.target).get('nom');
     const resultat = await requeteJSON(`/api/races/${race.id}`, {
       method: 'PUT',
-      body: new FormData(e.target)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nom })
     });
     afficherSync(resultat.synchronisation);
     await chargerTout();
@@ -175,7 +175,12 @@ function afficherFormulaireModifRace(li, race) {
 
 document.getElementById('form-nouvelle-race').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const resultat = await requeteJSON('/api/races', { method: 'POST', body: new FormData(e.target) });
+  const nom = new FormData(e.target).get('nom');
+  const resultat = await requeteJSON('/api/races', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nom })
+  });
   afficherSync(resultat.synchronisation);
   e.target.reset();
   await chargerTout();
@@ -221,7 +226,7 @@ function creerElementRepresentant(rep) {
     if (!confirm(`Supprimer le representant "${rep.nom}" ?`)) return;
     const resultat = await requeteJSON(`/api/representants/${rep.id}`, { method: 'DELETE' });
     afficherSync(resultat.synchronisation);
-    await chargerRepresentants();
+    await chargerTout();
   });
 
   return li;
@@ -252,7 +257,7 @@ function afficherFormulaireModifRepresentant(li, rep) {
       body: new FormData(e.target)
     });
     afficherSync(resultat.synchronisation);
-    await chargerRepresentants();
+    await chargerTout();
   });
 }
 
@@ -267,7 +272,7 @@ document.getElementById('form-nouveau-representant').addEventListener('submit', 
   });
   afficherSync(resultat.synchronisation);
   e.target.reset();
-  await chargerRepresentants();
+  await chargerTout();
 });
 
 // --- Dialogues ---
@@ -280,7 +285,9 @@ async function chargerReprésentantsPourDialogues() {
   const select = document.getElementById('select-representant-dialogues');
   const valeurPrecedente = select.value;
   select.innerHTML = representants.map((r) => `<option value="${r.id}">${r.nom}</option>`).join('');
-  if (valeurPrecedente) select.value = valeurPrecedente;
+  if (valeurPrecedente && representants.some((r) => String(r.id) === valeurPrecedente)) {
+    select.value = valeurPrecedente;
+  }
 
   await chargerDialogues();
 }
@@ -356,7 +363,12 @@ function afficherFormulaireModifDialogue(li, dialogue) {
 
 document.getElementById('select-race-dialogues').addEventListener('change', chargerReprésentantsPourDialogues);
 document.getElementById('select-representant-dialogues').addEventListener('change', chargerDialogues);
-document.getElementById('champ-prenom-test').addEventListener('input', chargerDialogues);
+document.getElementById('champ-prenom-test').addEventListener('input', () => {
+  document.querySelectorAll('#liste-dialogues li').forEach((li) => {
+    const apercu = li.querySelector('.apercu-dialogue');
+    if (apercu) apercu.textContent = `Apercu : ${texteAvecVariante(li.dataset.texteOriginal)}`;
+  });
+});
 
 document.getElementById('form-nouveau-dialogue').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -374,12 +386,278 @@ document.getElementById('form-nouveau-dialogue').addEventListener('submit', asyn
   await chargerDialogues();
 });
 
+// --- Objectifs ---
+
+async function chargerObjectifs() {
+  objectifsEnCache = await requeteJSON('/api/objectifs');
+  remplirFiltresObjectifs();
+  afficherObjectifsFiltres();
+}
+
+function valeursDistinctes(cle) {
+  return [...new Set(objectifsEnCache.map((o) => o[cle]).filter(Boolean))].sort();
+}
+
+function remplirFiltresObjectifs() {
+  remplirUnFiltre('filtre-niveau', valeursDistinctes('niveau'));
+  remplirUnFiltre('filtre-type', valeursDistinctes('type'));
+  remplirUnFiltre('filtre-categorie', valeursDistinctes('categorie'));
+}
+
+function remplirUnFiltre(id, valeurs) {
+  const select = document.getElementById(id);
+  const valeurPrecedente = select.value;
+  const optionParDefaut = select.options[0];
+  select.innerHTML = '';
+  select.appendChild(optionParDefaut);
+  valeurs.forEach((v) => {
+    const option = document.createElement('option');
+    option.value = v;
+    option.textContent = v;
+    select.appendChild(option);
+  });
+  if (valeurPrecedente) select.value = valeurPrecedente;
+}
+
+function afficherObjectifsFiltres() {
+  const niveau = document.getElementById('filtre-niveau').value;
+  const type = document.getElementById('filtre-type').value;
+  const categorie = document.getElementById('filtre-categorie').value;
+
+  const filtres = objectifsEnCache.filter(
+    (o) =>
+      (!niveau || o.niveau === niveau) &&
+      (!type || o.type === type) &&
+      (!categorie || o.categorie === categorie)
+  );
+
+  const liste = document.getElementById('liste-objectifs');
+  liste.innerHTML = '';
+  filtres.forEach((o) => liste.appendChild(creerElementObjectif(o)));
+}
+
+function creerElementObjectif(objectif) {
+  const li = document.createElement('li');
+  li.className = 'element-carte';
+  li.innerHTML = `
+    <div class="element-infos">
+      <div>
+        <strong>${objectif.description}</strong>
+        <div class="compteur">${[objectif.niveau, objectif.type, objectif.categorie].filter(Boolean).join(' | ')}</div>
+      </div>
+    </div>
+    <div class="element-actions">
+      <button class="btn-modifier">Modifier</button>
+      <button class="btn-supprimer bouton-danger">Supprimer</button>
+    </div>
+  `;
+
+  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifObjectif(li, objectif));
+  li.querySelector('.btn-supprimer').addEventListener('click', async () => {
+    if (!confirm('Supprimer cet objectif ?')) return;
+    const resultat = await requeteJSON(`/api/objectifs/${objectif.id}`, { method: 'DELETE' });
+    afficherSync(resultat.synchronisation);
+    await chargerObjectifs();
+  });
+
+  return li;
+}
+
+function afficherFormulaireModifObjectif(li, objectif) {
+  li.innerHTML = `
+    <form class="formulaire" style="width:100%">
+      <textarea name="description" required>${objectif.description}</textarea>
+      <input name="niveau" type="text" placeholder="Niveau" value="${objectif.niveau || ''}" />
+      <input name="type" type="text" placeholder="Type" value="${objectif.type || ''}" />
+      <input name="categorie" type="text" placeholder="Categorie" value="${objectif.categorie || ''}" />
+      <div class="element-actions">
+        <button type="submit">Enregistrer</button>
+        <button type="button" class="bouton-secondaire btn-annuler">Annuler</button>
+      </div>
+    </form>
+  `;
+  li.querySelector('.btn-annuler').addEventListener('click', () => afficherObjectifsFiltres());
+  li.querySelector('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const donnees = new FormData(e.target);
+    const resultat = await requeteJSON(`/api/objectifs/${objectif.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        description: donnees.get('description'),
+        niveau: donnees.get('niveau'),
+        type: donnees.get('type'),
+        categorie: donnees.get('categorie')
+      })
+    });
+    afficherSync(resultat.synchronisation);
+    await chargerObjectifs();
+  });
+}
+
+['filtre-niveau', 'filtre-type', 'filtre-categorie'].forEach((id) => {
+  document.getElementById(id).addEventListener('change', afficherObjectifsFiltres);
+});
+
+document.getElementById('form-nouvel-objectif').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const donnees = new FormData(e.target);
+  const resultat = await requeteJSON('/api/objectifs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      description: donnees.get('description'),
+      niveau: donnees.get('niveau'),
+      type: donnees.get('type'),
+      categorie: donnees.get('categorie')
+    })
+  });
+  afficherSync(resultat.synchronisation);
+  e.target.reset();
+  await chargerObjectifs();
+});
+
+document.getElementById('form-import-objectifs').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fichier = document.getElementById('champ-csv-objectifs').files[0];
+  if (!fichier) return;
+
+  const donnees = new FormData();
+  donnees.append('fichier', fichier);
+
+  const messageEl = document.getElementById('message-import-objectifs');
+  try {
+    const resultat = await requeteJSON('/api/objectifs/import', { method: 'POST', body: donnees });
+    afficherSync(resultat.synchronisation);
+    messageEl.textContent = `${resultat.importes} objectif(s) importe(s).`;
+    messageEl.classList.remove('cachee');
+    e.target.reset();
+    await chargerObjectifs();
+  } catch (err) {
+    messageEl.textContent = err.message;
+    messageEl.classList.remove('cachee');
+  }
+});
+
+// --- Fonds (image de village par race) ---
+
+function chargerFond() {
+  const raceId = document.getElementById('select-race-fond').value;
+  const apercu = document.getElementById('apercu-fond');
+  if (!raceId) {
+    apercu.style.backgroundImage = '';
+    apercu.textContent = '';
+    return;
+  }
+
+  const race = racesEnCache.find((r) => String(r.id) === String(raceId));
+  if (race && race.image_fond) {
+    apercu.style.backgroundImage = `url(${race.image_fond})`;
+    apercu.textContent = '';
+  } else {
+    apercu.style.backgroundImage = '';
+    apercu.textContent = 'Aucun fond defini pour cette race';
+  }
+}
+
+document.getElementById('select-race-fond').addEventListener('change', chargerFond);
+
+document.getElementById('form-fond').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const raceId = document.getElementById('select-race-fond').value;
+  if (!raceId) return alert('Choisissez une race');
+
+  const resultat = await requeteJSON(`/api/races/${raceId}/fond`, {
+    method: 'PUT',
+    body: new FormData(e.target)
+  });
+  afficherSync(resultat.synchronisation);
+  e.target.reset();
+  await chargerTout();
+});
+
+document.getElementById('btn-supprimer-fond').addEventListener('click', async () => {
+  const raceId = document.getElementById('select-race-fond').value;
+  if (!raceId) return;
+  if (!confirm('Supprimer le fond de cette race ?')) return;
+
+  const resultat = await requeteJSON(`/api/races/${raceId}/fond`, { method: 'DELETE' });
+  afficherSync(resultat.synchronisation);
+  await chargerTout();
+});
+
+// --- Scenario (images ordonnees) ---
+
+async function chargerScenario() {
+  const images = await requeteJSON('/api/scenario');
+  const liste = document.getElementById('liste-scenario');
+  liste.innerHTML = '';
+  images.forEach((image, index) => liste.appendChild(creerElementScenario(image, index, images.length)));
+}
+
+function creerElementScenario(image, index, total) {
+  const li = document.createElement('li');
+  li.className = 'element-carte';
+  li.innerHTML = `
+    <div class="element-infos">
+      <img class="miniature-scenario" src="${image.image}" alt="scenario" />
+      <div>Position ${image.ordre}</div>
+    </div>
+    <div class="element-actions">
+      <button class="btn-monter"${index === 0 ? ' disabled' : ''}>Monter</button>
+      <button class="btn-descendre"${index === total - 1 ? ' disabled' : ''}>Descendre</button>
+      <button class="btn-supprimer bouton-danger">Supprimer</button>
+    </div>
+  `;
+
+  li.querySelector('.btn-monter').addEventListener('click', async () => {
+    const resultat = await requeteJSON(`/api/scenario/${image.id}/deplacer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ direction: 'haut' })
+    });
+    afficherSync(resultat.synchronisation);
+    await chargerScenario();
+  });
+  li.querySelector('.btn-descendre').addEventListener('click', async () => {
+    const resultat = await requeteJSON(`/api/scenario/${image.id}/deplacer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ direction: 'bas' })
+    });
+    afficherSync(resultat.synchronisation);
+    await chargerScenario();
+  });
+  li.querySelector('.btn-supprimer').addEventListener('click', async () => {
+    if (!confirm('Supprimer cette image du scenario ?')) return;
+    const resultat = await requeteJSON(`/api/scenario/${image.id}`, { method: 'DELETE' });
+    afficherSync(resultat.synchronisation);
+    await chargerScenario();
+  });
+
+  return li;
+}
+
+document.getElementById('form-scenario').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const resultat = await requeteJSON('/api/scenario', { method: 'POST', body: new FormData(e.target) });
+  afficherSync(resultat.synchronisation);
+  e.target.reset();
+  await chargerScenario();
+});
+
 // --- Chargement global ---
+// Chaque mutation (races, representants, dialogues...) appelle chargerTout() afin que
+// tous les selects/listes dependants (ex. Dialogues -> representants) restent synchronises,
+// meme lorsqu'ils sont modifies depuis un autre onglet.
 
 async function chargerTout() {
   await chargerRaces();
   await chargerRepresentants();
   await chargerReprésentantsPourDialogues();
+  await chargerObjectifs();
+  chargerFond();
+  await chargerScenario();
 }
 
 vérifierSession();

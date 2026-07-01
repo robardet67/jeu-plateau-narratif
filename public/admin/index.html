@@ -24,6 +24,7 @@
         <span id="indicateur-sync" class="indicateur-sync"></span>
         <button id="btn-afficher-mdp" class="bouton-secondaire">Changer le mot de passe</button>
         <button id="btn-deconnexion" class="bouton-secondaire">Se deconnecter</button>
+        <button id="btn-quitter-admin" class="bouton-secondaire">Quitter l'admin</button>
       </div>
     </header>
 
@@ -41,17 +42,16 @@
       <button class="onglet actif" data-onglet="races">Races</button>
       <button class="onglet" data-onglet="representants">Representants</button>
       <button class="onglet" data-onglet="dialogues">Dialogues</button>
+      <button class="onglet" data-onglet="objectifs">Objectifs</button>
+      <button class="onglet" data-onglet="fonds">Fonds</button>
+      <button class="onglet" data-onglet="scenario">Scenario</button>
     </nav>
 
     <section id="onglet-races" class="contenu-onglet">
       <div class="carte">
         <h2>Ajouter une race</h2>
-        <form id="form-nouvelle-race" class="formulaire" enctype="multipart/form-data">
+        <form id="form-nouvelle-race" class="formulaire">
           <input name="nom" type="text" placeholder="Nom de la race" required />
-          <textarea name="description" placeholder="Description (optionnel)"></textarea>
-          <label class="champ-fichier">Image (optionnel)
-            <input name="image" type="file" accept="image/*" />
-          </label>
           <button type="submit">Creer la race</button>
         </form>
       </div>
@@ -114,6 +114,76 @@
       <div class="carte">
         <h2>Dialogues existants</h2>
         <ul id="liste-dialogues" class="liste-elements"></ul>
+      </div>
+    </section>
+
+    <section id="onglet-objectifs" class="contenu-onglet cachee">
+      <div class="carte">
+        <h2>Importer des objectifs (CSV)</h2>
+        <p class="astuce">Colonnes attendues : <code>description, niveau, type, categorie</code></p>
+        <form id="form-import-objectifs" class="formulaire-ligne">
+          <input id="champ-csv-objectifs" type="file" accept=".csv,text/csv" required />
+          <button type="submit">Importer</button>
+        </form>
+        <p id="message-import-objectifs" class="message-info cachee"></p>
+      </div>
+
+      <div class="carte">
+        <h2>Ajouter un objectif</h2>
+        <form id="form-nouvel-objectif" class="formulaire">
+          <textarea name="description" placeholder="Description de l'objectif" required></textarea>
+          <input name="niveau" type="text" placeholder="Niveau (ex: 1, Facile...)" />
+          <input name="type" type="text" placeholder="Type" />
+          <input name="categorie" type="text" placeholder="Categorie" />
+          <button type="submit">Ajouter l'objectif</button>
+        </form>
+      </div>
+
+      <div class="carte">
+        <h2>Filtrer les objectifs</h2>
+        <div class="formulaire-ligne">
+          <select id="filtre-niveau"><option value="">Tous les niveaux</option></select>
+          <select id="filtre-type"><option value="">Tous les types</option></select>
+          <select id="filtre-categorie"><option value="">Toutes les categories</option></select>
+        </div>
+      </div>
+
+      <div class="carte">
+        <h2>Objectifs existants</h2>
+        <ul id="liste-objectifs" class="liste-elements"></ul>
+      </div>
+    </section>
+
+    <section id="onglet-fonds" class="contenu-onglet cachee">
+      <div class="carte">
+        <h2>Choisir une race</h2>
+        <select id="select-race-fond"></select>
+      </div>
+
+      <div class="carte">
+        <h2>Fond de village</h2>
+        <div id="apercu-fond" class="apercu-fond"></div>
+        <form id="form-fond" class="formulaire-ligne" enctype="multipart/form-data">
+          <input name="image" type="file" accept="image/*" required />
+          <button type="submit">Enregistrer le fond</button>
+          <button type="button" id="btn-supprimer-fond" class="bouton-danger">Supprimer le fond</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="onglet-scenario" class="contenu-onglet cachee">
+      <div class="carte">
+        <h2>Ajouter une image au scenario</h2>
+        <p class="astuce">Les images sont affichees dans l'ordre ci-dessous, uniquement navigables par le maitre du jeu.</p>
+        <form id="form-scenario" class="formulaire-ligne" enctype="multipart/form-data">
+          <input name="image" type="file" accept="image/*" required />
+          <button type="submit">Ajouter</button>
+        </form>
+      </div>
+
+      <div class="carte">
+        <h2>Images du scenario</h2>
+        <ul id="liste-scenario" class="liste-elements"></ul>
       </div>
     </section>
   </div>

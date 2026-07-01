@@ -213,3 +213,28 @@ button:hover {
   font-style: italic;
   color: #b8b8ff;
 }
+
+.apercu-fond {
+  width: 100%;
+  max-width: 480px;
+  min-height: 160px;
+  background-color: #1c1b29;
+  background-size: cover;
+  background-position: center;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777;
+  font-size: 0.85rem;
+}
+
+.element-infos img.miniature-scenario {
+  width: 80px;
+  height: 48px;
+}
+
+select[multiple] {
+  min-height: 100px;
+}
