@@ -768,10 +768,18 @@ document.getElementById('btn-enregistrer-config').addEventListener('click', asyn
       body: JSON.stringify({ nombreJoueursPrevu, nombreCoopParJoueur, emplacements })
     });
     afficherSync(resultat.synchronisation);
-    messageEl.textContent = 'Configuration enregistree.';
+
+    if (resultat.lancement?.lance) {
+      messageEl.textContent = 'Configuration enregistree. Effectif complet : la partie vient de demarrer !';
+    } else {
+      messageEl.textContent = 'Configuration enregistree.';
+    }
     messageEl.classList.remove('message-erreur');
     messageEl.classList.add('message-info');
     messageEl.classList.remove('cachee');
+
+    // Rafraichit la vue (bascule automatiquement sur le suivi si la partie a demarre).
+    await chargerPartieActive();
   } catch (err) {
     messageEl.textContent = err.message;
     messageEl.classList.remove('message-info');
@@ -782,8 +790,17 @@ document.getElementById('btn-enregistrer-config').addEventListener('click', asyn
 
 document.getElementById('btn-verifier-pool').addEventListener('click', async () => {
   const messageEl = document.getElementById('message-verification-pool');
+  // Verifie les valeurs actuellement affichees a l'ecran, pas la derniere config
+  // enregistree en base (sinon "Verifier" avant tout "Enregistrer" controle du vide).
+  const nombreJoueursPrevu = Number(document.getElementById('config-nombre-joueurs').value);
+  const emplacements = lireEmplacementsDepuisTable();
+
   try {
-    const resultat = await requeteJSON('/api/admin/partie-active/verifier-pool', { method: 'POST' });
+    const resultat = await requeteJSON('/api/admin/partie-active/verifier-pool', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombreJoueursPrevu, emplacements })
+    });
     messageEl.textContent = resultat.suffisant
       ? 'Le pool est suffisant pour tous les emplacements.'
       : resultat.message;

@@ -589,6 +589,60 @@ function joueursDeLaPartie(partieId) {
     .all(partieId);
 }
 
+// Le MJ configure la partie en amont (nombre de joueurs, emplacements). Le jour J, il
+// rejoint comme un joueur normal : la partie se lance donc automatiquement des que
+// l'effectif attendu est complet et que chacun a choisi une race distincte, sans bouton
+// a cliquer. Reutilise pour le bouton manuel "Lancer la partie" (filet de securite/reprise
+// apres reconfiguration, ex. un joueur absent le jour J).
+function tenterLancementPartie(partieId) {
+  const partie = db.prepare('SELECT * FROM parties WHERE id = ?').get(partieId);
+  if (!partie || partie.statut !== 'en_attente') {
+    return { lance: false, raison: 'La partie est deja lancee ou terminee' };
+  }
+  if (!partie.nombre_joueurs_prevu) {
+    return { lance: false, raison: "Le nombre de joueurs n'est pas encore configure" };
+  }
+
+  const joueurs = joueursDeLaPartie(partieId);
+  if (joueurs.length !== partie.nombre_joueurs_prevu) {
+    return {
+      lance: false,
+      raison: `${joueurs.length} joueur(s) present(s), ${partie.nombre_joueurs_prevu} attendu(s) selon la configuration`
+    };
+  }
+  if (joueurs.some((j) => !j.race_id)) {
+    return { lance: false, raison: "Tous les joueurs n'ont pas encore choisi leur race" };
+  }
+  const racesDistinctes = new Set(joueurs.map((j) => j.race_id));
+  if (racesDistinctes.size !== joueurs.length) {
+    return { lance: false, raison: 'Deux joueurs ont choisi la meme race' };
+  }
+
+  const emplacements = db
+    .prepare('SELECT * FROM configuration_emplacements WHERE partie_id = ?')
+    .all(partieId);
+  if (emplacements.length < 9) {
+    return { lance: false, raison: 'Les 9 emplacements ne sont pas encore tous configures' };
+  }
+
+  const verification = verifierPool(db, partie.nombre_joueurs_prevu, emplacements);
+  if (!verification.suffisant) {
+    return { lance: false, raison: verification.message };
+  }
+
+  try {
+    distribuer(db, { partieId, joueurIds: joueurs.map((j) => j.id), emplacements });
+  } catch (erreur) {
+    return { lance: false, raison: erreur.message };
+  }
+
+  db.prepare("UPDATE parties SET statut = 'en_cours' WHERE id = ?").run(partieId);
+  joueurs.forEach((j) => deverrouillerRang(db, j.id, partieId, 1));
+  io.to(partie.code).emit('partie_lancee');
+
+  return { lance: true };
+}
+
 // --- Cote joueur ---
 
 app.get('/api/partie-active', (req, res) => {
@@ -681,69 +735,45 @@ app.post('/api/admin/partie-active/config', exigerAdmin, gerer(async (req, res) 
     );
   });
 
+  // Si l'effectif (re)configure correspond deja aux joueurs presents (ex: le MJ reduit
+  // le nombre de joueurs suite a une absence), la partie peut se lancer immediatement.
+  const lancement = tenterLancementPartie(partie.id);
+
   const synchronisation = await commiterEtPousser('Admin : configuration de la partie');
-  res.json({ ok: true, synchronisation });
+  res.json({ ok: true, synchronisation, lancement });
 }));
 
+// Verifie les valeurs actuellement affichees a l'ecran (envoyees dans le corps), pas la
+// derniere configuration enregistree en base : sinon "Verifier" avant tout
+// "Enregistrer" controlerait une configuration vide/perimee.
 app.post('/api/admin/partie-active/verifier-pool', exigerAdmin, (req, res) => {
   const partie = obtenirPartieActive(db);
   if (!partie) return res.status(404).json({ error: 'Aucune partie active' });
 
-  const emplacements = db
-    .prepare('SELECT * FROM configuration_emplacements WHERE partie_id = ?')
-    .all(partie.id);
-  if (emplacements.length < 9) {
+  const nombreJoueursPrevu = req.body?.nombreJoueursPrevu ?? partie.nombre_joueurs_prevu;
+  const emplacements =
+    req.body?.emplacements ||
+    db.prepare('SELECT * FROM configuration_emplacements WHERE partie_id = ?').all(partie.id);
+
+  if (!emplacements || emplacements.length < 9) {
     return res.status(400).json({ error: 'Les 9 emplacements ne sont pas encore tous configures' });
   }
 
-  const resultat = verifierPool(db, partie.nombre_joueurs_prevu, emplacements);
+  const resultat = verifierPool(db, nombreJoueursPrevu, emplacements);
   res.json(resultat);
 });
 
+// Bouton manuel de secours (l'admin peut forcer une tentative de lancement, ex. apres
+// avoir reconfigure). En temps normal la partie se lance toute seule (voir
+// tenterLancementPartie, appelee automatiquement des qu'un joueur choisit sa race).
 app.post('/api/admin/partie-active/lancer', exigerAdmin, gerer(async (req, res) => {
   const partie = obtenirPartieActive(db);
   if (!partie) return res.status(404).json({ error: 'Aucune partie active' });
-  if (partie.statut !== 'en_attente') {
-    return res.status(400).json({ error: 'La partie est deja lancee' });
-  }
 
-  const joueurs = joueursDeLaPartie(partie.id);
-  if (joueurs.length !== partie.nombre_joueurs_prevu) {
-    return res.status(400).json({
-      error: `${joueurs.length} joueur(s) present(s), ${partie.nombre_joueurs_prevu} attendu(s) selon la configuration`
-    });
+  const resultat = tenterLancementPartie(partie.id);
+  if (!resultat.lance) {
+    return res.status(400).json({ error: resultat.raison });
   }
-  if (joueurs.some((j) => !j.race_id)) {
-    return res.status(400).json({ error: "Tous les joueurs n'ont pas encore choisi leur race" });
-  }
-  const racesDistinctes = new Set(joueurs.map((j) => j.race_id));
-  if (racesDistinctes.size !== joueurs.length) {
-    return res.status(400).json({ error: 'Deux joueurs ont choisi la meme race' });
-  }
-
-  const emplacements = db
-    .prepare('SELECT * FROM configuration_emplacements WHERE partie_id = ?')
-    .all(partie.id);
-  if (emplacements.length < 9) {
-    return res.status(400).json({ error: 'Les 9 emplacements ne sont pas encore tous configures' });
-  }
-
-  const verification = verifierPool(db, partie.nombre_joueurs_prevu, emplacements);
-  if (!verification.suffisant) {
-    return res.status(400).json({ error: verification.message });
-  }
-
-  try {
-    distribuer(db, { partieId: partie.id, joueurIds: joueurs.map((j) => j.id), emplacements });
-  } catch (erreur) {
-    return res.status(400).json({ error: erreur.message });
-  }
-
-  db.prepare("UPDATE parties SET statut = 'en_cours' WHERE id = ?").run(partie.id);
-
-  joueurs.forEach((j) => deverrouillerRang(db, j.id, partie.id, 1));
-
-  io.to(partie.code).emit('partie_lancee');
 
   const synchronisation = await commiterEtPousser('Admin : lancement de la partie');
   res.json({ ok: true, synchronisation });
@@ -833,9 +863,14 @@ io.on('connection', (socket) => {
       joueurId
     );
 
-    // Les cases de grille (les 9 emplacements) sont creees par le MJ au lancement de la
-    // partie (voir utils/distribution.js), pas ici : tant que la partie est 'en_attente',
-    // il n'y a rien a deverrouiller.
+    // Tente un lancement automatique : des que tous les joueurs attendus ont choisi une
+    // race distincte, la partie demarre toute seule (le MJ configure en amont, il n'a
+    // rien a cliquer le jour J). Diffuse 'partie_lancee' a la partie si ca demarre.
+    tenterLancementPartie(joueurActuel.partie_id);
+
+    // Les cases de grille (les 9 emplacements) sont creees au lancement de la partie
+    // (voir utils/distribution.js), pas ici : tant que la partie est 'en_attente', il
+    // n'y a rien a deverrouiller.
     const partieDuJoueur = db.prepare('SELECT * FROM parties WHERE id = ?').get(joueurActuel.partie_id);
     if (partieDuJoueur && partieDuJoueur.statut === 'en_cours') {
       deverrouillerRang(db, joueurId, joueurActuel.partie_id, 1);
