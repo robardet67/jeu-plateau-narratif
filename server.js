@@ -11,6 +11,7 @@ const { parse } = require('csv-parse/sync');
 
 const db = require('./database/db');
 const { commiterEtPousser } = require('./utils/gitSync');
+const { restaurerSiVide } = require('./utils/restaurerContenu');
 const {
   obtenirParametre,
   deverrouillerRang,
@@ -19,6 +20,13 @@ const {
   validerObjectif,
   obtenirEtatJoueur
 } = require('./utils/grille');
+
+// Sur un serveur fraichement deploye (base SQLite vide, non versionnee), recharge le
+// contenu admin depuis la sauvegarde JSON versionnee sur GitHub (voir utils/exportContenu.js).
+const resultatRestauration = restaurerSiVide(db);
+if (resultatRestauration.restaure) {
+  console.log('Contenu restaure depuis la sauvegarde JSON :', resultatRestauration.compteurs);
+}
 
 const PORT = process.env.PORT || 3000;
 
