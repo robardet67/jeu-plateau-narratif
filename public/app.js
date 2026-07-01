@@ -80,9 +80,16 @@ async function demarrerPartie(code, joueurId, pseudo) {
 document.getElementById('btn-creer-partie').addEventListener('click', creerPartie);
 document.getElementById('btn-rejoindre-partie').addEventListener('click', rejoindrePartie);
 
-// --- Modaux de la page d'accueil (creer / rejoindre) ---
+// --- Modaux de la page d'accueil (creer / rejoindre / scenario) ---
+// Un seul modal visible a la fois : sans ceci, ouvrir "Scenario" pendant que
+// "Rejoindre" restait ouvert superposait les deux boites au meme endroit.
+
+function fermerTousLesModaux() {
+  document.querySelectorAll('.modal').forEach((modal) => modal.classList.add('cachee'));
+}
 
 function ouvrirModal(id) {
+  fermerTousLesModaux();
   document.getElementById(id).classList.remove('cachee');
 }
 
@@ -222,6 +229,7 @@ function afficherImageScenario() {
 async function ouvrirScenario() {
   scenarioImages = await fetch('/api/scenario').then((r) => r.json());
   afficherImageScenario();
+  fermerTousLesModaux();
   modalScenario.classList.remove('cachee');
 }
 
