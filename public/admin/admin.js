@@ -706,47 +706,39 @@ function lireEmplacementsDepuisTable() {
   }));
 }
 
-// Propose une configuration complete des 9 emplacements a partir de N et K, pour que le
-// MJ n'ait qu'a valider ou ajuster quelques cases plutot que tout remplir a la main :
-// - niveau croissant par rang (facile/moyen/difficile), le jeu se corse en progressant
-// - K emplacements marques "cooperatif" (position 2 en priorite, repartis sur les rangs),
-//   le reste en "standard"
-// - categories piochees en tournant parmi celles existantes dans le pool, pour varier
-function proposerConfiguration(nombreJoueurs, nombreCoopParJoueur) {
-  const niveauxParRang = { 1: 'facile', 2: 'moyen', 3: 'difficile' };
-  const ordrePrioriteCoop = [
-    { rang: 1, position: 2 }, { rang: 2, position: 2 }, { rang: 3, position: 2 },
-    { rang: 1, position: 1 }, { rang: 2, position: 1 }, { rang: 3, position: 1 },
-    { rang: 1, position: 3 }, { rang: 2, position: 3 }, { rang: 3, position: 3 }
-  ];
-  const coopChoisis = new Set(
-    ordrePrioriteCoop.slice(0, nombreCoopParJoueur).map((e) => `${e.rang}-${e.position}`)
-  );
+// Minimum d'intervention du MJ : des que N et K sont renseignes (y compris les valeurs
+// par defaut a l'ouverture), le serveur genere ET enregistre automatiquement les 9
+// emplacements en piochant reellement dans le pool CSV (niveau croissant par position,
+// K cooperatifs repartis, categories aleatoires parmi celles disponibles). Le bouton
+// "Lancer la partie" est donc utilisable immediatement ; modifier reste optionnel.
+async function genererConfigurationAutomatique() {
+  const messageEl = document.getElementById('message-config-partie');
+  messageEl.classList.add('cachee');
 
-  const categories = valeursDistinctes('categorie');
-  let indexCategorie = 0;
+  const nombreJoueursPrevu = Number(document.getElementById('config-nombre-joueurs').value);
+  const nombreCoopParJoueur = Number(document.getElementById('config-nombre-coop').value);
+  if (!nombreJoueursPrevu || Number.isNaN(nombreCoopParJoueur)) return;
 
-  const propositions = [];
-  for (const rang of [1, 2, 3]) {
-    for (const position of [1, 2, 3]) {
-      const categorie = categories.length ? categories[indexCategorie++ % categories.length] : '';
-      propositions.push({
-        rang,
-        position,
-        niveau: niveauxParRang[rang],
-        type: coopChoisis.has(`${rang}-${position}`) ? 'coopératif' : 'standard',
-        categorie
-      });
-    }
+  try {
+    const resultat = await requeteJSON('/api/admin/partie-active/generer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombreJoueursPrevu, nombreCoopParJoueur })
+    });
+    construireTableEmplacements(resultat.emplacements);
+    afficherSync(resultat.synchronisation);
+  } catch (err) {
+    messageEl.textContent = err.message;
+    messageEl.classList.remove('message-info');
+    messageEl.classList.add('message-erreur');
+    messageEl.classList.remove('cachee');
   }
-  return propositions;
 }
 
-document.getElementById('btn-proposer-config').addEventListener('click', () => {
-  const nombreJoueurs = Number(document.getElementById('config-nombre-joueurs').value);
-  const nombreCoopParJoueur = Number(document.getElementById('config-nombre-coop').value);
-  construireTableEmplacements(proposerConfiguration(nombreJoueurs, nombreCoopParJoueur));
-});
+document.getElementById('config-nombre-joueurs').addEventListener('change', genererConfigurationAutomatique);
+document.getElementById('config-nombre-coop').addEventListener('change', genererConfigurationAutomatique);
+// Le meme bouton sert de "regenerer" (nouveau tirage aleatoire) si le MJ n'aime pas le resultat.
+document.getElementById('btn-proposer-config').addEventListener('click', genererConfigurationAutomatique);
 
 async function chargerPartieActive() {
   const partie = await requeteJSON('/api/admin/partie-active');
@@ -772,7 +764,13 @@ async function chargerPartieActive() {
       .map((j) => `<li>${j.pseudo}${j.race_id ? '' : ' (race non choisie)'}</li>`)
       .join('') || '<li>Aucun joueur pour le moment</li>';
 
-    construireTableEmplacements(partie.emplacements || []);
+    if (partie.emplacements && partie.emplacements.length === 9) {
+      construireTableEmplacements(partie.emplacements);
+    } else {
+      // Partie fraichement creee : genere tout de suite avec les valeurs par defaut
+      // affichees, pour que "Lancer la partie" soit utilisable sans aucune saisie.
+      await genererConfigurationAutomatique();
+    }
   } else if (partie.statut === 'en_cours') {
     await chargerSuiviPartie();
     intervalSuivi = setInterval(chargerSuiviPartie, 5000);
@@ -859,6 +857,17 @@ document.getElementById('btn-lancer-partie').addEventListener('click', async () 
   const messageEl = document.getElementById('message-lancement');
   messageEl.classList.add('cachee');
   try {
+    // Sauvegarde d'abord l'etat actuel de la table (capture d'eventuels ajustements
+    // manuels du MJ), puis lance : aucune action prealable n'est requise sinon.
+    const nombreJoueursPrevu = Number(document.getElementById('config-nombre-joueurs').value);
+    const nombreCoopParJoueur = Number(document.getElementById('config-nombre-coop').value);
+    const emplacements = lireEmplacementsDepuisTable();
+    await requeteJSON('/api/admin/partie-active/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombreJoueursPrevu, nombreCoopParJoueur, emplacements })
+    });
+
     const resultat = await requeteJSON('/api/admin/partie-active/lancer', { method: 'POST' });
     afficherSync(resultat.synchronisation);
     await chargerPartieActive();

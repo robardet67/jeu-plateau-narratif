@@ -20,7 +20,7 @@ const {
   validerObjectif,
   obtenirEtatJoueur
 } = require('./utils/grille');
-const { validerNombreCooperatifs, verifierPool, distribuer } = require('./utils/distribution');
+const { validerNombreCooperatifs, verifierPool, genererEmplacements, distribuer } = require('./utils/distribution');
 
 // Sur un serveur fraichement deploye (base SQLite vide, non versionnee), recharge le
 // contenu admin depuis la sauvegarde JSON versionnee sur GitHub (voir utils/exportContenu.js).
@@ -698,6 +698,45 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
   const nouvelle = db.prepare('SELECT * FROM parties WHERE id = ?').get(partie.lastInsertRowid);
   res.status(201).json({ active: true, ...nouvelle, joueurs: [] });
 });
+
+// Minimum d'intervention du MJ : il saisit juste N et K, tout le reste (les 9
+// emplacements) est genere et sauvegarde automatiquement, pret a lancer sans autre
+// action. Le MJ peut ensuite modifier des cases si besoin (formulaire /config), mais ce
+// n'est pas obligatoire.
+app.post('/api/admin/partie-active/generer', exigerAdmin, gerer(async (req, res) => {
+  const partie = obtenirPartieActive(db);
+  if (!partie) return res.status(404).json({ error: 'Aucune partie active. Creez-en une dabord.' });
+  if (partie.statut !== 'en_attente') {
+    return res.status(400).json({ error: 'La partie a deja demarre, configuration verrouillee' });
+  }
+
+  const { nombreJoueursPrevu, nombreCoopParJoueur } = req.body;
+  const validation = validerNombreCooperatifs(nombreJoueursPrevu, nombreCoopParJoueur);
+  if (!validation.valide) {
+    return res.status(400).json({ error: validation.message });
+  }
+
+  const { emplacements, manques } = genererEmplacements(db, nombreJoueursPrevu, nombreCoopParJoueur);
+  if (manques.length) {
+    return res.status(400).json({ error: `Pool CSV insuffisant : ${manques.join(' | ')}` });
+  }
+
+  db.prepare(
+    'UPDATE parties SET nombre_joueurs_prevu = ?, nombre_coop_par_joueur = ? WHERE id = ?'
+  ).run(nombreJoueursPrevu, nombreCoopParJoueur, partie.id);
+
+  const upsert = db.prepare(
+    `INSERT INTO configuration_emplacements (partie_id, rang, position, niveau, type, categorie)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(partie_id, rang, position) DO UPDATE SET niveau = ?, type = ?, categorie = ?`
+  );
+  emplacements.forEach((e) => {
+    upsert.run(partie.id, e.rang, e.position, e.niveau, e.type, e.categorie, e.niveau, e.type, e.categorie);
+  });
+
+  const synchronisation = await commiterEtPousser('Admin : generation automatique de la configuration');
+  res.json({ ok: true, emplacements, synchronisation });
+}));
 
 app.post('/api/admin/partie-active/config', exigerAdmin, gerer(async (req, res) => {
   const partie = obtenirPartieActive(db);

@@ -112,6 +112,67 @@ function verifierPool(db, nombreJoueurs, emplacements) {
   return { suffisant: false, manques, message: `Objectifs insuffisants dans le pool : ${message}` };
 }
 
+// --- Generation automatique des 9 emplacements (minimum d'intervention du MJ) ---
+//
+// A partir du nombre de joueurs et du nombre de cooperatifs voulus, choisit pour chaque
+// emplacement (rang, position) un niveau (croissant par position : facile/moyen/
+// difficile), un type (cooperatif reparti selon K, reste en standard) et pioche au
+// hasard une categorie du pool ayant assez d'objectifs disponibles (en tenant compte de
+// ce que les emplacements precedents ont deja reserve dans le meme combo niveau/type/
+// categorie). Ne modifie pas la base ; l'appelant est responsable de sauvegarder.
+const NIVEAU_CIBLE_PAR_POSITION = { 1: 'facile', 2: 'moyen', 3: 'difficile' };
+const ORDRE_PRIORITE_COOP = [
+  { rang: 1, position: 2 }, { rang: 2, position: 2 }, { rang: 3, position: 2 },
+  { rang: 1, position: 1 }, { rang: 2, position: 1 }, { rang: 3, position: 1 },
+  { rang: 1, position: 3 }, { rang: 2, position: 3 }, { rang: 3, position: 3 }
+];
+
+function genererEmplacements(db, nombreJoueurs, nombreCoopParJoueur) {
+  const coopChoisis = new Set(
+    ORDRE_PRIORITE_COOP.slice(0, nombreCoopParJoueur).map((e) => `${e.rang}-${e.position}`)
+  );
+
+  const poolBrut = db
+    .prepare('SELECT niveau, type, categorie, COUNT(*) AS n FROM objectifs GROUP BY niveau, type, categorie')
+    .all();
+
+  const reserve = new Map();
+  const cleReserve = (niveau, type, categorie) => `${niveau}|${type}|${categorie}`;
+
+  const emplacements = [];
+  const manques = [];
+
+  for (const rang of [1, 2, 3]) {
+    for (const position of [1, 2, 3]) {
+      const estCoop = coopChoisis.has(`${rang}-${position}`);
+      const niveauCible = NIVEAU_CIBLE_PAR_POSITION[position];
+      const typeCible = estCoop ? 'cooperatif' : 'standard';
+      const requis = estCoop ? Math.ceil(nombreJoueurs / 2) : nombreJoueurs;
+
+      const candidats = poolBrut
+        .filter((c) => normaliser(c.niveau) === niveauCible && normaliser(c.type) === typeCible)
+        .map((c) => ({ ...c, disponible: c.n - (reserve.get(cleReserve(c.niveau, c.type, c.categorie)) || 0) }))
+        .filter((c) => c.disponible >= requis);
+
+      if (!candidats.length) {
+        manques.push(
+          `Rang ${rang} - Position ${position} (${niveauCible}/${typeCible}) : aucune categorie du pool n'a ${requis} objectif(s) disponible(s)`
+        );
+        emplacements.push({ rang, position, niveau: niveauCible, type: typeCible, categorie: null });
+        continue;
+      }
+
+      const choisi = candidats[Math.floor(Math.random() * candidats.length)];
+      const cle = cleReserve(choisi.niveau, choisi.type, choisi.categorie);
+      reserve.set(cle, (reserve.get(cle) || 0) + requis);
+
+      emplacements.push({ rang, position, niveau: choisi.niveau, type: choisi.type, categorie: choisi.categorie });
+    }
+  }
+
+  return { emplacements, manques };
+}
+
 // --- Pairage (partage entre 2 joueurs, jamais deux fois la meme paire) ---
 //
 // Essaie plusieurs tirages aleatoires et garde le meilleur (le moins de joueurs
@@ -249,5 +310,6 @@ module.exports = {
   objectifsRequisPourEmplacement,
   validerNombreCooperatifs,
   verifierPool,
+  genererEmplacements,
   distribuer
 };
