@@ -706,6 +706,48 @@ function lireEmplacementsDepuisTable() {
   }));
 }
 
+// Propose une configuration complete des 9 emplacements a partir de N et K, pour que le
+// MJ n'ait qu'a valider ou ajuster quelques cases plutot que tout remplir a la main :
+// - niveau croissant par rang (facile/moyen/difficile), le jeu se corse en progressant
+// - K emplacements marques "cooperatif" (position 2 en priorite, repartis sur les rangs),
+//   le reste en "standard"
+// - categories piochees en tournant parmi celles existantes dans le pool, pour varier
+function proposerConfiguration(nombreJoueurs, nombreCoopParJoueur) {
+  const niveauxParRang = { 1: 'facile', 2: 'moyen', 3: 'difficile' };
+  const ordrePrioriteCoop = [
+    { rang: 1, position: 2 }, { rang: 2, position: 2 }, { rang: 3, position: 2 },
+    { rang: 1, position: 1 }, { rang: 2, position: 1 }, { rang: 3, position: 1 },
+    { rang: 1, position: 3 }, { rang: 2, position: 3 }, { rang: 3, position: 3 }
+  ];
+  const coopChoisis = new Set(
+    ordrePrioriteCoop.slice(0, nombreCoopParJoueur).map((e) => `${e.rang}-${e.position}`)
+  );
+
+  const categories = valeursDistinctes('categorie');
+  let indexCategorie = 0;
+
+  const propositions = [];
+  for (const rang of [1, 2, 3]) {
+    for (const position of [1, 2, 3]) {
+      const categorie = categories.length ? categories[indexCategorie++ % categories.length] : '';
+      propositions.push({
+        rang,
+        position,
+        niveau: niveauxParRang[rang],
+        type: coopChoisis.has(`${rang}-${position}`) ? 'coopératif' : 'standard',
+        categorie
+      });
+    }
+  }
+  return propositions;
+}
+
+document.getElementById('btn-proposer-config').addEventListener('click', () => {
+  const nombreJoueurs = Number(document.getElementById('config-nombre-joueurs').value);
+  const nombreCoopParJoueur = Number(document.getElementById('config-nombre-coop').value);
+  construireTableEmplacements(proposerConfiguration(nombreJoueurs, nombreCoopParJoueur));
+});
+
 async function chargerPartieActive() {
   const partie = await requeteJSON('/api/admin/partie-active');
 

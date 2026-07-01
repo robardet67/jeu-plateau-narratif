@@ -224,8 +224,14 @@
           <label>Objectifs cooperatifs par joueur
             <input id="config-nombre-coop" type="number" min="0" value="0" />
           </label>
+          <button id="btn-proposer-config" class="bouton-secondaire">Proposer une configuration</button>
           <button id="btn-enregistrer-config">Enregistrer la configuration</button>
         </div>
+        <p class="astuce">
+          "Proposer" remplit automatiquement les 9 emplacements ci-dessous (difficulte
+          croissante par rang, cooperatifs repartis, categories variees) a partir du pool
+          existant. Vous pouvez ensuite ajuster chaque case avant d'enregistrer.
+        </p>
         <p id="message-config-partie" class="message-erreur cachee"></p>
 
         <h3>Joueurs presents</h3>
