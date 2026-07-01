@@ -27,7 +27,7 @@ function afficherVue(id) {
   document.getElementById(id).classList.remove('cachee');
 }
 
-// --- Modaux (creer / rejoindre / scenario) ---
+// --- Modaux (commencer / scenario) ---
 
 function fermerTousLesModaux() {
   document.querySelectorAll('.modal').forEach((modal) => modal.classList.add('cachee'));
@@ -42,15 +42,15 @@ function fermerModal(id) {
   document.getElementById(id).classList.add('cachee');
 }
 
-document.getElementById('btn-ouvrir-rejoindre').addEventListener('click', async () => {
+document.getElementById('btn-ouvrir-commencer').addEventListener('click', async () => {
   const partie = await requeteJSON('/api/partie-active').catch(() => ({ active: false }));
   if (!partie.active) {
     return alert("Aucune partie n'est configuree par le maitre du jeu pour le moment.");
   }
   if (partie.statut !== 'en_attente') {
-    return alert('La partie a deja demarre, impossible de la rejoindre.');
+    return alert('La partie a deja demarre, impossible de la commencer.');
   }
-  ouvrirModal('modal-rejoindre');
+  ouvrirModal('modal-commencer');
 });
 
 document.querySelectorAll('.btn-fermer-modal').forEach((bouton) => {
@@ -65,9 +65,9 @@ document.querySelectorAll('.modal').forEach((modal) => {
 
 // --- Connexion a la partie active (unique, sans code : creee/configuree par le MJ) ---
 
-async function rejoindrePartie() {
-  const pseudo = document.getElementById('rejoindre-pseudo').value.trim();
-  const erreurEl = document.getElementById('erreur-rejoindre');
+async function commencerPartie() {
+  const pseudo = document.getElementById('commencer-pseudo').value.trim();
+  const erreurEl = document.getElementById('erreur-commencer');
   erreurEl.classList.add('cachee');
   if (!pseudo) return alert('Entrez un pseudo');
 
@@ -84,11 +84,11 @@ async function rejoindrePartie() {
   }
 }
 
-document.getElementById('btn-rejoindre-partie').addEventListener('click', rejoindrePartie);
+document.getElementById('btn-commencer-partie').addEventListener('click', commencerPartie);
 
 async function demarrerPartie(code, joueurId, pseudo) {
   etatCourant = { code, joueurId, pseudo, estHote: false };
-  fermerModal('modal-rejoindre');
+  fermerModal('modal-commencer');
 
   racesEnCache = await requeteJSON('/api/races');
   parametresGlobaux = await requeteJSON('/api/parametres');
