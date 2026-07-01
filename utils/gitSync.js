@@ -38,8 +38,18 @@ async function commiterEtPousser(message) {
   try {
     await executer('git', ['add', '-A']);
 
+    // Sur un serveur fraichement deploye (ex. Render), aucune identite git globale
+    // n'est configuree : "git commit" echouerait sinon avec "Author identity unknown".
+    // On la fournit explicitement pour ce commit, sans toucher a la config globale.
+    const nomAuteur = process.env.GIT_AUTHOR_NAME || 'Jeu Plateau Narratif (admin)';
+    const emailAuteur = process.env.GIT_AUTHOR_EMAIL || 'admin@jeu-plateau-narratif.local';
+
     try {
-      await executer('git', ['commit', '-m', message]);
+      await executer('git', [
+        '-c', `user.name=${nomAuteur}`,
+        '-c', `user.email=${emailAuteur}`,
+        'commit', '-m', message
+      ]);
     } catch (erreurCommit) {
       if (/nothing to commit/i.test(erreurCommit.message)) {
         return { pushed: false, raison: 'aucun fichier a synchroniser' };

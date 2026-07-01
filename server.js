@@ -718,7 +718,13 @@ app.post('/api/admin/partie-active/generer', exigerAdmin, gerer(async (req, res)
 
   const { emplacements, manques } = genererEmplacements(db, nombreJoueursPrevu, nombreCoopParJoueur);
   if (manques.length) {
-    return res.status(400).json({ error: `Pool CSV insuffisant : ${manques.join(' | ')}` });
+    // Renvoie aussi les emplacements partiels (les cases en echec ont categorie=null) :
+    // le MJ voit ce qui a fonctionne et peut completer manuellement le reste plutot que
+    // de se retrouver face a un tableau entierement vide.
+    return res.status(400).json({
+      error: `Pool CSV insuffisant : ${manques.join(' | ')}`,
+      emplacements
+    });
   }
 
   db.prepare(

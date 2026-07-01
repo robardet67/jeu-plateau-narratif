@@ -9,7 +9,11 @@ let objectifsEnCache = [];
 async function requeteJSON(url, options = {}) {
   const reponse = await fetch(url, options);
   const donnees = await reponse.json().catch(() => ({}));
-  if (!reponse.ok) throw new Error(donnees.error || 'Erreur inconnue');
+  if (!reponse.ok) {
+    const erreur = new Error(donnees.error || 'Erreur inconnue');
+    erreur.donnees = donnees; // conserve le corps complet (ex: emplacements partiels)
+    throw erreur;
+  }
   return donnees;
 }
 
@@ -667,6 +671,7 @@ document.getElementById('case-tableau-de-bord').addEventListener('change', async
 const NIVEAUX_FIXES = ['facile', 'moyen', 'difficile'];
 const TYPES_FIXES = ['standard', 'coopératif', 'belliqueux'];
 let intervalSuivi = null;
+let intervalJoueursConfig = null;
 
 function optionsAvecVide(valeurs, valeurSelectionnee) {
   const options = ['<option value="">--</option>']
@@ -732,6 +737,11 @@ async function genererConfigurationAutomatique() {
     messageEl.classList.remove('message-info');
     messageEl.classList.add('message-erreur');
     messageEl.classList.remove('cachee');
+
+    // Meme en echec (pool insuffisant), affiche ce qui a pu etre genere : le MJ voit
+    // quelles cases fonctionnent et complete manuellement le reste, au lieu de faire
+    // face a un tableau entierement vide sans indice.
+    construireTableEmplacements(err.donnees?.emplacements || []);
   }
 }
 
@@ -751,6 +761,10 @@ async function chargerPartieActive() {
     clearInterval(intervalSuivi);
     intervalSuivi = null;
   }
+  if (intervalJoueursConfig) {
+    clearInterval(intervalJoueursConfig);
+    intervalJoueursConfig = null;
+  }
 
   if (!partie.active) return;
 
@@ -759,10 +773,10 @@ async function chargerPartieActive() {
     document.getElementById('config-nombre-joueurs').value = partie.nombre_joueurs_prevu || 4;
     document.getElementById('config-nombre-coop').value = partie.nombre_coop_par_joueur || 0;
 
-    const listeJoueursConfig = document.getElementById('liste-joueurs-config');
-    listeJoueursConfig.innerHTML = partie.joueurs
-      .map((j) => `<li>${j.pseudo}${j.race_id ? '' : ' (race non choisie)'}</li>`)
-      .join('') || '<li>Aucun joueur pour le moment</li>';
+    afficherListeJoueursConfig(partie.joueurs);
+    // Un joueur peut rejoindre a tout moment pendant que cet ecran reste ouvert : sans
+    // ce rafraichissement, le MJ ne verrait pas les arrivees sans recharger la page.
+    intervalJoueursConfig = setInterval(rafraichirJoueursConfig, 4000);
 
     if (partie.emplacements && partie.emplacements.length === 9) {
       construireTableEmplacements(partie.emplacements);
@@ -774,6 +788,24 @@ async function chargerPartieActive() {
   } else if (partie.statut === 'en_cours') {
     await chargerSuiviPartie();
     intervalSuivi = setInterval(chargerSuiviPartie, 5000);
+  }
+}
+
+function afficherListeJoueursConfig(joueurs) {
+  const listeJoueursConfig = document.getElementById('liste-joueurs-config');
+  listeJoueursConfig.innerHTML = joueurs
+    .map((j) => `<li>${j.pseudo}${j.race_id ? '' : ' (race non choisie)'}</li>`)
+    .join('') || '<li>Aucun joueur pour le moment</li>';
+}
+
+async function rafraichirJoueursConfig() {
+  try {
+    const partie = await requeteJSON('/api/admin/partie-active');
+    if (!partie.active || partie.statut !== 'en_attente') return;
+    afficherListeJoueursConfig(partie.joueurs);
+  } catch (err) {
+    // Rafraichissement silencieux en arriere-plan : une erreur ponctuelle n'a pas besoin
+    // d'interrompre le MJ.
   }
 }
 
