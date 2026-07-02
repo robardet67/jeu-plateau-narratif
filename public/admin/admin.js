@@ -24,7 +24,16 @@ function afficherSync(sync) {
     indicateurSync.textContent = 'Synchronise sur GitHub';
     indicateurSync.classList.add('succes');
   } else {
-    indicateurSync.textContent = `Non synchronise (${sync.raison || 'erreur'})`;
+    const raison = sync.raison || '';
+    // Raisons silencieuses : desactivation volontaire ou rien a commiter
+    const silencieux =
+      raison.includes('desactivee') ||
+      raison.includes('aucun fichier');
+    if (silencieux) {
+      indicateurSync.textContent = '';
+      return;
+    }
+    indicateurSync.textContent = `Non synchronise (${raison})`;
     indicateurSync.classList.add('echec');
   }
 }
