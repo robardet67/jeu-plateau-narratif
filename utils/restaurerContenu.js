@@ -60,10 +60,10 @@ function restaurerSiVide(db) {
     });
 
     const insererObjectif = db.prepare(
-      'INSERT INTO objectifs (id, description, niveau, type, categorie, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO objectifs (id, description, created_at) VALUES (?, ?, ?)'
     );
     (contenu.objectifs || []).forEach((o) => {
-      insererObjectif.run(o.id, o.description, o.niveau, o.type, o.categorie, o.created_at);
+      insererObjectif.run(o.id, o.description, o.created_at);
       compteurs.objectifs++;
     });
 

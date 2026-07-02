@@ -1,9 +1,6 @@
 // Logique de la grille de progression d'un joueur : 3 rangs (les 3 representants de sa
-// race) x 3 positions d'objectif = 9 cases. Deux joueurs n'ont jamais la meme race, donc
-// le partage cooperatif/belliqueux se fait par coordonnee (rang, position), commune a
-// tous les joueurs d'une partie quelle que soit leur race.
-
-const { normaliser } = require('./texte');
+// race) x 2 positions d'objectif = 6 cases au total. Tous les objectifs sont identiques
+// (pas de type cooperatif/belliqueux) et uniques par partie.
 
 function obtenirParametre(db, cle) {
   const ligne = db.prepare('SELECT valeur FROM parametres WHERE cle = ?').get(cle);
@@ -17,14 +14,12 @@ function compterValide(db, joueurId) {
 }
 
 function estJoueurTermine(db, joueurId) {
-  return compterValide(db, joueurId) >= 9;
+  return compterValide(db, joueurId) >= 6;
 }
 
-// Reveille (masque -> statut demande) la case (joueur, rang, position) si elle a deja
-// ete pre-distribuee par le MJ (Phase 4, voir utils/distribution.js). Si elle n'existe
-// pas du tout (partie non configuree/lancee via l'admin), reste sur l'ancien
-// comportement : partage avec un autre joueur deja present a cette coordonnee, sinon
-// pioche aleatoire jamais utilisee par ce joueur.
+// Reveille (masque -> ferme) les deux cases d'un rang. Si elles ont deja ete
+// pre-distribuees, met a jour leur statut ; sinon les cree a la volee (cas de
+// parties sans distribution prealable).
 function assurerLigneGrille(db, joueurId, partieId, rang, position, statutParDefaut) {
   const existante = db
     .prepare('SELECT * FROM grille_objectifs WHERE joueur_id = ? AND rang = ? AND position = ?')
@@ -38,41 +33,23 @@ function assurerLigneGrille(db, joueurId, partieId, rang, position, statutParDef
     return existante;
   }
 
-  const partagee = db
-    .prepare(
-      'SELECT * FROM grille_objectifs WHERE partie_id = ? AND rang = ? AND position = ? AND joueur_id != ? LIMIT 1'
-    )
-    .get(partieId, rang, position, joueurId);
-
-  let objectifId;
-  let statut;
-  let completedAt = null;
-
-  if (partagee) {
-    objectifId = partagee.objectif_id;
-    statut = partagee.statut;
-    completedAt = partagee.completed_at;
-  } else {
-    const dejaUtilises = db
-      .prepare('SELECT objectif_id FROM grille_objectifs WHERE joueur_id = ?')
-      .all(joueurId)
-      .map((r) => r.objectif_id);
-    const exclusion = dejaUtilises.length ? dejaUtilises : [0];
-    const placeholders = exclusion.map(() => '?').join(',');
-    const objectif =
-      db
-        .prepare(`SELECT * FROM objectifs WHERE id NOT IN (${placeholders}) ORDER BY RANDOM() LIMIT 1`)
-        .get(...exclusion) || db.prepare('SELECT * FROM objectifs ORDER BY RANDOM() LIMIT 1').get();
-    if (!objectif) return null;
-    objectifId = objectif.id;
-    statut = statutParDefaut;
-  }
+  const dejaUtilises = db
+    .prepare('SELECT objectif_id FROM grille_objectifs WHERE partie_id = ?')
+    .all(partieId)
+    .map((r) => r.objectif_id);
+  const exclusion = dejaUtilises.length ? dejaUtilises : [0];
+  const placeholders = exclusion.map(() => '?').join(',');
+  const objectif =
+    db
+      .prepare(`SELECT * FROM objectifs WHERE id NOT IN (${placeholders}) ORDER BY RANDOM() LIMIT 1`)
+      .get(...exclusion) || db.prepare('SELECT * FROM objectifs ORDER BY RANDOM() LIMIT 1').get();
+  if (!objectif) return null;
 
   const resultat = db
     .prepare(
-      'INSERT INTO grille_objectifs (joueur_id, partie_id, rang, position, objectif_id, statut, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO grille_objectifs (joueur_id, partie_id, rang, position, objectif_id, statut) VALUES (?, ?, ?, ?, ?, ?)'
     )
-    .run(joueurId, partieId, rang, position, objectifId, statut, completedAt);
+    .run(joueurId, partieId, rang, position, objectif.id, statutParDefaut);
 
   return db.prepare('SELECT * FROM grille_objectifs WHERE id = ?').get(resultat.lastInsertRowid);
 }
@@ -80,7 +57,6 @@ function assurerLigneGrille(db, joueurId, partieId, rang, position, statutParDef
 function deverrouillerRang(db, joueurId, partieId, rang) {
   assurerLigneGrille(db, joueurId, partieId, rang, 1, 'ferme');
   assurerLigneGrille(db, joueurId, partieId, rang, 2, 'ferme');
-  assurerLigneGrille(db, joueurId, partieId, rang, 3, 'masque');
 }
 
 function verifierDeverrouillages(db, joueurId, partieId) {
@@ -89,97 +65,20 @@ function verifierDeverrouillages(db, joueurId, partieId) {
   if (total >= 3) deverrouillerRang(db, joueurId, partieId, 3);
 }
 
-// La 3e case d'un rang se devoile (masque -> ferme) quand les 2 premieres DE CE MEME
-// rang sont validees (independamment du total tous rangs confondus).
-function verifierDevoilementPosition3(db, joueurId, rang) {
-  const pos1 = db
-    .prepare('SELECT statut FROM grille_objectifs WHERE joueur_id = ? AND rang = ? AND position = 1')
-    .get(joueurId, rang);
-  const pos2 = db
-    .prepare('SELECT statut FROM grille_objectifs WHERE joueur_id = ? AND rang = ? AND position = 2')
-    .get(joueurId, rang);
-
-  if (pos1?.statut === 'valide' && pos2?.statut === 'valide') {
-    db.prepare(
-      "UPDATE grille_objectifs SET statut = 'ferme' WHERE joueur_id = ? AND rang = ? AND position = 3 AND statut = 'masque'"
-    ).run(joueurId, rang);
-  }
-}
-
-// Cherche un objectif de remplacement (meme niveau/type/categorie en priorite), avec un
-// repli progressif si aucun objectif ne correspond exactement (pool trop petit).
-function choisirObjectifRemplacement(db, objectifActuel, exclureIds = []) {
-  const exclusion = [...new Set([objectifActuel.id, ...exclureIds])];
-  const placeholders = exclusion.map(() => '?').join(',');
-
-  let candidat = db
-    .prepare(
-      `SELECT * FROM objectifs WHERE niveau IS ? AND type IS ? AND categorie IS ? AND id NOT IN (${placeholders}) ORDER BY RANDOM() LIMIT 1`
-    )
-    .get(objectifActuel.niveau, objectifActuel.type, objectifActuel.categorie, ...exclusion);
-  if (candidat) return candidat;
-
-  candidat = db
-    .prepare(`SELECT * FROM objectifs WHERE type IS ? AND id NOT IN (${placeholders}) ORDER BY RANDOM() LIMIT 1`)
-    .get(objectifActuel.type, ...exclusion);
-  if (candidat) return candidat;
-
-  candidat = db
-    .prepare(`SELECT * FROM objectifs WHERE id NOT IN (${placeholders}) ORDER BY RANDOM() LIMIT 1`)
-    .get(...exclusion);
-  return candidat || null;
-}
-
-// Valide une case pour un joueur et propage l'effet cooperatif/belliqueux aux autres
-// joueurs de la partie qui partagent la meme coordonnee (rang, position).
+// Valide une case : pas d'effet sur les autres joueurs (plus de cooperatif/belliqueux).
 function validerObjectif(db, { joueurId, ligneId }) {
   const ligne = db.prepare('SELECT * FROM grille_objectifs WHERE id = ? AND joueur_id = ?').get(ligneId, joueurId);
   if (!ligne) throw new Error('Case de grille introuvable');
   if (ligne.statut !== 'ouvert') throw new Error("Cet objectif doit d'abord etre ouvert");
 
-  const objectif = db.prepare('SELECT * FROM objectifs WHERE id = ?').get(ligne.objectif_id);
-
   db.prepare("UPDATE grille_objectifs SET statut = 'valide', completed_at = datetime('now') WHERE id = ?").run(
     ligne.id
   );
 
-  const affectes = [];
-  const type = normaliser(objectif.type);
-
-  if (type === 'cooperatif' || type === 'belliqueux') {
-    const autres = db
-      .prepare(
-        "SELECT * FROM grille_objectifs WHERE partie_id = ? AND rang = ? AND position = ? AND joueur_id != ? AND statut != 'valide'"
-      )
-      .all(ligne.partie_id, ligne.rang, ligne.position, joueurId);
-
-    for (const autre of autres) {
-      if (type === 'cooperatif') {
-        db.prepare(
-          "UPDATE grille_objectifs SET statut = 'valide', completed_at = datetime('now') WHERE id = ?"
-        ).run(autre.id);
-        affectes.push({ joueurId: autre.joueur_id, action: 'valide' });
-      } else {
-        const nouvel = choisirObjectifRemplacement(db, objectif, [autre.objectif_id]);
-        if (nouvel) {
-          const nouveauStatut = autre.statut === 'masque' ? 'masque' : 'ferme';
-          db.prepare(
-            'UPDATE grille_objectifs SET objectif_id = ?, statut = ?, completed_at = NULL WHERE id = ?'
-          ).run(nouvel.id, nouveauStatut, autre.id);
-          affectes.push({ joueurId: autre.joueur_id, action: 'remplace' });
-        }
-      }
-    }
-  }
-
-  const joueursAVerifier = [joueurId, ...affectes.filter((a) => a.action === 'valide').map((a) => a.joueurId)];
-  const partieTerminee = joueursAVerifier.some((jid) => estJoueurTermine(db, jid));
-
-  return { ligne, objectif, affectes, partieTerminee, partieId: ligne.partie_id };
+  return { ligne, partieTerminee: estJoueurTermine(db, joueurId), partieId: ligne.partie_id };
 }
 
-// Construit l'etat complet de la grille d'un joueur (races/representants deverrouilles,
-// cases avec objectifs, dialogues avec {nom} substitue) pour l'envoyer au client.
+// Construit l'etat complet de la grille d'un joueur (6 cases, 3 rangs x 2 positions).
 function obtenirEtatJoueur(db, joueurId) {
   const joueur = db.prepare('SELECT * FROM joueurs WHERE id = ?').get(joueurId);
   if (!joueur) return null;
@@ -205,7 +104,7 @@ function obtenirEtatJoueur(db, joueurId) {
       .prepare('SELECT * FROM grille_objectifs WHERE joueur_id = ? AND rang = ?')
       .all(joueurId, rang);
 
-    const cases = [1, 2, 3].map((position) => {
+    const cases = [1, 2].map((position) => {
       const ligne = lignes.find((l) => l.position === position);
       if (!ligne || ligne.statut === 'masque') {
         return { id: ligne ? ligne.id : null, position, statut: 'masque', objectif: null };
@@ -237,7 +136,7 @@ function obtenirEtatJoueur(db, joueurId) {
     raceNom: race ? race.nom : null,
     imageFond: race ? race.image_fond : null,
     totalValide: total,
-    partieTerminee: total >= 9,
+    partieTerminee: total >= 6,
     rangs
   };
 }
@@ -249,8 +148,6 @@ module.exports = {
   assurerLigneGrille,
   deverrouillerRang,
   verifierDeverrouillages,
-  verifierDevoilementPosition3,
-  choisirObjectifRemplacement,
   validerObjectif,
   obtenirEtatJoueur
 };

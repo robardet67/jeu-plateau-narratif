@@ -162,11 +162,19 @@ function initDatabase() {
 
   assurerColonne(db, 'parties', 'scenario_index', "INTEGER NOT NULL DEFAULT 0");
   assurerColonne(db, 'parties', 'nb_joueurs_attendus', 'INTEGER NOT NULL DEFAULT 0');
-  assurerColonne(db, 'parties', 'nb_objectifs_cooperatifs', 'INTEGER NOT NULL DEFAULT 0');
 
   retirerColonne(db, 'parties', 'nombre_joueurs_prevu');
   retirerColonne(db, 'parties', 'nombre_coop_par_joueur');
+  retirerColonne(db, 'parties', 'nb_objectifs_cooperatifs');
   db.exec('DROP TABLE IF EXISTS configuration_emplacements');
+
+  // Les objectifs sont desormais tous identiques (plus de type/niveau/categorie)
+  retirerColonne(db, 'objectifs', 'niveau');
+  retirerColonne(db, 'objectifs', 'type');
+  retirerColonne(db, 'objectifs', 'categorie');
+
+  // La grille passe de 3x3 a 3x2 : supprime les cases de position 3 existantes
+  db.exec("DELETE FROM grille_objectifs WHERE position = 3");
 
   const rangExistaitDeja = colonneExiste(db, 'representants', 'rang');
   assurerColonne(db, 'representants', 'rang', 'INTEGER NOT NULL DEFAULT 1');

@@ -16,7 +16,6 @@ const {
   obtenirParametre,
   deverrouillerRang,
   verifierDeverrouillages,
-  verifierDevoilementPosition3,
   validerObjectif,
   obtenirEtatJoueur
 } = require('./utils/grille');
@@ -366,32 +365,14 @@ app.delete('/api/dialogues/:id', exigerAdmin, gerer(async (req, res) => {
 // --- API : objectifs (description, niveau, type, categorie) ---
 
 app.get('/api/objectifs', (req, res) => {
-  const { niveau, type, categorie } = req.query;
-  let sql = 'SELECT * FROM objectifs WHERE 1 = 1';
-  const params = [];
-  if (niveau) {
-    sql += ' AND niveau = ?';
-    params.push(niveau);
-  }
-  if (type) {
-    sql += ' AND type = ?';
-    params.push(type);
-  }
-  if (categorie) {
-    sql += ' AND categorie = ?';
-    params.push(categorie);
-  }
-  sql += ' ORDER BY id DESC';
-  res.json(db.prepare(sql).all(...params));
+  res.json(db.prepare('SELECT * FROM objectifs ORDER BY id DESC').all());
 });
 
 app.post('/api/objectifs', exigerAdmin, gerer(async (req, res) => {
-  const { description, niveau, type, categorie } = req.body;
+  const { description } = req.body;
   if (!description) return res.status(400).json({ error: 'La description est requise' });
 
-  const result = db
-    .prepare('INSERT INTO objectifs (description, niveau, type, categorie) VALUES (?, ?, ?, ?)')
-    .run(description, niveau || null, type || null, categorie || null);
+  const result = db.prepare('INSERT INTO objectifs (description) VALUES (?)').run(description);
 
   const synchronisation = await commiterEtPousser("Admin : ajout d'un objectif");
   res.status(201).json({ id: result.lastInsertRowid, synchronisation });
@@ -401,12 +382,9 @@ app.put('/api/objectifs/:id', exigerAdmin, gerer(async (req, res) => {
   const objectif = db.prepare('SELECT * FROM objectifs WHERE id = ?').get(req.params.id);
   if (!objectif) return res.status(404).json({ error: 'Objectif introuvable' });
 
-  const { description, niveau, type, categorie } = req.body;
-  db.prepare('UPDATE objectifs SET description = ?, niveau = ?, type = ?, categorie = ? WHERE id = ?').run(
+  const { description } = req.body;
+  db.prepare('UPDATE objectifs SET description = ? WHERE id = ?').run(
     description || objectif.description,
-    niveau ?? objectif.niveau,
-    type ?? objectif.type,
-    categorie ?? objectif.categorie,
     objectif.id
   );
 
@@ -442,14 +420,14 @@ app.post('/api/objectifs/import', exigerAdmin, uploadCsv.single('fichier'), gere
     return normalisee;
   });
 
-  const insertion = db.prepare(
-    'INSERT INTO objectifs (description, niveau, type, categorie) VALUES (?, ?, ?, ?)'
-  );
+  // Seule la colonne "description" est utilisee ; niveau/type/categorie sont ignores
+  // pour rester compatible avec les CSV existants.
+  const insertion = db.prepare('INSERT INTO objectifs (description) VALUES (?)');
   const importerTout = db.transaction((rows) => {
     let compteur = 0;
     for (const ligne of rows) {
       if (!ligne.description) continue;
-      insertion.run(ligne.description, ligne.niveau || null, ligne.type || null, ligne.categorie || null);
+      insertion.run(ligne.description);
       compteur++;
     }
     return compteur;
@@ -562,7 +540,7 @@ app.get('/api/parties/:code/tableau-de-bord', (req, res) => {
     pseudo: j.pseudo,
     objectifsValides: db
       .prepare(
-        `SELECT g.rang, g.position, g.completed_at, o.description, o.niveau, o.type, o.categorie
+        `SELECT g.rang, g.position, g.completed_at, o.description
          FROM grille_objectifs g JOIN objectifs o ON o.id = g.objectif_id
          WHERE g.joueur_id = ? AND g.statut = 'valide'
          ORDER BY g.completed_at`
@@ -604,12 +582,17 @@ function tenterLancementPartie(partieId) {
     return { lance: false, raison: 'Deux joueurs ont choisi la meme race' };
   }
 
+  const nbObjectifsNecessaires = joueurs.length * 6;
+  const { n: nbObjectifsDisponibles } = db.prepare('SELECT COUNT(*) AS n FROM objectifs').get();
+  if (nbObjectifsDisponibles < nbObjectifsNecessaires) {
+    return {
+      lance: false,
+      raison: `Pool insuffisant : ${nbObjectifsDisponibles} objectif(s) disponible(s), ${nbObjectifsNecessaires} requis (${joueurs.length} joueur(s) x 6)`
+    };
+  }
+
   try {
-    distribuer(db, {
-      partieId,
-      joueurIds: joueurs.map((j) => j.id),
-      nbCoopParJoueur: partie.nb_objectifs_cooperatifs || 0
-    });
+    distribuer(db, { partieId, joueurIds: joueurs.map((j) => j.id) });
   } catch (erreur) {
     return { lance: false, raison: erreur.message };
   }
@@ -689,7 +672,6 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
   }
 
   const nbJoueursAttendu = parseInt(req.body.nb_joueurs_attendus) || 0;
-  const nbCoop = parseInt(req.body.nb_objectifs_cooperatifs) || 0;
 
   let code;
   do {
@@ -697,8 +679,8 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
   } while (db.prepare('SELECT id FROM parties WHERE code = ?').get(code));
 
   const partie = db
-    .prepare('INSERT INTO parties (code, nom, nb_joueurs_attendus, nb_objectifs_cooperatifs) VALUES (?, ?, ?, ?)')
-    .run(code, `Partie ${code}`, nbJoueursAttendu, nbCoop);
+    .prepare('INSERT INTO parties (code, nom, nb_joueurs_attendus) VALUES (?, ?, ?)')
+    .run(code, `Partie ${code}`, nbJoueursAttendu);
   const nouvelle = db.prepare('SELECT * FROM parties WHERE id = ?').get(partie.lastInsertRowid);
   res.status(201).json({ active: true, ...nouvelle, joueurs: [] });
 });
@@ -843,8 +825,6 @@ io.on('connection', (socket) => {
     socket.emit('etat_joueur', obtenirEtatJoueur(db, joueurId));
   });
 
-  // Valide un objectif : propage aux autres joueurs (cooperatif = valide aussi,
-  // belliqueux = remplace leur objectif + notification), verifie la fin de partie.
   socket.on('grille_valider', ({ joueurId, ligneId }) => {
     let resultat;
     try {
@@ -853,25 +833,8 @@ io.on('connection', (socket) => {
       return socket.emit('erreur', { message: erreur.message });
     }
 
-    verifierDevoilementPosition3(db, joueurId, resultat.ligne.rang);
     verifierDeverrouillages(db, joueurId, resultat.partieId);
     socket.emit('etat_joueur', obtenirEtatJoueur(db, joueurId));
-
-    resultat.affectes.forEach((affecte) => {
-      if (affecte.action === 'valide') {
-        verifierDevoilementPosition3(db, affecte.joueurId, resultat.ligne.rang);
-        verifierDeverrouillages(db, affecte.joueurId, resultat.partieId);
-      }
-      const autreJoueur = db.prepare('SELECT * FROM joueurs WHERE id = ?').get(affecte.joueurId);
-      if (autreJoueur && autreJoueur.socket_id) {
-        io.to(autreJoueur.socket_id).emit('etat_joueur', obtenirEtatJoueur(db, affecte.joueurId));
-        if (affecte.action === 'remplace') {
-          io.to(autreJoueur.socket_id).emit('notification', {
-            message: "Un objectif a ete remplace suite a l'action d'un autre joueur !"
-          });
-        }
-      }
-    });
 
     if (socket.data.code && obtenirParametre(db, 'tableau_de_bord_actif') === 'true') {
       io.to(socket.data.code).emit('tableau_de_bord_maj');

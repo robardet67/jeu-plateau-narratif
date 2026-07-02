@@ -394,50 +394,9 @@ document.getElementById('form-nouveau-dialogue').addEventListener('submit', asyn
 
 async function chargerObjectifs() {
   objectifsEnCache = await requeteJSON('/api/objectifs');
-  remplirFiltresObjectifs();
-  afficherObjectifsFiltres();
-}
-
-function valeursDistinctes(cle) {
-  return [...new Set(objectifsEnCache.map((o) => o[cle]).filter(Boolean))].sort();
-}
-
-function remplirFiltresObjectifs() {
-  remplirUnFiltre('filtre-niveau', valeursDistinctes('niveau'));
-  remplirUnFiltre('filtre-type', valeursDistinctes('type'));
-  remplirUnFiltre('filtre-categorie', valeursDistinctes('categorie'));
-}
-
-function remplirUnFiltre(id, valeurs) {
-  const select = document.getElementById(id);
-  const valeurPrecedente = select.value;
-  const optionParDefaut = select.options[0];
-  select.innerHTML = '';
-  select.appendChild(optionParDefaut);
-  valeurs.forEach((v) => {
-    const option = document.createElement('option');
-    option.value = v;
-    option.textContent = v;
-    select.appendChild(option);
-  });
-  if (valeurPrecedente) select.value = valeurPrecedente;
-}
-
-function afficherObjectifsFiltres() {
-  const niveau = document.getElementById('filtre-niveau').value;
-  const type = document.getElementById('filtre-type').value;
-  const categorie = document.getElementById('filtre-categorie').value;
-
-  const filtres = objectifsEnCache.filter(
-    (o) =>
-      (!niveau || o.niveau === niveau) &&
-      (!type || o.type === type) &&
-      (!categorie || o.categorie === categorie)
-  );
-
   const liste = document.getElementById('liste-objectifs');
   liste.innerHTML = '';
-  filtres.forEach((o) => liste.appendChild(creerElementObjectif(o)));
+  objectifsEnCache.forEach((o) => liste.appendChild(creerElementObjectif(o)));
 }
 
 function creerElementObjectif(objectif) {
@@ -445,10 +404,7 @@ function creerElementObjectif(objectif) {
   li.className = 'element-carte';
   li.innerHTML = `
     <div class="element-infos">
-      <div>
-        <strong>${objectif.description}</strong>
-        <div class="compteur">${[objectif.niveau, objectif.type, objectif.categorie].filter(Boolean).join(' | ')}</div>
-      </div>
+      <div><strong>${objectif.description}</strong></div>
     </div>
     <div class="element-actions">
       <button class="btn-modifier">Modifier</button>
@@ -471,50 +427,31 @@ function afficherFormulaireModifObjectif(li, objectif) {
   li.innerHTML = `
     <form class="formulaire" style="width:100%">
       <textarea name="description" required>${objectif.description}</textarea>
-      <input name="niveau" type="text" placeholder="Niveau" value="${objectif.niveau || ''}" />
-      <input name="type" type="text" placeholder="Type" value="${objectif.type || ''}" />
-      <input name="categorie" type="text" placeholder="Categorie" value="${objectif.categorie || ''}" />
       <div class="element-actions">
         <button type="submit">Enregistrer</button>
         <button type="button" class="bouton-secondaire btn-annuler">Annuler</button>
       </div>
     </form>
   `;
-  li.querySelector('.btn-annuler').addEventListener('click', () => afficherObjectifsFiltres());
+  li.querySelector('.btn-annuler').addEventListener('click', () => chargerObjectifs());
   li.querySelector('form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const donnees = new FormData(e.target);
     const resultat = await requeteJSON(`/api/objectifs/${objectif.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        description: donnees.get('description'),
-        niveau: donnees.get('niveau'),
-        type: donnees.get('type'),
-        categorie: donnees.get('categorie')
-      })
+      body: JSON.stringify({ description: new FormData(e.target).get('description') })
     });
     afficherSync(resultat.synchronisation);
     await chargerObjectifs();
   });
 }
 
-['filtre-niveau', 'filtre-type', 'filtre-categorie'].forEach((id) => {
-  document.getElementById(id).addEventListener('change', afficherObjectifsFiltres);
-});
-
 document.getElementById('form-nouvel-objectif').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const donnees = new FormData(e.target);
   const resultat = await requeteJSON('/api/objectifs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      description: donnees.get('description'),
-      niveau: donnees.get('niveau'),
-      type: donnees.get('type'),
-      categorie: donnees.get('categorie')
-    })
+    body: JSON.stringify({ description: new FormData(e.target).get('description') })
   });
   afficherSync(resultat.synchronisation);
   e.target.reset();
@@ -712,9 +649,9 @@ function afficherProgressionLancement(partie) {
   const nbAttendu = partie.nb_joueurs_attendus || 0;
   if (nbAttendu > 0) {
     const nbPrets = (partie.joueurs || []).filter((j) => j.race_id).length;
-    infoEl.textContent = `Lancement automatique : ${nbPrets} / ${nbAttendu} joueur(s) prets (race choisie).`;
+    infoEl.textContent = `Lancement automatique quand ${nbPrets}/${nbAttendu} joueur(s) ont choisi leur race. Chaque joueur recevra 6 objectifs uniques (3 representants x 2).`;
   } else {
-    infoEl.textContent = 'Lancement manuel uniquement (aucun nombre de joueurs cible configure).';
+    infoEl.textContent = 'Aucun lancement automatique configure. Creez une nouvelle partie avec un nombre de joueurs cible pour activer le lancement automatique.';
   }
 }
 
@@ -748,28 +685,12 @@ async function chargerSuiviPartie() {
 
 document.getElementById('btn-creer-partie-active').addEventListener('click', async () => {
   const nbJoueurs = parseInt(document.getElementById('config-nb-joueurs').value) || 0;
-  const nbCoop = parseInt(document.getElementById('config-nb-coop').value) || 0;
   await requeteJSON('/api/admin/partie-active/creer', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nb_joueurs_attendus: nbJoueurs, nb_objectifs_cooperatifs: nbCoop })
+    body: JSON.stringify({ nb_joueurs_attendus: nbJoueurs })
   });
   await chargerPartieActive();
-});
-
-document.getElementById('btn-lancer-partie').addEventListener('click', async () => {
-  if (!confirm('Lancer la partie ? La distribution des objectifs sera definitive.')) return;
-
-  const messageEl = document.getElementById('message-lancement');
-  messageEl.classList.add('cachee');
-  try {
-    const resultat = await requeteJSON('/api/admin/partie-active/lancer', { method: 'POST' });
-    afficherSync(resultat.synchronisation);
-    await chargerPartieActive();
-  } catch (err) {
-    messageEl.textContent = err.message;
-    messageEl.classList.remove('cachee');
-  }
 });
 
 document.getElementById('btn-terminer-partie').addEventListener('click', async () => {

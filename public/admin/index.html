@@ -122,7 +122,11 @@
     <section id="onglet-objectifs" class="contenu-onglet cachee">
       <div class="carte">
         <h2>Importer des objectifs (CSV)</h2>
-        <p class="astuce">Colonnes attendues : <code>description, niveau, type, categorie</code></p>
+        <p class="astuce">
+          Colonne requise : <code>description</code>. Les colonnes <code>niveau</code>,
+          <code>type</code> et <code>categorie</code> sont ignorees si presentes (compatibilite
+          avec les anciens fichiers).
+        </p>
         <form id="form-import-objectifs" class="formulaire-ligne">
           <input id="champ-csv-objectifs" type="file" accept=".csv,text/csv" required />
           <button type="submit">Importer</button>
@@ -132,28 +136,10 @@
 
       <div class="carte">
         <h2>Ajouter un objectif</h2>
-        <p class="astuce">
-          Le champ Type declenche un comportement special en jeu si vous utilisez la valeur
-          <code>cooperatif</code> (valide aussi l'objectif du joueur en vis-a-vis) ou
-          <code>belliqueux</code> (remplace l'objectif du joueur en vis-a-vis par un autre,
-          de meme niveau/type/categorie, avec notification). Toute autre valeur = objectif neutre.
-        </p>
         <form id="form-nouvel-objectif" class="formulaire">
           <textarea name="description" placeholder="Description de l'objectif" required></textarea>
-          <input name="niveau" type="text" placeholder="Niveau (ex: 1, Facile...)" />
-          <input name="type" type="text" placeholder="Type (ou cooperatif / belliqueux)" />
-          <input name="categorie" type="text" placeholder="Categorie" />
           <button type="submit">Ajouter l'objectif</button>
         </form>
-      </div>
-
-      <div class="carte">
-        <h2>Filtrer les objectifs</h2>
-        <div class="formulaire-ligne">
-          <select id="filtre-niveau"><option value="">Tous les niveaux</option></select>
-          <select id="filtre-type"><option value="">Tous les types</option></select>
-          <select id="filtre-categorie"><option value="">Toutes les categories</option></select>
-        </div>
       </div>
 
       <div class="carte">
@@ -216,14 +202,11 @@
           <label>Nombre de joueurs attendus pour le lancement automatique
             <input id="config-nb-joueurs" type="number" min="0" max="20" value="2" />
           </label>
-          <label>Nombre d'objectifs cooperatifs par joueur (sur 9)
-            <input id="config-nb-coop" type="number" min="0" max="9" value="0" />
-          </label>
         </div>
         <p class="astuce">
           La partie se lancera automatiquement des que le nombre de joueurs configures
           auront tous choisi leur race. Laissez 0 joueurs attendus pour un lancement
-          manuel uniquement.
+          manuel uniquement (bouton secours dans la salle d'attente).
         </p>
         <button id="btn-creer-partie-active">Creer la partie</button>
       </div>
@@ -236,13 +219,6 @@
         <h3>Joueurs presents</h3>
         <ul id="liste-joueurs-config" class="liste-elements"></ul>
 
-        <p class="astuce">
-          Le bouton ci-dessous sert de secours si le lancement automatique ne se declenche
-          pas (ex. : un joueur a rejoint sans choisir sa race).
-        </p>
-        <div class="formulaire-ligne">
-          <button id="btn-lancer-partie" class="bouton-secondaire">Lancer manuellement (secours)</button>
-        </div>
         <p id="message-lancement" class="message-erreur cachee"></p>
       </div>
 
