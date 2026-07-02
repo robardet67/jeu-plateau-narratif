@@ -20,7 +20,7 @@ const {
   validerObjectif,
   obtenirEtatJoueur
 } = require('./utils/grille');
-const { validerNombreCooperatifs, genererEmplacements, distribuer } = require('./utils/distribution');
+const { distribuer } = require('./utils/distribution');
 
 // Sur un serveur fraichement deploye (base SQLite vide, non versionnee), recharge le
 // contenu admin depuis la sauvegarde JSON versionnee sur GitHub (voir utils/exportContenu.js).
@@ -589,25 +589,16 @@ function joueursDeLaPartie(partieId) {
     .all(partieId);
 }
 
-// Le MJ configure la partie en amont (nombre de joueurs, emplacements). Les joueurs
-// patientent en salle d'attente quoi qu'ils fassent : rien ne demarre tant que le MJ n'a
-// pas clique sur "Lancer la partie" dans l'admin (seul appelant de cette fonction).
+// Les joueurs patientent en salle d'attente quoi qu'ils fassent : rien ne demarre tant
+// que le MJ n'a pas clique sur "Lancer la partie" dans l'admin (seul appelant de cette
+// fonction). La partie demarre avec les joueurs presents a cet instant.
 function tenterLancementPartie(partieId) {
   const partie = db.prepare('SELECT * FROM parties WHERE id = ?').get(partieId);
   if (!partie || partie.statut !== 'en_attente') {
     return { lance: false, raison: 'La partie est deja lancee ou terminee' };
   }
-  if (!partie.nombre_joueurs_prevu) {
-    return { lance: false, raison: "Le nombre de joueurs n'est pas encore configure" };
-  }
 
   const joueurs = joueursDeLaPartie(partieId);
-  if (joueurs.length !== partie.nombre_joueurs_prevu) {
-    return {
-      lance: false,
-      raison: `${joueurs.length} joueur(s) present(s), ${partie.nombre_joueurs_prevu} attendu(s) selon la configuration`
-    };
-  }
   if (joueurs.some((j) => !j.race_id)) {
     return { lance: false, raison: "Tous les joueurs n'ont pas encore choisi leur race" };
   }
@@ -616,19 +607,8 @@ function tenterLancementPartie(partieId) {
     return { lance: false, raison: 'Deux joueurs ont choisi la meme race' };
   }
 
-  const nombreEmplacements = db
-    .prepare('SELECT COUNT(*) AS n FROM configuration_emplacements WHERE partie_id = ?')
-    .get(partieId).n;
-  if (nombreEmplacements < 9) {
-    return { lance: false, raison: 'Les 9 emplacements ne sont pas encore configures' };
-  }
-
   try {
-    distribuer(db, {
-      partieId,
-      joueurIds: joueurs.map((j) => j.id),
-      nombreCoopParJoueur: partie.nombre_coop_par_joueur
-    });
+    distribuer(db, { partieId, joueurIds: joueurs.map((j) => j.id) });
   } catch (erreur) {
     return { lance: false, raison: erreur.message };
   }
@@ -673,11 +653,7 @@ app.get('/api/admin/partie-active', exigerAdmin, (req, res) => {
   const partie = obtenirPartieActive(db);
   if (!partie) return res.json({ active: false });
 
-  const emplacements = db
-    .prepare('SELECT * FROM configuration_emplacements WHERE partie_id = ? ORDER BY rang, position')
-    .all(partie.id);
-
-  res.json({ active: true, ...partie, joueurs: joueursDeLaPartie(partie.id), emplacements });
+  res.json({ active: true, ...partie, joueurs: joueursDeLaPartie(partie.id) });
 });
 
 app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
@@ -695,43 +671,6 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
   const nouvelle = db.prepare('SELECT * FROM parties WHERE id = ?').get(partie.lastInsertRowid);
   res.status(201).json({ active: true, ...nouvelle, joueurs: [] });
 });
-
-// Minimum d'intervention du MJ : il saisit juste N et K, tout le reste (les 9
-// emplacements : niveau croissant par position, cooperatifs repartis selon K) est deduit
-// et sauvegarde automatiquement, pret a lancer sans autre action. Le tirage reel de
-// l'objectif de chaque case se fait au lancement (voir distribuer), pas ici : il ne peut
-// donc jamais echouer faute de stock.
-app.post('/api/admin/partie-active/generer', exigerAdmin, gerer(async (req, res) => {
-  const partie = obtenirPartieActive(db);
-  if (!partie) return res.status(404).json({ error: 'Aucune partie active. Creez-en une dabord.' });
-  if (partie.statut !== 'en_attente') {
-    return res.status(400).json({ error: 'La partie a deja demarre, configuration verrouillee' });
-  }
-
-  const { nombreJoueursPrevu, nombreCoopParJoueur } = req.body;
-  const validation = validerNombreCooperatifs(nombreJoueursPrevu, nombreCoopParJoueur);
-  if (!validation.valide) {
-    return res.status(400).json({ error: validation.message });
-  }
-
-  const emplacements = genererEmplacements(nombreCoopParJoueur);
-
-  db.prepare(
-    'UPDATE parties SET nombre_joueurs_prevu = ?, nombre_coop_par_joueur = ? WHERE id = ?'
-  ).run(nombreJoueursPrevu, nombreCoopParJoueur, partie.id);
-
-  const upsert = db.prepare(
-    `INSERT INTO configuration_emplacements (partie_id, rang, position, niveau, type)
-     VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(partie_id, rang, position) DO UPDATE SET niveau = ?, type = ?`
-  );
-  emplacements.forEach((e) => {
-    upsert.run(partie.id, e.rang, e.position, e.niveau, e.type, e.niveau, e.type);
-  });
-
-  const synchronisation = await commiterEtPousser('Admin : configuration de la partie');
-  res.json({ ok: true, emplacements, synchronisation });
-}));
 
 // Seul declencheur du lancement : la partie ne demarre jamais toute seule, quoi que
 // fassent les joueurs en salle d'attente. Ce bouton est la seule action qui appelle

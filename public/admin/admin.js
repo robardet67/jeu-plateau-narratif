@@ -666,62 +666,10 @@ document.getElementById('case-tableau-de-bord').addEventListener('change', async
   afficherSync(resultat.synchronisation);
 });
 
-// --- Configuration de partie (Phase 4) ---
+// --- Salle d'attente / lancement de partie ---
 
 let intervalSuivi = null;
 let intervalJoueursConfig = null;
-
-// Simple apercu en lecture seule : niveau (deduit de la position) et statut cooperatif
-// (deduit de K). Le tirage reel de l'objectif de chaque case se fait au lancement de la
-// partie, directement dans tout le pool CSV du niveau demande.
-function construireTableEmplacements(emplacements) {
-  const corps = document.getElementById('corps-table-emplacements');
-  corps.innerHTML = '';
-
-  for (const rang of [1, 2, 3]) {
-    for (const position of [1, 2, 3]) {
-      const existant = emplacements.find((e) => e.rang === rang && e.position === position) || {};
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>Rang ${rang} - Position ${position}</td>
-        <td>${existant.niveau || '--'}</td>
-        <td>${existant.type === 'cooperatif' ? 'Cooperatif' : 'Normal'}</td>
-      `;
-      corps.appendChild(tr);
-    }
-  }
-}
-
-// Minimum d'intervention du MJ : des que N et K sont renseignes (y compris les valeurs
-// par defaut a l'ouverture), le serveur deduit ET enregistre automatiquement les 9
-// emplacements (niveau croissant par position, K cooperatifs repartis). La partie ne
-// demarre jamais toute seule : seul le bouton "Lancer la partie" plus bas le fait.
-async function genererConfigurationAutomatique() {
-  const messageEl = document.getElementById('message-config-partie');
-  messageEl.classList.add('cachee');
-
-  const nombreJoueursPrevu = Number(document.getElementById('config-nombre-joueurs').value);
-  const nombreCoopParJoueur = Number(document.getElementById('config-nombre-coop').value);
-  if (!nombreJoueursPrevu || Number.isNaN(nombreCoopParJoueur)) return;
-
-  try {
-    const resultat = await requeteJSON('/api/admin/partie-active/generer', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombreJoueursPrevu, nombreCoopParJoueur })
-    });
-    construireTableEmplacements(resultat.emplacements);
-    afficherSync(resultat.synchronisation);
-  } catch (err) {
-    messageEl.textContent = err.message;
-    messageEl.classList.remove('message-info');
-    messageEl.classList.add('message-erreur');
-    messageEl.classList.remove('cachee');
-  }
-}
-
-document.getElementById('config-nombre-joueurs').addEventListener('change', genererConfigurationAutomatique);
-document.getElementById('config-nombre-coop').addEventListener('change', genererConfigurationAutomatique);
 
 async function chargerPartieActive() {
   const partie = await requeteJSON('/api/admin/partie-active');
@@ -743,21 +691,10 @@ async function chargerPartieActive() {
 
   if (partie.statut === 'en_attente') {
     document.getElementById('partie-statut-badge').textContent = `(code interne : ${partie.code})`;
-    document.getElementById('config-nombre-joueurs').value = partie.nombre_joueurs_prevu || 4;
-    document.getElementById('config-nombre-coop').value = partie.nombre_coop_par_joueur || 0;
-
     afficherListeJoueursConfig(partie.joueurs);
     // Un joueur peut rejoindre a tout moment pendant que cet ecran reste ouvert : sans
     // ce rafraichissement, le MJ ne verrait pas les arrivees sans recharger la page.
     intervalJoueursConfig = setInterval(rafraichirJoueursConfig, 4000);
-
-    if (partie.emplacements && partie.emplacements.length === 9) {
-      construireTableEmplacements(partie.emplacements);
-    } else {
-      // Partie fraichement creee : genere tout de suite avec les valeurs par defaut
-      // affichees, pour que "Lancer la partie" soit utilisable sans aucune saisie.
-      await genererConfigurationAutomatique();
-    }
   } else if (partie.statut === 'en_cours') {
     await chargerSuiviPartie();
     intervalSuivi = setInterval(chargerSuiviPartie, 5000);
