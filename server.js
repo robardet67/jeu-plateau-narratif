@@ -620,13 +620,30 @@ function tenterLancementPartie(partieId) {
 function verifierLancementAutomatique(partieId) {
   const partie = db.prepare('SELECT * FROM parties WHERE id = ?').get(partieId);
   if (!partie || partie.statut !== 'en_attente') return;
-  if (!partie.nb_joueurs_attendus || partie.nb_joueurs_attendus <= 0) return;
+
+  if (!partie.nb_joueurs_attendus || partie.nb_joueurs_attendus <= 0) {
+    console.log('[auto-launch] desactive (nb_joueurs_attendus = 0)');
+    return;
+  }
 
   const joueurs = joueursDeLaPartie(partieId);
-  if (joueurs.length < partie.nb_joueurs_attendus) return;
-  if (joueurs.some((j) => !j.race_id)) return;
+  const nbAvecRace = joueurs.filter((j) => j.race_id).length;
+  console.log(
+    `[auto-launch] joueurs=${joueurs.length}/${partie.nb_joueurs_attendus}, avec race=${nbAvecRace}/${joueurs.length}`
+  );
 
-  tenterLancementPartie(partieId);
+  if (joueurs.length < partie.nb_joueurs_attendus) {
+    console.log(`[auto-launch] en attente de joueurs (${joueurs.length}/${partie.nb_joueurs_attendus})`);
+    return;
+  }
+  if (joueurs.some((j) => !j.race_id)) {
+    console.log(`[auto-launch] en attente du choix de race (${nbAvecRace}/${joueurs.length} prets)`);
+    return;
+  }
+
+  console.log('[auto-launch] conditions remplies, tentative de lancement...');
+  const resultat = tenterLancementPartie(partieId);
+  console.log('[auto-launch] resultat :', resultat);
 }
 
 // --- Cote joueur ---
@@ -700,6 +717,17 @@ app.post('/api/admin/partie-active/lancer', exigerAdmin, gerer(async (req, res) 
   const synchronisation = await commiterEtPousser('Admin : lancement de la partie');
   res.json({ ok: true, synchronisation });
 }));
+
+// Annule une partie en attente sans broadcast de classement (utile si la salle
+// d'attente est bloquee et que l'admin veut repartir de zero).
+app.post('/api/admin/partie-active/reinitialiser', exigerAdmin, (req, res) => {
+  const partie = obtenirPartieActive(db);
+  if (!partie) return res.status(404).json({ error: 'Aucune partie active' });
+
+  db.prepare("UPDATE parties SET statut = 'terminee' WHERE id = ?").run(partie.id);
+  io.to(partie.code).emit('partie_annulee', { message: 'La partie a ete annulee par le maitre du jeu.' });
+  res.json({ ok: true });
+});
 
 app.post('/api/admin/partie-active/terminer', exigerAdmin, (req, res) => {
   const partie = obtenirPartieActive(db);

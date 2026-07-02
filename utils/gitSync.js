@@ -17,7 +17,12 @@ async function cibleDePush() {
   const token = process.env.GITHUB_TOKEN;
   if (!token) return 'origin';
 
-  const urlDistante = (await executer('git', ['config', '--get', 'remote.origin.url'])).trim();
+  let urlDistante;
+  try {
+    urlDistante = (await executer('git', ['config', '--get', 'remote.origin.url'])).trim();
+  } catch {
+    return 'origin';
+  }
   if (!urlDistante.startsWith('https://')) return 'origin';
 
   const sansProtocole = urlDistante.replace('https://', '');
@@ -40,7 +45,6 @@ async function commiterEtPousser(message) {
 
     // Sur un serveur fraichement deploye (ex. Render), aucune identite git globale
     // n'est configuree : "git commit" echouerait sinon avec "Author identity unknown".
-    // On la fournit explicitement pour ce commit, sans toucher a la config globale.
     const nomAuteur = process.env.GIT_AUTHOR_NAME || 'Jeu Plateau Narratif (admin)';
     const emailAuteur = process.env.GIT_AUTHOR_EMAIL || 'admin@jeu-plateau-narratif.local';
 
@@ -57,12 +61,28 @@ async function commiterEtPousser(message) {
       throw erreurCommit;
     }
 
-    const cible = await cibleDePush();
+    let cible;
+    try {
+      cible = await cibleDePush();
+    } catch {
+      cible = 'origin';
+    }
+
     await executer('git', ['push', cible, 'HEAD:main']);
     return { pushed: true };
   } catch (erreur) {
-    console.error('Erreur de synchronisation GitHub :', erreur.message);
-    return { pushed: false, raison: erreur.message };
+    const msg = erreur.message || '';
+    // Remplace le message d'erreur git brut par un libelle lisible pour l'admin
+    const estErreurAcces =
+      msg.includes('Could not read from remote') ||
+      msg.includes('not appear to be a git repository') ||
+      msg.includes('Authentication failed') ||
+      msg.includes('could not read Username');
+    const raison = estErreurAcces
+      ? 'Push GitHub echoue : configurez GITHUB_TOKEN dans les variables d\'environnement du serveur'
+      : msg;
+    console.error('Erreur de synchronisation GitHub :', msg);
+    return { pushed: false, raison };
   }
 }
 

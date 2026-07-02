@@ -639,20 +639,41 @@ async function chargerPartieActive() {
 
 function afficherListeJoueursConfig(joueurs) {
   const listeJoueursConfig = document.getElementById('liste-joueurs-config');
-  listeJoueursConfig.innerHTML = joueurs
-    .map((j) => `<li>${j.pseudo}${j.race_id ? '' : ' (race non choisie)'}</li>`)
-    .join('') || '<li>Aucun joueur pour le moment</li>';
+  listeJoueursConfig.innerHTML =
+    joueurs
+      .map((j) => {
+        const statut = j.race_id ? '✓ race choisie' : '⏳ race non choisie';
+        const connexion = j.connecte ? '' : ' (hors ligne)';
+        return `<li>${j.pseudo}${connexion} — ${statut}</li>`;
+      })
+      .join('') || '<li>Aucun joueur pour le moment</li>';
 }
 
 function afficherProgressionLancement(partie) {
   const infoEl = document.getElementById('info-lancement-auto');
+  const joueurs = partie.joueurs || [];
   const nbAttendu = partie.nb_joueurs_attendus || 0;
+  const nbConnectes = joueurs.filter((j) => j.connecte).length;
+  const nbPrets = joueurs.filter((j) => j.race_id).length;
+
+  const lignes = [];
+
   if (nbAttendu > 0) {
-    const nbPrets = (partie.joueurs || []).filter((j) => j.race_id).length;
-    infoEl.textContent = `Lancement automatique quand ${nbPrets}/${nbAttendu} joueur(s) ont choisi leur race. Chaque joueur recevra 6 objectifs uniques (3 representants x 2).`;
+    lignes.push(`Lancement auto : ${joueurs.length}/${nbAttendu} joueur(s) inscrits, ${nbPrets}/${nbAttendu} ont choisi leur race.`);
+    if (joueurs.length >= nbAttendu && nbPrets < joueurs.length) {
+      lignes.push('En attente : certains joueurs n\'ont pas encore choisi leur race.');
+    } else if (joueurs.length < nbAttendu) {
+      lignes.push(`En attente : ${nbAttendu - joueurs.length} joueur(s) supplementaire(s) doivent rejoindre.`);
+    }
   } else {
-    infoEl.textContent = 'Aucun lancement automatique configure. Creez une nouvelle partie avec un nombre de joueurs cible pour activer le lancement automatique.';
+    lignes.push('Lancement automatique desactive (0 joueurs attendus configure). Utilisez le bouton "Forcer le lancement".');
   }
+
+  if (nbConnectes < joueurs.length) {
+    lignes.push(`Attention : ${joueurs.length - nbConnectes} joueur(s) inscrit(s) mais non connecte(s) via socket.`);
+  }
+
+  infoEl.textContent = lignes.join(' ');
 }
 
 async function rafraichirJoueursConfig() {
@@ -682,6 +703,25 @@ async function chargerSuiviPartie() {
     )
     .join('');
 }
+
+document.getElementById('btn-forcer-lancement').addEventListener('click', async () => {
+  if (!confirm('Forcer le lancement maintenant ? La partie demarrera meme si tous les joueurs n\'ont pas choisi leur race.')) return;
+  const msgEl = document.getElementById('message-lancement');
+  msgEl.classList.add('cachee');
+  try {
+    await requeteJSON('/api/admin/partie-active/lancer', { method: 'POST' });
+    await chargerPartieActive();
+  } catch (err) {
+    msgEl.textContent = err.message;
+    msgEl.classList.remove('cachee');
+  }
+});
+
+document.getElementById('btn-reinitialiser-partie').addEventListener('click', async () => {
+  if (!confirm('Annuler cette partie et revenir a la creation ? Les joueurs connectes seront deconnectes.')) return;
+  await requeteJSON('/api/admin/partie-active/reinitialiser', { method: 'POST' });
+  await chargerPartieActive();
+});
 
 document.getElementById('btn-creer-partie-active').addEventListener('click', async () => {
   const nbJoueurs = parseInt(document.getElementById('config-nb-joueurs').value) || 0;
