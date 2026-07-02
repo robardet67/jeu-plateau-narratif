@@ -327,11 +327,6 @@ function afficherJoueurs(joueurs) {
   }
 }
 
-async function refreshJoueurs() {
-  if (!etatCourant.code) return;
-  const data = await requeteJSON(`/api/parties/${etatCourant.code}`).catch(() => null);
-  if (data) afficherJoueurs(data.joueurs);
-}
 
 // --- Scenario (defilement reserve au maitre du jeu) ---
 
@@ -433,8 +428,17 @@ socket.on('etat_partie', ({ partie, joueurs }) => {
   }
 });
 
-socket.on('joueur_maj', () => refreshJoueurs());
-socket.on('joueur_deconnecte', () => refreshJoueurs());
+socket.on('joueur_maj', ({ joueurId, raceId }) => {
+  const joueur = joueursPartieEnCache.find((j) => j.id === joueurId);
+  if (joueur) joueur.race_id = raceId;
+  afficherJoueurs(joueursPartieEnCache);
+});
+
+socket.on('joueur_deconnecte', ({ joueurId }) => {
+  const joueur = joueursPartieEnCache.find((j) => j.id === joueurId);
+  if (joueur) joueur.connecte = 0;
+  afficherJoueurs(joueursPartieEnCache);
+});
 socket.on('erreur', ({ message }) => alert(message));
 socket.on('notification', ({ message }) => afficherNotification(message));
 

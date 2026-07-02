@@ -161,10 +161,9 @@ function initDatabase() {
   }
 
   assurerColonne(db, 'parties', 'scenario_index', "INTEGER NOT NULL DEFAULT 0");
+  assurerColonne(db, 'parties', 'nb_joueurs_attendus', 'INTEGER NOT NULL DEFAULT 0');
+  assurerColonne(db, 'parties', 'nb_objectifs_cooperatifs', 'INTEGER NOT NULL DEFAULT 0');
 
-  // Le MJ ne configure plus rien en amont (nombre de joueurs, cooperatifs, emplacements) :
-  // "Lancer la partie" tire directement au hasard dans tout le pool pour les joueurs
-  // presents a cet instant (voir utils/distribution.js).
   retirerColonne(db, 'parties', 'nombre_joueurs_prevu');
   retirerColonne(db, 'parties', 'nombre_coop_par_joueur');
   db.exec('DROP TABLE IF EXISTS configuration_emplacements');

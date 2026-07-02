@@ -589,9 +589,6 @@ function joueursDeLaPartie(partieId) {
     .all(partieId);
 }
 
-// Les joueurs patientent en salle d'attente quoi qu'ils fassent : rien ne demarre tant
-// que le MJ n'a pas clique sur "Lancer la partie" dans l'admin (seul appelant de cette
-// fonction). La partie demarre avec les joueurs presents a cet instant.
 function tenterLancementPartie(partieId) {
   const partie = db.prepare('SELECT * FROM parties WHERE id = ?').get(partieId);
   if (!partie || partie.statut !== 'en_attente') {
@@ -608,16 +605,45 @@ function tenterLancementPartie(partieId) {
   }
 
   try {
-    distribuer(db, { partieId, joueurIds: joueurs.map((j) => j.id) });
+    distribuer(db, {
+      partieId,
+      joueurIds: joueurs.map((j) => j.id),
+      nbCoopParJoueur: partie.nb_objectifs_cooperatifs || 0
+    });
   } catch (erreur) {
     return { lance: false, raison: erreur.message };
   }
 
   db.prepare("UPDATE parties SET statut = 'en_cours' WHERE id = ?").run(partieId);
   joueurs.forEach((j) => deverrouillerRang(db, j.id, partieId, 1));
+
+  // Broadcast a toute la room : les clients mettent a jour leur etatCourant.partieStatut
   io.to(partie.code).emit('partie_lancee');
 
+  // Pousse directement etat_joueur a chaque socket connecte : contourne le cache client
+  // potentiellement obsolete (race_id non mis a jour) et garantit le demarrage simultanement.
+  const joueursConnectes = db
+    .prepare('SELECT id, socket_id FROM joueurs WHERE partie_id = ? AND socket_id IS NOT NULL')
+    .all(partieId);
+  joueursConnectes.forEach((j) => {
+    io.to(j.socket_id).emit('etat_joueur', obtenirEtatJoueur(db, j.id));
+  });
+
   return { lance: true };
+}
+
+// Lancement automatique : declenche tenterLancementPartie si le nombre de joueurs attendus
+// est atteint et que tous ont choisi leur race.
+function verifierLancementAutomatique(partieId) {
+  const partie = db.prepare('SELECT * FROM parties WHERE id = ?').get(partieId);
+  if (!partie || partie.statut !== 'en_attente') return;
+  if (!partie.nb_joueurs_attendus || partie.nb_joueurs_attendus <= 0) return;
+
+  const joueurs = joueursDeLaPartie(partieId);
+  if (joueurs.length < partie.nb_joueurs_attendus) return;
+  if (joueurs.some((j) => !j.race_id)) return;
+
+  tenterLancementPartie(partieId);
 }
 
 // --- Cote joueur ---
@@ -662,12 +688,17 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
     return res.json({ active: true, ...existante, joueurs: joueursDeLaPartie(existante.id) });
   }
 
+  const nbJoueursAttendu = parseInt(req.body.nb_joueurs_attendus) || 0;
+  const nbCoop = parseInt(req.body.nb_objectifs_cooperatifs) || 0;
+
   let code;
   do {
     code = genererCodePartie();
   } while (db.prepare('SELECT id FROM parties WHERE code = ?').get(code));
 
-  const partie = db.prepare('INSERT INTO parties (code, nom) VALUES (?, ?)').run(code, `Partie ${code}`);
+  const partie = db
+    .prepare('INSERT INTO parties (code, nom, nb_joueurs_attendus, nb_objectifs_cooperatifs) VALUES (?, ?, ?, ?)')
+    .run(code, `Partie ${code}`, nbJoueursAttendu, nbCoop);
   const nouvelle = db.prepare('SELECT * FROM parties WHERE id = ?').get(partie.lastInsertRowid);
   res.status(201).json({ active: true, ...nouvelle, joueurs: [] });
 });
@@ -747,6 +778,9 @@ io.on('connection', (socket) => {
       .all(partie.id);
 
     io.to(code.toUpperCase()).emit('etat_partie', { partie, joueurs });
+
+    // Un joueur vient de se connecter : verifier si le lancement automatique peut s'enclencher
+    verifierLancementAutomatique(partie.id);
   });
 
   // Le joueur ne choisit que sa race : ses 3 representants (rangs 1-3) se debloquent
@@ -783,6 +817,11 @@ io.on('connection', (socket) => {
     socket.emit('etat_joueur', obtenirEtatJoueur(db, joueurId));
     if (socket.data.code) {
       io.to(socket.data.code).emit('joueur_maj', { joueurId, raceId });
+    }
+
+    // Une race vient d'etre choisie : verifier si le lancement automatique peut s'enclencher
+    if (partieDuJoueur && partieDuJoueur.statut === 'en_attente') {
+      verifierLancementAutomatique(joueurActuel.partie_id);
     }
   });
 

@@ -211,23 +211,37 @@
 
     <section id="onglet-partie" class="contenu-onglet cachee">
       <div id="partie-aucune" class="carte">
-        <h2>Aucune partie active</h2>
-        <button id="btn-creer-partie-active">Creer une nouvelle partie</button>
+        <h2>Creer une nouvelle partie</h2>
+        <div class="formulaire">
+          <label>Nombre de joueurs attendus pour le lancement automatique
+            <input id="config-nb-joueurs" type="number" min="0" max="20" value="2" />
+          </label>
+          <label>Nombre d'objectifs cooperatifs par joueur (sur 9)
+            <input id="config-nb-coop" type="number" min="0" max="9" value="0" />
+          </label>
+        </div>
+        <p class="astuce">
+          La partie se lancera automatiquement des que le nombre de joueurs configures
+          auront tous choisi leur race. Laissez 0 joueurs attendus pour un lancement
+          manuel uniquement.
+        </p>
+        <button id="btn-creer-partie-active">Creer la partie</button>
       </div>
 
       <div id="partie-configuration" class="carte cachee">
         <h2>Partie en attente <span id="partie-statut-badge" class="compteur"></span></h2>
 
+        <p id="info-lancement-auto" class="astuce"></p>
+
         <h3>Joueurs presents</h3>
         <ul id="liste-joueurs-config" class="liste-elements"></ul>
 
         <p class="astuce">
-          Les joueurs patientent en salle d'attente : rien ne demarre tant que vous n'avez
-          pas clique sur ce bouton. Chaque joueur present recevra ses objectifs par tirage
-          aleatoire au lancement.
+          Le bouton ci-dessous sert de secours si le lancement automatique ne se declenche
+          pas (ex. : un joueur a rejoint sans choisir sa race).
         </p>
         <div class="formulaire-ligne">
-          <button id="btn-lancer-partie">Lancer la partie</button>
+          <button id="btn-lancer-partie" class="bouton-secondaire">Lancer manuellement (secours)</button>
         </div>
         <p id="message-lancement" class="message-erreur cachee"></p>
       </div>

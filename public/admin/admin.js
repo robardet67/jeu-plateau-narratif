@@ -692,8 +692,7 @@ async function chargerPartieActive() {
   if (partie.statut === 'en_attente') {
     document.getElementById('partie-statut-badge').textContent = `(code interne : ${partie.code})`;
     afficherListeJoueursConfig(partie.joueurs);
-    // Un joueur peut rejoindre a tout moment pendant que cet ecran reste ouvert : sans
-    // ce rafraichissement, le MJ ne verrait pas les arrivees sans recharger la page.
+    afficherProgressionLancement(partie);
     intervalJoueursConfig = setInterval(rafraichirJoueursConfig, 4000);
   } else if (partie.statut === 'en_cours') {
     await chargerSuiviPartie();
@@ -708,11 +707,28 @@ function afficherListeJoueursConfig(joueurs) {
     .join('') || '<li>Aucun joueur pour le moment</li>';
 }
 
+function afficherProgressionLancement(partie) {
+  const infoEl = document.getElementById('info-lancement-auto');
+  const nbAttendu = partie.nb_joueurs_attendus || 0;
+  if (nbAttendu > 0) {
+    const nbPrets = (partie.joueurs || []).filter((j) => j.race_id).length;
+    infoEl.textContent = `Lancement automatique : ${nbPrets} / ${nbAttendu} joueur(s) prets (race choisie).`;
+  } else {
+    infoEl.textContent = 'Lancement manuel uniquement (aucun nombre de joueurs cible configure).';
+  }
+}
+
 async function rafraichirJoueursConfig() {
   try {
     const partie = await requeteJSON('/api/admin/partie-active');
-    if (!partie.active || partie.statut !== 'en_attente') return;
+    if (!partie.active) return;
+    if (partie.statut !== 'en_attente') {
+      // La partie a ete lancee automatiquement pendant l'attente : recharger la vue complete
+      await chargerPartieActive();
+      return;
+    }
     afficherListeJoueursConfig(partie.joueurs);
+    afficherProgressionLancement(partie);
   } catch (err) {
     // Rafraichissement silencieux en arriere-plan : une erreur ponctuelle n'a pas besoin
     // d'interrompre le MJ.
@@ -731,7 +747,13 @@ async function chargerSuiviPartie() {
 }
 
 document.getElementById('btn-creer-partie-active').addEventListener('click', async () => {
-  await requeteJSON('/api/admin/partie-active/creer', { method: 'POST' });
+  const nbJoueurs = parseInt(document.getElementById('config-nb-joueurs').value) || 0;
+  const nbCoop = parseInt(document.getElementById('config-nb-coop').value) || 0;
+  await requeteJSON('/api/admin/partie-active/creer', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nb_joueurs_attendus: nbJoueurs, nb_objectifs_cooperatifs: nbCoop })
+  });
   await chargerPartieActive();
 });
 
