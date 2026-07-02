@@ -589,11 +589,9 @@ function joueursDeLaPartie(partieId) {
     .all(partieId);
 }
 
-// Le MJ configure la partie en amont (nombre de joueurs, emplacements). Le jour J, il
-// rejoint comme un joueur normal : la partie se lance donc automatiquement des que
-// l'effectif attendu est complet et que chacun a choisi une race distincte, sans bouton
-// a cliquer. Reutilise pour le bouton manuel "Lancer la partie" (filet de securite/reprise
-// apres reconfiguration, ex. un joueur absent le jour J).
+// Le MJ configure la partie en amont (nombre de joueurs, emplacements). Les joueurs
+// patientent en salle d'attente quoi qu'ils fassent : rien ne demarre tant que le MJ n'a
+// pas clique sur "Lancer la partie" dans l'admin (seul appelant de cette fonction).
 function tenterLancementPartie(partieId) {
   const partie = db.prepare('SELECT * FROM parties WHERE id = ?').get(partieId);
   if (!partie || partie.statut !== 'en_attente') {
@@ -731,17 +729,13 @@ app.post('/api/admin/partie-active/generer', exigerAdmin, gerer(async (req, res)
     upsert.run(partie.id, e.rang, e.position, e.niveau, e.type, e.niveau, e.type);
   });
 
-  // Si l'effectif configure correspond deja aux joueurs presents (ex: le MJ reduit le
-  // nombre de joueurs suite a une absence), la partie peut se lancer immediatement.
-  const lancement = tenterLancementPartie(partie.id);
-
   const synchronisation = await commiterEtPousser('Admin : configuration de la partie');
-  res.json({ ok: true, emplacements, lancement, synchronisation });
+  res.json({ ok: true, emplacements, synchronisation });
 }));
 
-// Bouton manuel de secours (l'admin peut forcer une tentative de lancement, ex. apres
-// avoir reconfigure). En temps normal la partie se lance toute seule (voir
-// tenterLancementPartie, appelee automatiquement des qu'un joueur choisit sa race).
+// Seul declencheur du lancement : la partie ne demarre jamais toute seule, quoi que
+// fassent les joueurs en salle d'attente. Ce bouton est la seule action qui appelle
+// tenterLancementPartie.
 app.post('/api/admin/partie-active/lancer', exigerAdmin, gerer(async (req, res) => {
   const partie = obtenirPartieActive(db);
   if (!partie) return res.status(404).json({ error: 'Aucune partie active' });
@@ -838,11 +832,6 @@ io.on('connection', (socket) => {
       rangUn ? rangUn.id : null,
       joueurId
     );
-
-    // Tente un lancement automatique : des que tous les joueurs attendus ont choisi une
-    // race distincte, la partie demarre toute seule (le MJ configure en amont, il n'a
-    // rien a cliquer le jour J). Diffuse 'partie_lancee' a la partie si ca demarre.
-    tenterLancementPartie(joueurActuel.partie_id);
 
     // Les cases de grille (les 9 emplacements) sont creees au lancement de la partie
     // (voir utils/distribution.js), pas ici : tant que la partie est 'en_attente', il

@@ -694,8 +694,8 @@ function construireTableEmplacements(emplacements) {
 
 // Minimum d'intervention du MJ : des que N et K sont renseignes (y compris les valeurs
 // par defaut a l'ouverture), le serveur deduit ET enregistre automatiquement les 9
-// emplacements (niveau croissant par position, K cooperatifs repartis). Le bouton
-// "Lancer la partie" est donc utilisable immediatement.
+// emplacements (niveau croissant par position, K cooperatifs repartis). La partie ne
+// demarre jamais toute seule : seul le bouton "Lancer la partie" plus bas le fait.
 async function genererConfigurationAutomatique() {
   const messageEl = document.getElementById('message-config-partie');
   messageEl.classList.add('cachee');
@@ -712,14 +712,6 @@ async function genererConfigurationAutomatique() {
     });
     construireTableEmplacements(resultat.emplacements);
     afficherSync(resultat.synchronisation);
-
-    if (resultat.lancement?.lance) {
-      messageEl.textContent = 'Configuration enregistree. Effectif complet : la partie vient de demarrer !';
-      messageEl.classList.remove('message-erreur');
-      messageEl.classList.add('message-info');
-      messageEl.classList.remove('cachee');
-      await chargerPartieActive();
-    }
   } catch (err) {
     messageEl.textContent = err.message;
     messageEl.classList.remove('message-info');
