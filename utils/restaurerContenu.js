@@ -17,7 +17,7 @@ function restaurerSiVide(db) {
 
   let contenu;
   try {
-    contenu = JSON.parse(fs.readFileSync(CHEMIN_EXPORT, 'utf-8'));
+    contenu = JSON.parse(fs.readFileSync(CHEMIN_EXPORT, 'utf-8').replace(/^﻿/, ''));
   } catch (erreur) {
     console.error('Sauvegarde JSON illisible :', erreur.message);
     return { restaure: false, raison: 'fichier de sauvegarde invalide' };

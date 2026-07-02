@@ -1,221 +1,221 @@
-﻿{
-    "genere_le":  "2026-07-02T12:12:01.608Z",
-    "races":  [
-                  {
-                      "id":  1,
-                      "nom":  "gobelin",
-                      "image_fond":  "/uploads/1782912265324-b54c560af3b939ab.png",
-                      "created_at":  "2026-07-01 13:18:59"
-                  },
-                  {
-                      "id":  2,
-                      "nom":  "Elfe noir",
-                      "image_fond":  "/uploads/1782912281584-1d204ba93e9df42e.png",
-                      "created_at":  "2026-07-01 13:19:04"
-                  }
-              ],
-    "representants":  [
-                          {
-                              "id":  1,
-                              "race_id":  1,
-                              "rang":  1,
-                              "nom":  "standard",
-                              "description":  null,
-                              "image_depart":  "/uploads/1782911962108-7a9961a89ca50def.png",
-                              "image_sourire":  "/uploads/1782911962114-dbac828dc51f8643.png",
-                              "created_at":  "2026-07-01 13:19:22"
-                          },
-                          {
-                              "id":  2,
-                              "race_id":  1,
-                              "rang":  2,
-                              "nom":  "gobelin magicien",
-                              "description":  null,
-                              "image_depart":  "/uploads/1782911985949-a3943915f4724ae0.png",
-                              "image_sourire":  "/uploads/1782911985963-375f92b7d2031b84.png",
-                              "created_at":  "2026-07-01 13:19:45"
-                          },
-                          {
-                              "id":  3,
-                              "race_id":  1,
-                              "rang":  3,
-                              "nom":  "gobelin chef",
-                              "description":  null,
-                              "image_depart":  "/uploads/1782912000071-e4859813bfd6f88b.png",
-                              "image_sourire":  "/uploads/1782912000098-0e0387d4384d10d8.png",
-                              "created_at":  "2026-07-01 13:20:00"
-                          },
-                          {
-                              "id":  4,
-                              "race_id":  2,
-                              "rang":  1,
-                              "nom":  "standard",
-                              "description":  null,
-                              "image_depart":  "/uploads/1782912017473-acf5ac7e995806ed.png",
-                              "image_sourire":  "/uploads/1782912017478-0237ff46c4de704c.png",
-                              "created_at":  "2026-07-01 13:20:17"
-                          },
-                          {
-                              "id":  5,
-                              "race_id":  2,
-                              "rang":  2,
-                              "nom":  "elfe noir magicien",
-                              "description":  null,
-                              "image_depart":  "/uploads/1782912053687-5fd7f9b2d7f344d5.png",
-                              "image_sourire":  "/uploads/1782912053691-c0f6162b3b713016.png",
-                              "created_at":  "2026-07-01 13:20:53"
-                          }
-                      ],
-    "dialogues":  [
-                      {
-                          "id":  1,
-                          "representant_id":  1,
-                          "contexte":  "comunautÃ© de gobelin",
-                          "texte":  "bienvenue chez les gobelin",
-                          "created_at":  "2026-07-01 13:21:31"
-                      },
-                      {
-                          "id":  2,
-                          "representant_id":  2,
-                          "contexte":  "comunautÃ© de gobelin",
-                          "texte":  "bienvenu {nom} chez les gobelin magicien",
-                          "created_at":  "2026-07-01 13:22:09"
-                      },
-                      {
-                          "id":  3,
-                          "representant_id":  2,
-                          "contexte":  "comunautÃ© de gobelin",
-                          "texte":  "{nom} , nous t\u0027attendions aux royaume de gobelin",
-                          "created_at":  "2026-07-01 13:22:36"
-                      },
-                      {
-                          "id":  4,
-                          "representant_id":  4,
-                          "contexte":  "comunautÃ© d\u0027elfe noir ",
-                          "texte":  "bienvenu chez les elfe noirs",
-                          "created_at":  "2026-07-01 13:23:08"
-                      },
-                      {
-                          "id":  5,
-                          "representant_id":  5,
-                          "contexte":  "comunautÃ© d \u0027elfes noirs",
-                          "texte":  "bienvenu chez les elfe noirs magicien",
-                          "created_at":  "2026-07-01 13:23:29"
-                      },
-                      {
-                          "id":  6,
-                          "representant_id":  5,
-                          "contexte":  "La communautÃ© Ã  besoin de valeureux aventurier pour l\u0027aider dans ses quÃªtes.",
-                          "texte":  "bienvenu {nom} chez les elfe noirs le royaume",
-                          "created_at":  "2026-07-01 13:23:56"
-                      }
-                  ],
-    "objectifs":  [
-                      {
-                          "id":  1,
-                          "description":  "Dï¿½poser uneï¿½ pï¿½ee bleu au village.",
-                          "created_at":  "2026-07-01 13:24:09"
-                      },
-                      {
-                          "id":  2,
-                          "description":  "ramener une larve de ciraya au lieu7.",
-                          "created_at":  "2026-07-01 13:24:09"
-                      },
-                      {
-                          "id":  3,
-                          "description":  "Tuer un monstre de niveau 4.",
-                          "created_at":  "2026-07-01 13:24:09"
-                      },
-                      {
-                          "id":  4,
-                          "description":  "Dï¿½poser un bouclier bleu au village.",
-                          "created_at":  "2026-07-01 13:24:09"
-                      },
-                      {
-                          "id":  5,
-                          "description":  "ramener une pierre bleue de ciraya au lieu7.",
-                          "created_at":  "2026-07-01 13:24:09"
-                      },
-                      {
-                          "id":  6,
-                          "description":  "Explorer une crypte de niveau 4.",
-                          "created_at":  "2026-07-01 13:24:09"
-                      },
-                      {
-                          "id":  7,
-                          "description":  "Dï¿½poser un outil au village au village.",
-                          "created_at":  "2026-07-01 13:24:09"
-                      },
-                      {
-                          "id":  8,
-                          "description":  "ramener une larve de ciraya au lieu7.",
-                          "created_at":  "2026-07-01 13:24:09"
-                      },
-                      {
-                          "id":  9,
-                          "description":  "capturer un animal.",
-                          "created_at":  "2026-07-01 13:24:09"
-                      },
-                      {
-                          "id":  10,
-                          "description":  "Dï¿½poser une pierre rouge bleu au village.",
-                          "created_at":  "2026-07-01 13:24:09"
-                      },
-                      {
-                          "id":  11,
-                          "description":  "ramener une pierre rouge au lieu7.",
-                          "created_at":  "2026-07-01 13:24:09"
-                      },
-                      {
-                          "id":  12,
-                          "description":  "ramener au lieu 4 le sacre de Ramok.",
-                          "created_at":  "2026-07-01 13:24:09"
-                      },
-                      {
-                          "id":  13,
-                          "description":  "derober un objet commun a un autre joueur.",
-                          "created_at":  "2026-07-01 13:24:09"
-                      },
-                      {
-                          "id":  14,
-                          "description":  "Dï¿½poser une pierre verte au village.",
-                          "created_at":  "2026-07-01 13:24:09"
-                      },
-                      {
-                          "id":  15,
-                          "description":  "ramener deux outils au lieu7.",
-                          "created_at":  "2026-07-01 13:24:09"
-                      },
-                      {
-                          "id":  16,
-                          "description":  "ramener au lieu 4 la tete de cyraya.",
-                          "created_at":  "2026-07-01 13:24:09"
-                      }
-                  ],
-    "scenario_images":  [
-                            {
-                                "id":  1,
-                                "ordre":  1,
-                                "image":  "/uploads/1782912290624-b839748e8f8ea3a6.png",
-                                "created_at":  "2026-07-01 13:24:50"
-                            },
-                            {
-                                "id":  2,
-                                "ordre":  2,
-                                "image":  "/uploads/1782912297041-f95675aa046a97c3.png",
-                                "created_at":  "2026-07-01 13:24:57"
-                            },
-                            {
-                                "id":  3,
-                                "ordre":  3,
-                                "image":  "/uploads/1782912302393-17a909321bd5d2a0.png",
-                                "created_at":  "2026-07-01 13:25:02"
-                            },
-                            {
-                                "id":  4,
-                                "ordre":  4,
-                                "image":  "/uploads/1782912311294-e490a1d3f182f114.png",
-                                "created_at":  "2026-07-01 13:25:11"
-                            }
-                        ]
+{
+  "genere_le": "2026-07-02T12:12:01.608Z",
+  "races": [
+    {
+      "id": 1,
+      "nom": "gobelin",
+      "image_fond": "/uploads/1782912265324-b54c560af3b939ab.png",
+      "created_at": "2026-07-01 13:18:59"
+    },
+    {
+      "id": 2,
+      "nom": "Elfe noir",
+      "image_fond": "/uploads/1782912281584-1d204ba93e9df42e.png",
+      "created_at": "2026-07-01 13:19:04"
+    }
+  ],
+  "representants": [
+    {
+      "id": 1,
+      "race_id": 1,
+      "rang": 1,
+      "nom": "standard",
+      "description": null,
+      "image_depart": "/uploads/1782911962108-7a9961a89ca50def.png",
+      "image_sourire": "/uploads/1782911962114-dbac828dc51f8643.png",
+      "created_at": "2026-07-01 13:19:22"
+    },
+    {
+      "id": 2,
+      "race_id": 1,
+      "rang": 2,
+      "nom": "gobelin magicien",
+      "description": null,
+      "image_depart": "/uploads/1782911985949-a3943915f4724ae0.png",
+      "image_sourire": "/uploads/1782911985963-375f92b7d2031b84.png",
+      "created_at": "2026-07-01 13:19:45"
+    },
+    {
+      "id": 3,
+      "race_id": 1,
+      "rang": 3,
+      "nom": "gobelin chef",
+      "description": null,
+      "image_depart": "/uploads/1782912000071-e4859813bfd6f88b.png",
+      "image_sourire": "/uploads/1782912000098-0e0387d4384d10d8.png",
+      "created_at": "2026-07-01 13:20:00"
+    },
+    {
+      "id": 4,
+      "race_id": 2,
+      "rang": 1,
+      "nom": "standard",
+      "description": null,
+      "image_depart": "/uploads/1782912017473-acf5ac7e995806ed.png",
+      "image_sourire": "/uploads/1782912017478-0237ff46c4de704c.png",
+      "created_at": "2026-07-01 13:20:17"
+    },
+    {
+      "id": 5,
+      "race_id": 2,
+      "rang": 2,
+      "nom": "elfe noir magicien",
+      "description": null,
+      "image_depart": "/uploads/1782912053687-5fd7f9b2d7f344d5.png",
+      "image_sourire": "/uploads/1782912053691-c0f6162b3b713016.png",
+      "created_at": "2026-07-01 13:20:53"
+    }
+  ],
+  "dialogues": [
+    {
+      "id": 1,
+      "representant_id": 1,
+      "contexte": "comunautÃ© de gobelin",
+      "texte": "bienvenue chez les gobelin",
+      "created_at": "2026-07-01 13:21:31"
+    },
+    {
+      "id": 2,
+      "representant_id": 2,
+      "contexte": "comunautÃ© de gobelin",
+      "texte": "bienvenu {nom} chez les gobelin magicien",
+      "created_at": "2026-07-01 13:22:09"
+    },
+    {
+      "id": 3,
+      "representant_id": 2,
+      "contexte": "comunautÃ© de gobelin",
+      "texte": "{nom} , nous t'attendions aux royaume de gobelin",
+      "created_at": "2026-07-01 13:22:36"
+    },
+    {
+      "id": 4,
+      "representant_id": 4,
+      "contexte": "comunautÃ© d'elfe noir ",
+      "texte": "bienvenu chez les elfe noirs",
+      "created_at": "2026-07-01 13:23:08"
+    },
+    {
+      "id": 5,
+      "representant_id": 5,
+      "contexte": "comunautÃ© d 'elfes noirs",
+      "texte": "bienvenu chez les elfe noirs magicien",
+      "created_at": "2026-07-01 13:23:29"
+    },
+    {
+      "id": 6,
+      "representant_id": 5,
+      "contexte": "La communautÃ© Ã  besoin de valeureux aventurier pour l'aider dans ses quÃªtes.",
+      "texte": "bienvenu {nom} chez les elfe noirs le royaume",
+      "created_at": "2026-07-01 13:23:56"
+    }
+  ],
+  "objectifs": [
+    {
+      "id": 1,
+      "description": "Dï¿½poser uneï¿½ pï¿½ee bleu au village.",
+      "created_at": "2026-07-01 13:24:09"
+    },
+    {
+      "id": 2,
+      "description": "ramener une larve de ciraya au lieu7.",
+      "created_at": "2026-07-01 13:24:09"
+    },
+    {
+      "id": 3,
+      "description": "Tuer un monstre de niveau 4.",
+      "created_at": "2026-07-01 13:24:09"
+    },
+    {
+      "id": 4,
+      "description": "Dï¿½poser un bouclier bleu au village.",
+      "created_at": "2026-07-01 13:24:09"
+    },
+    {
+      "id": 5,
+      "description": "ramener une pierre bleue de ciraya au lieu7.",
+      "created_at": "2026-07-01 13:24:09"
+    },
+    {
+      "id": 6,
+      "description": "Explorer une crypte de niveau 4.",
+      "created_at": "2026-07-01 13:24:09"
+    },
+    {
+      "id": 7,
+      "description": "Dï¿½poser un outil au village au village.",
+      "created_at": "2026-07-01 13:24:09"
+    },
+    {
+      "id": 8,
+      "description": "ramener une larve de ciraya au lieu7.",
+      "created_at": "2026-07-01 13:24:09"
+    },
+    {
+      "id": 9,
+      "description": "capturer un animal.",
+      "created_at": "2026-07-01 13:24:09"
+    },
+    {
+      "id": 10,
+      "description": "Dï¿½poser une pierre rouge bleu au village.",
+      "created_at": "2026-07-01 13:24:09"
+    },
+    {
+      "id": 11,
+      "description": "ramener une pierre rouge au lieu7.",
+      "created_at": "2026-07-01 13:24:09"
+    },
+    {
+      "id": 12,
+      "description": "ramener au lieu 4 le sacre de Ramok.",
+      "created_at": "2026-07-01 13:24:09"
+    },
+    {
+      "id": 13,
+      "description": "derober un objet commun a un autre joueur.",
+      "created_at": "2026-07-01 13:24:09"
+    },
+    {
+      "id": 14,
+      "description": "Dï¿½poser une pierre verte au village.",
+      "created_at": "2026-07-01 13:24:09"
+    },
+    {
+      "id": 15,
+      "description": "ramener deux outils au lieu7.",
+      "created_at": "2026-07-01 13:24:09"
+    },
+    {
+      "id": 16,
+      "description": "ramener au lieu 4 la tete de cyraya.",
+      "created_at": "2026-07-01 13:24:09"
+    }
+  ],
+  "scenario_images": [
+    {
+      "id": 1,
+      "ordre": 1,
+      "image": "/uploads/1782912290624-b839748e8f8ea3a6.png",
+      "created_at": "2026-07-01 13:24:50"
+    },
+    {
+      "id": 2,
+      "ordre": 2,
+      "image": "/uploads/1782912297041-f95675aa046a97c3.png",
+      "created_at": "2026-07-01 13:24:57"
+    },
+    {
+      "id": 3,
+      "ordre": 3,
+      "image": "/uploads/1782912302393-17a909321bd5d2a0.png",
+      "created_at": "2026-07-01 13:25:02"
+    },
+    {
+      "id": 4,
+      "ordre": 4,
+      "image": "/uploads/1782912311294-e490a1d3f182f114.png",
+      "created_at": "2026-07-01 13:25:11"
+    }
+  ]
 }
