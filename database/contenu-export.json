@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-03T13:11:03.431Z",
+  "genere_le": "2026-07-03T13:12:45.158Z",
   "races": [
     {
       "id": 1,
@@ -135,6 +135,16 @@
       "image_sourire": "/uploads/1783068501409-61c88ce26b66023c.png",
       "dialogue": "bienvenue chez les representant de la rune",
       "created_at": "2026-07-03 08:48:21"
+    },
+    {
+      "id": 2,
+      "allegiance_id": 1,
+      "rang": 2,
+      "nom": "standard",
+      "image_depart": "/uploads/1783084365146-f09d0b4189f855f6.png",
+      "image_sourire": "/uploads/1783084365155-de5b92df5e11cad6.png",
+      "dialogue": null,
+      "created_at": "2026-07-03 13:12:45"
     }
   ],
   "scenario_images": [
