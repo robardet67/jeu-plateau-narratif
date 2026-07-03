@@ -949,15 +949,70 @@ function lireConfigRace() {
   return { objectifs, niveaux };
 }
 
+// Config allegeance : objectifs par rang + niveau par slot
+function mettreAJourConfigAllegeance(nb) {
+  const conteneur = document.getElementById('config-obj-allegeance');
+  conteneur.innerHTML = '';
+  for (let rang = 1; rang <= 3; rang++) {
+    const actif = rang <= nb;
+    const div = document.createElement('div');
+    div.style.cssText = `opacity:${actif ? 1 : 0.4};margin-bottom:.6rem`;
+    div.innerHTML = `
+      <label>Rep ${rang} — objectifs :
+        <input type="number" min="1" max="3" value="2"
+               id="alleg-nb-obj-rang-${rang}" style="width:3.5rem" ${actif ? '' : 'disabled'} />
+      </label>
+      <div id="alleg-niveaux-rang-${rang}" style="margin-left:1rem;margin-top:.2rem;display:flex;gap:.5rem;flex-wrap:wrap"></div>
+    `;
+    conteneur.appendChild(div);
+
+    if (actif) {
+      const inputNb = div.querySelector(`#alleg-nb-obj-rang-${rang}`);
+      const niveauxDiv = div.querySelector(`#alleg-niveaux-rang-${rang}`);
+
+      const rafraichirNiveaux = () => {
+        const n = parseInt(inputNb.value) || 0;
+        niveauxDiv.innerHTML = '';
+        for (let pos = 1; pos <= n; pos++) {
+          const lbl = document.createElement('label');
+          lbl.style.fontSize = '.85rem';
+          lbl.innerHTML = `Slot ${pos} niv.: <input type="number" min="1" max="99" value="${rang}"
+            id="alleg-niv-rang-${rang}-pos-${pos}" style="width:3.2rem" />`;
+          niveauxDiv.appendChild(lbl);
+        }
+      };
+      inputNb.addEventListener('input', rafraichirNiveaux);
+      rafraichirNiveaux();
+    }
+  }
+}
+
+function lireConfigAllegeance() {
+  const objectifs = [];
+  const niveaux = [];
+  for (let rang = 1; rang <= 3; rang++) {
+    const nbInput = document.getElementById(`alleg-nb-obj-rang-${rang}`);
+    const nb = nbInput && !nbInput.disabled ? (parseInt(nbInput.value) || 2) : 2;
+    objectifs.push(nb);
+    const nvsRang = [];
+    for (let pos = 1; pos <= nb; pos++) {
+      const nvInput = document.getElementById(`alleg-niv-rang-${rang}-pos-${pos}`);
+      nvsRang.push(nvInput ? (parseInt(nvInput.value) || null) : null);
+    }
+    niveaux.push(nvsRang);
+  }
+  return { objectifs, niveaux };
+}
+
 document.getElementById('config-nb-rep-race').addEventListener('input', (e) => {
   mettreAJourConfigRace(parseInt(e.target.value) || 0);
 });
 document.getElementById('config-nb-rep-allegeance').addEventListener('input', (e) => {
-  mettreAJourConfigObjectifs('config-obj-allegeance', parseInt(e.target.value) || 0);
+  mettreAJourConfigAllegeance(parseInt(e.target.value) || 0);
 });
 
 mettreAJourConfigRace(parseInt(document.getElementById('config-nb-rep-race').value) || 2);
-mettreAJourConfigObjectifs('config-obj-allegeance', parseInt(document.getElementById('config-nb-rep-allegeance').value) || 2);
+mettreAJourConfigAllegeance(parseInt(document.getElementById('config-nb-rep-allegeance').value) || 2);
 
 document.getElementById('btn-forcer-lancement').addEventListener('click', async () => {
   if (!confirm('Forcer le lancement maintenant ? La partie demarrera meme si tous les joueurs n\'ont pas choisi leur race.')) return;
@@ -994,7 +1049,9 @@ document.getElementById('btn-creer-partie-active').addEventListener('click', asy
   const { objectifs: objsRace, niveaux: niveauxRace } = lireConfigRace();
   const configRace = JSON.stringify(objsRace);
   const configNiveauxRace = JSON.stringify(niveauxRace);
-  const configAllegeance = JSON.stringify(lireConfigObjectifs('config-obj-allegeance'));
+  const { objectifs: objsAlleg, niveaux: niveauxAlleg } = lireConfigAllegeance();
+  const configAllegeance = JSON.stringify(objsAlleg);
+  const configNiveauxAllegeance = JSON.stringify(niveauxAlleg);
 
   try {
     await requeteJSON('/api/admin/partie-active/creer', {
@@ -1006,7 +1063,8 @@ document.getElementById('btn-creer-partie-active').addEventListener('click', asy
         nb_representants_allegeance: nbRepAllegeance,
         config_objectifs_race: configRace,
         config_niveaux_race: configNiveauxRace,
-        config_objectifs_allegeance: configAllegeance
+        config_objectifs_allegeance: configAllegeance,
+        config_niveaux_allegeance: configNiveauxAllegeance
       })
     });
     await chargerPartieActive();

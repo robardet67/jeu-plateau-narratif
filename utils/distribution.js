@@ -61,4 +61,52 @@ function distribuer(db, { partieId, joueurIds }) {
   transaction();
 }
 
-module.exports = { distribuer };
+function distribuerAllegeances(db, { partieId, joueurIds }) {
+  const partie = db.prepare('SELECT * FROM parties WHERE id = ?').get(partieId);
+
+  let configObjAlleg, configNiveauxAlleg, nbRepAlleg;
+  try { configObjAlleg = JSON.parse(partie?.config_objectifs_allegeance || '[2,2,2]'); } catch { configObjAlleg = [2, 2, 2]; }
+  try { configNiveauxAlleg = JSON.parse(partie?.config_niveaux_allegeance || '[[null,null],[null,null],[null,null]]'); } catch { configNiveauxAlleg = [[null, null], [null, null], [null, null]]; }
+  nbRepAlleg = partie?.nb_representants_allegeance ?? 2;
+
+  // Identifie les allegeances uniques parmi tous les joueurs de la partie
+  const rows = db
+    .prepare('SELECT DISTINCT allegeance_id FROM joueur_allegeances WHERE joueur_id IN (' + joueurIds.map(() => '?').join(',') + ')')
+    .all(...joueurIds);
+  const allegeanceIds = rows.map((r) => r.allegeance_id);
+
+  if (allegeanceIds.length === 0) return;
+
+  const insererCase = db.prepare(
+    'INSERT OR IGNORE INTO grille_allegeance (allegeance_id, partie_id, rang, position, objectif_id, statut) VALUES (?, ?, ?, ?, ?, ?)'
+  );
+
+  const transaction = db.transaction(() => {
+    // Exclus globaux : objectifs deja distribues en grille race
+    const dejaUtilises = new Set(
+      db.prepare('SELECT objectif_id FROM grille_objectifs WHERE partie_id = ?').all(partieId).map((r) => r.objectif_id)
+    );
+
+    for (const allegeanceId of allegeanceIds) {
+      for (let rangIdx = 0; rangIdx < nbRepAlleg; rangIdx++) {
+        const rang = rangIdx + 1;
+        const nbPositions = configObjAlleg[rangIdx] ?? 2;
+        const niveauxRang = configNiveauxAlleg[rangIdx] || [];
+        const statutInitial = rang === 1 ? 'ouvert' : 'masque';
+
+        for (let posIdx = 0; posIdx < nbPositions; posIdx++) {
+          const position = posIdx + 1;
+          const niveau = niveauxRang[posIdx] ?? null;
+          const objectif = piocherObjectifNiveau(db, niveau, dejaUtilises);
+          if (!objectif) throw new Error("Plus assez d'objectifs dans le pool pour distribuer (allegeances)");
+          insererCase.run(allegeanceId, partieId, rang, position, objectif.id, statutInitial);
+          dejaUtilises.add(objectif.id);
+        }
+      }
+    }
+  });
+
+  transaction();
+}
+
+module.exports = { distribuer, distribuerAllegeances };

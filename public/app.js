@@ -4,6 +4,8 @@ let etatCourant = { code: null, joueurId: null, pseudo: null, estHote: false, pa
 let joueursPartieEnCache = [];
 let etatJoueur = null;
 let rangAffiche = null;
+let allegeanceAffichee = null;
+let rangAllegeanceAffiche = null;
 
 let scenarioImages = [];
 let scenarioIndexActuel = 0;
@@ -200,17 +202,22 @@ function afficherHub() {
     hubPortraits.appendChild(div);
   }
 
-  // Portraits d'allegeances (non cliquables)
+  // Portraits d'allegeances (cliquables si nbRepAlleg > 0)
   if (etatJoueur.allegeances && etatJoueur.allegeances.length > 0) {
     const divAlleg = document.createElement('div');
     divAlleg.className = 'portraits-allegeances';
     etatJoueur.allegeances.forEach((a) => {
       const div = document.createElement('div');
-      div.className = 'portrait-allegeance';
+      const cliquable = etatJoueur.config.nbRepAlleg > 0;
+      div.className = 'portrait-allegeance' + (cliquable ? ' portrait-cliquable' : '');
       div.innerHTML = `
         ${a.portrait ? `<img src="${a.portrait}" alt="${a.nom}" />` : '<div class="placeholder-allegeance-hub">&#10024;</div>'}
         <div class="nom-portrait">${a.nom}</div>
+        ${a.toutesValidees ? '<div class="couronne">&#128081;</div>' : ''}
       `;
+      if (cliquable) {
+        div.addEventListener('click', () => afficherParcoursAllegeance(a.id));
+      }
       divAlleg.appendChild(div);
     });
     hubPortraits.appendChild(divAlleg);
@@ -321,6 +328,121 @@ function afficherRepresentantIndividuel(rang) {
   afficherVue('ecran-representant-individuel');
 }
 
+// --- Parcours allegeance : grille des representants ---
+
+function afficherParcoursAllegeance(allegeanceId) {
+  if (!etatJoueur) return;
+  allegeanceAffichee = allegeanceId;
+
+  const alleg = etatJoueur.allegeances.find((a) => a.id === allegeanceId);
+  if (!alleg) return;
+
+  const ecran = document.getElementById('ecran-parcours-allegeance');
+  ecran.style.backgroundImage = etatJoueur.imageFond ? `url(${etatJoueur.imageFond})` : '';
+
+  const grille = document.getElementById('grille-reps-allegeance');
+  grille.innerHTML = '';
+
+  (alleg.rangs || []).forEach((rangInfo) => {
+    const slot = document.createElement('div');
+    slot.className = 'slot-representant';
+
+    if (!rangInfo.deverrouille || !rangInfo.representant) {
+      slot.innerHTML = `
+        <div class="silhouette">&#128274;</div>
+        <div class="nom-slot">Rang ${rangInfo.rang}</div>
+      `;
+    } else {
+      const image = rangInfo.toutesLesCasesValidees
+        ? rangInfo.representant.image_sourire || rangInfo.representant.image_depart
+        : rangInfo.representant.image_depart;
+      slot.innerHTML = `
+        ${image ? `<img src="${image}" alt="${rangInfo.representant.nom}" />` : ''}
+        <div class="nom-slot">${rangInfo.representant.nom}</div>
+        ${rangInfo.toutesLesCasesValidees ? '<div class="couronne">&#128081;</div>' : ''}
+      `;
+      slot.classList.add('slot-cliquable');
+      slot.addEventListener('click', () => afficherRepAllegeanceIndividuel(allegeanceId, rangInfo.rang));
+    }
+
+    grille.appendChild(slot);
+  });
+
+  document.getElementById('btn-tableau-de-bord-allegeance').classList.toggle('cachee', !parametresGlobaux.tableau_de_bord_actif);
+
+  afficherVue('ecran-parcours-allegeance');
+}
+
+document.getElementById('btn-retour-hub-allegeance').addEventListener('click', afficherHub);
+
+// --- Page individuelle d'un representant d'allegeance : objectifs inline ---
+
+function afficherRepAllegeanceIndividuel(allegeanceId, rang) {
+  if (!etatJoueur) return;
+  const alleg = etatJoueur.allegeances.find((a) => a.id === allegeanceId);
+  if (!alleg) return;
+  const rangInfo = (alleg.rangs || []).find((r) => r.rang === rang);
+  if (!rangInfo || !rangInfo.representant) return;
+
+  allegeanceAffichee = allegeanceId;
+  rangAllegeanceAffiche = rang;
+
+  const image = rangInfo.toutesLesCasesValidees
+    ? rangInfo.representant.image_sourire || rangInfo.representant.image_depart
+    : rangInfo.representant.image_depart;
+
+  const imgEl = document.getElementById('image-rep-allegeance');
+  imgEl.src = image || '';
+  imgEl.style.display = image ? '' : 'none';
+
+  document.getElementById('couronne-rep-allegeance').classList.toggle('cachee', !rangInfo.toutesLesCasesValidees);
+
+  const dialoguesEl = document.getElementById('dialogues-rep-allegeance');
+  const dialogue = rangInfo.representant.dialogue;
+  dialoguesEl.innerHTML = dialogue ? `<p>${dialogue}</p>` : '';
+
+  const objectifsEl = document.getElementById('objectifs-rep-allegeance');
+  objectifsEl.innerHTML = '';
+
+  rangInfo.cases.forEach((c) => {
+    const carte = document.createElement('div');
+    carte.className = 'carte-enveloppe';
+
+    if (c.statut === 'ouvert') {
+      carte.innerHTML = `
+        <span class="texte-obj">${c.objectif.description}</span>
+        <button class="btn-valider-obj">Valider</button>
+      `;
+      carte.querySelector('.btn-valider-obj').addEventListener('click', () => {
+        if (!confirm('Confirmer la validation de cet objectif ?')) return;
+        socket.emit('grille_valider_allegeance', {
+          joueurId: etatCourant.joueurId,
+          allegeanceId,
+          partieId: etatJoueur.partieId,
+          ligneId: c.id
+        });
+      });
+    } else if (c.statut === 'valide') {
+      carte.classList.add('valide');
+      carte.innerHTML = `<span class="texte-obj">${c.objectif.description}</span><span class="coche">&#9989;</span>`;
+    } else {
+      carte.classList.add('masque');
+      carte.innerHTML = '<span>???</span>';
+    }
+
+    objectifsEl.appendChild(carte);
+  });
+
+  document.getElementById('btn-tableau-de-bord-rep-allegeance').classList.toggle('cachee', !parametresGlobaux.tableau_de_bord_actif);
+
+  afficherVue('ecran-rep-allegeance-individuel');
+}
+
+document.getElementById('btn-retour-parcours-allegeance').addEventListener('click', () => {
+  if (allegeanceAffichee) afficherParcoursAllegeance(allegeanceAffichee);
+  else afficherHub();
+});
+
 // --- Tableau de bord global ---
 
 async function afficherTableauDeBord() {
@@ -344,6 +466,9 @@ async function afficherTableauDeBord() {
 document.getElementById('btn-tableau-de-bord-hub').addEventListener('click', afficherTableauDeBord);
 document.getElementById('btn-tableau-de-bord-representants').addEventListener('click', afficherTableauDeBord);
 document.getElementById('btn-tableau-de-bord-individuel').addEventListener('click', afficherTableauDeBord);
+document.getElementById('btn-tableau-de-bord-allegeance').addEventListener('click', afficherTableauDeBord);
+document.getElementById('btn-tableau-de-bord-rep-allegeance').addEventListener('click', afficherTableauDeBord);
+document.getElementById('btn-scenario-allegeance').addEventListener('click', ouvrirScenario);
 document.getElementById('btn-retour-tableau-de-bord').addEventListener('click', () => {
   const vue = vueActuelleId();
   if (vue === 'ecran-tableau-de-bord') afficherHub();
@@ -534,6 +659,10 @@ socket.on('etat_joueur', (nouvelEtat) => {
     afficherParcoursRace();
   } else if (vue === 'ecran-representant-individuel' && rangAffiche) {
     afficherRepresentantIndividuel(rangAffiche);
+  } else if (vue === 'ecran-parcours-allegeance' && allegeanceAffichee) {
+    afficherParcoursAllegeance(allegeanceAffichee);
+  } else if (vue === 'ecran-rep-allegeance-individuel' && allegeanceAffichee && rangAllegeanceAffiche) {
+    afficherRepAllegeanceIndividuel(allegeanceAffichee, rangAllegeanceAffiche);
   }
 });
 

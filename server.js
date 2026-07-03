@@ -14,12 +14,16 @@ const { commiterEtPousser } = require('./utils/gitSync');
 const { restaurerSiVide } = require('./utils/restaurerContenu');
 const {
   obtenirParametre,
+  estJoueurTermine,
   deverrouillerRang,
   verifierDeverrouillages,
   validerObjectif,
+  deverrouillerRangAllegeance,
+  verifierDeverrouillagesAllegeance,
+  validerObjectifAllegeance,
   obtenirEtatJoueur
 } = require('./utils/grille');
-const { distribuer } = require('./utils/distribution');
+const { distribuer, distribuerAllegeances } = require('./utils/distribution');
 
 // Sur un serveur fraichement deploye (base SQLite vide, non versionnee), recharge le
 // contenu admin depuis la sauvegarde JSON versionnee sur GitHub (voir utils/exportContenu.js).
@@ -744,18 +748,29 @@ function tenterLancementPartie(partieId) {
   try { configObj = JSON.parse(partie.config_objectifs_race || '[2,2,2]'); } catch { configObj = [2, 2, 2]; }
   const nbRepRace = partie.nb_representants_race ?? 3;
   const nbObjectifsParJoueur = configObj.slice(0, nbRepRace).reduce((s, n) => s + n, 0);
-  const nbObjectifsNecessaires = joueurs.length * nbObjectifsParJoueur;
+
+  let configObjAlleg;
+  try { configObjAlleg = JSON.parse(partie.config_objectifs_allegeance || '[2,2,2]'); } catch { configObjAlleg = [2, 2, 2]; }
+  const nbRepAlleg = partie.nb_representants_allegeance ?? 2;
+  const nbObjectifsParAllegeance = configObjAlleg.slice(0, nbRepAlleg).reduce((s, n) => s + n, 0);
+  const allegeancesUniques = db
+    .prepare('SELECT DISTINCT allegeance_id FROM joueur_allegeances WHERE joueur_id IN (' + joueurs.map(() => '?').join(',') + ')')
+    .all(...joueurs.map((j) => j.id));
+  const nbAllegeancesUniques = allegeancesUniques.length;
+
+  const nbObjectifsNecessaires = joueurs.length * nbObjectifsParJoueur + nbAllegeancesUniques * nbObjectifsParAllegeance;
 
   const { n: nbObjectifsDisponibles } = db.prepare('SELECT COUNT(*) AS n FROM objectifs').get();
   if (nbObjectifsDisponibles < nbObjectifsNecessaires) {
     return {
       lance: false,
-      raison: `Pool insuffisant : ${nbObjectifsDisponibles} objectif(s) disponible(s), ${nbObjectifsNecessaires} requis (${joueurs.length} joueur(s) x ${nbObjectifsParJoueur})`
+      raison: `Pool insuffisant : ${nbObjectifsDisponibles} objectif(s) disponible(s), ${nbObjectifsNecessaires} requis (${joueurs.length} joueur(s) x ${nbObjectifsParJoueur} + ${nbAllegeancesUniques} allegeance(s) x ${nbObjectifsParAllegeance})`
     };
   }
 
   try {
     distribuer(db, { partieId, joueurIds: joueurs.map((j) => j.id) });
+    distribuerAllegeances(db, { partieId, joueurIds: joueurs.map((j) => j.id) });
   } catch (erreur) {
     return { lance: false, raison: erreur.message };
   }
@@ -903,6 +918,12 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
     if (Array.isArray(parsed)) configNiveauxRace = JSON.stringify(parsed);
   } catch {}
 
+  let configNiveauxAllegeance = '[[null,null],[null,null],[null,null]]';
+  try {
+    const parsed = JSON.parse(req.body.config_niveaux_allegeance);
+    if (Array.isArray(parsed)) configNiveauxAllegeance = JSON.stringify(parsed);
+  } catch {}
+
   let code;
   do {
     code = genererCodePartie();
@@ -910,9 +931,9 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
 
   const partie = db
     .prepare(
-      'INSERT INTO parties (code, nom, nb_joueurs_attendus, nb_representants_race, nb_representants_allegeance, config_objectifs_race, config_objectifs_allegeance, config_niveaux_race) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO parties (code, nom, nb_joueurs_attendus, nb_representants_race, nb_representants_allegeance, config_objectifs_race, config_objectifs_allegeance, config_niveaux_race, config_niveaux_allegeance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     )
-    .run(code, `Partie ${code}`, nbJoueursAttendu, nbRepRace, nbRepAllegeance, configRace, configAllegeance, configNiveauxRace);
+    .run(code, `Partie ${code}`, nbJoueursAttendu, nbRepRace, nbRepAllegeance, configRace, configAllegeance, configNiveauxRace, configNiveauxAllegeance);
   const nouvelle = db.prepare('SELECT * FROM parties WHERE id = ?').get(partie.lastInsertRowid);
   res.status(201).json({ active: true, ...nouvelle, joueurs: [] });
 });
@@ -1094,6 +1115,43 @@ io.on('connection', (socket) => {
            ORDER BY valides DESC`
         )
         .all(resultat.partieId);
+      io.to(socket.data.code).emit('partie_terminee', { classement });
+    }
+  });
+
+  socket.on('grille_valider_allegeance', ({ joueurId, allegeanceId, partieId, ligneId }) => {
+    // Verifie que le joueur possede cette allegeance
+    const lienJoueur = db
+      .prepare('SELECT * FROM joueur_allegeances WHERE joueur_id = ? AND allegeance_id = ?')
+      .get(joueurId, allegeanceId);
+    if (!lienJoueur) {
+      return socket.emit('erreur', { message: "Vous ne portez pas cette allegeance" });
+    }
+
+    try {
+      validerObjectifAllegeance(db, { allegeanceId, partieId, ligneId, joueurId });
+    } catch (erreur) {
+      return socket.emit('erreur', { message: erreur.message });
+    }
+
+    verifierDeverrouillagesAllegeance(db, allegeanceId, partieId);
+    socket.emit('etat_joueur', obtenirEtatJoueur(db, joueurId));
+
+    if (socket.data.code && obtenirParametre(db, 'tableau_de_bord_actif') === 'true') {
+      io.to(socket.data.code).emit('tableau_de_bord_maj');
+    }
+
+    if (estJoueurTermine(db, joueurId) && socket.data.code) {
+      db.prepare("UPDATE parties SET statut = 'terminee' WHERE id = ?").run(partieId);
+      const classement = db
+        .prepare(
+          `SELECT j.id, j.pseudo, COUNT(g.id) AS valides
+           FROM joueurs j LEFT JOIN grille_objectifs g ON g.joueur_id = j.id AND g.statut = 'valide'
+           WHERE j.partie_id = ?
+           GROUP BY j.id
+           ORDER BY valides DESC`
+        )
+        .all(partieId);
       io.to(socket.data.code).emit('partie_terminee', { classement });
     }
   });

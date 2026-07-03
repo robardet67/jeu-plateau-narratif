@@ -264,6 +264,27 @@ function initDatabase() {
 
     CREATE INDEX IF NOT EXISTS idx_repr_allegeance ON representants_allegeance(allegeance_id);
     CREATE INDEX IF NOT EXISTS idx_joueur_allegeances ON joueur_allegeances(joueur_id);
+
+    -- Grille d'allegeance : une seule grille par allegeance × partie, partagee entre tous
+    -- les porteurs de cette allegeance (preparation a la synchronisation cooperative).
+    CREATE TABLE IF NOT EXISTS grille_allegeance (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      allegeance_id INTEGER NOT NULL,
+      partie_id INTEGER NOT NULL,
+      rang INTEGER NOT NULL CHECK (rang IN (1, 2, 3)),
+      position INTEGER NOT NULL CHECK (position IN (1, 2, 3)),
+      objectif_id INTEGER NOT NULL,
+      statut TEXT NOT NULL DEFAULT 'masque' CHECK (statut IN ('masque', 'ouvert', 'valide')),
+      completed_at TEXT,
+      completed_by_joueur_id INTEGER,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (allegeance_id) REFERENCES allegeances(id) ON DELETE CASCADE,
+      FOREIGN KEY (partie_id) REFERENCES parties(id) ON DELETE CASCADE,
+      FOREIGN KEY (objectif_id) REFERENCES objectifs(id) ON DELETE CASCADE,
+      UNIQUE (allegeance_id, partie_id, rang, position)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_grille_allegeance ON grille_allegeance(allegeance_id, partie_id);
   `);
 
   // v2 : niveau (entier) revient dans les objectifs — pool unique race+allegeance
@@ -296,6 +317,7 @@ function initDatabase() {
   assurerColonne(db, 'parties', 'nb_representants_allegeance', 'INTEGER NOT NULL DEFAULT 2');
   assurerColonne(db, 'parties', 'config_objectifs_allegeance', "TEXT NOT NULL DEFAULT '[2,2,2]'");
   assurerColonne(db, 'parties', 'config_niveaux_race', "TEXT NOT NULL DEFAULT '[[null,null],[null,null],[null,null]]'");
+  assurerColonne(db, 'parties', 'config_niveaux_allegeance', "TEXT NOT NULL DEFAULT '[[null,null],[null,null],[null,null]]'");
 
   const parametresParDefaut = { tableau_de_bord_actif: 'false' };
   const insererParametre = db.prepare('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)');
