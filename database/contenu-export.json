@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-03T14:29:32.595Z",
+  "genere_le": "2026-07-03T18:10:33.057Z",
   "races": [
     {
       "id": 1,
@@ -60,9 +60,9 @@
       "race_id": 2,
       "rang": 2,
       "nom": "elfe noir magicien",
-      "description": null,
-      "image_depart": "/uploads/1782912053687-5fd7f9b2d7f344d5.png",
-      "image_sourire": "/uploads/1782912053691-c0f6162b3b713016.png",
+      "description": "",
+      "image_depart": "/uploads/1783102233035-3252e5ba7194d627.png",
+      "image_sourire": "/uploads/1783102233046-785fb351589b9526.png",
       "created_at": "2026-07-01 13:20:53"
     },
     {
@@ -722,7 +722,7 @@
       "created_at": "2026-07-03 14:03:25"
     }
   ],
-  "allegiances": [
+  "allegeances": [
     {
       "id": 1,
       "nom": "or",
@@ -736,10 +736,10 @@
       "created_at": "2026-07-03 08:47:20"
     }
   ],
-  "representants_allegiance": [
+  "representants_allegeance": [
     {
       "id": 1,
-      "allegiance_id": 1,
+      "allegeance_id": 1,
       "rang": 1,
       "nom": "standard",
       "image_depart": "/uploads/1783068501397-410b1bd2cc460a5f.png",
@@ -749,7 +749,7 @@
     },
     {
       "id": 2,
-      "allegiance_id": 1,
+      "allegeance_id": 1,
       "rang": 2,
       "nom": "standard",
       "image_depart": "/uploads/1783084365146-f09d0b4189f855f6.png",
