@@ -1134,25 +1134,52 @@ io.on('connection', (socket) => {
       return socket.emit('erreur', { message: erreur.message });
     }
 
+    // Le deblocage est partage : un rang N+1 debloque pour tous les porteurs simultanement.
     verifierDeverrouillagesAllegeance(db, allegeanceId, partieId);
-    socket.emit('etat_joueur', obtenirEtatJoueur(db, joueurId));
+
+    // Tous les porteurs de cette allegeance dans la partie recoivent l'etat mis a jour.
+    const allegeance = db.prepare('SELECT nom FROM allegeances WHERE id = ?').get(allegeanceId);
+    const validateur = db.prepare('SELECT pseudo FROM joueurs WHERE id = ?').get(joueurId);
+    const porteurs = db
+      .prepare(
+        'SELECT j.id, j.socket_id FROM joueurs j ' +
+        'JOIN joueur_allegeances ja ON ja.joueur_id = j.id ' +
+        'WHERE ja.allegeance_id = ? AND j.partie_id = ?'
+      )
+      .all(allegeanceId, partieId);
+
+    for (const porteur of porteurs) {
+      if (!porteur.socket_id) continue;
+      io.to(porteur.socket_id).emit('etat_joueur', obtenirEtatJoueur(db, porteur.id));
+      // Notifie les co-porteurs (pas le validateur lui-meme)
+      if (porteur.id !== joueurId) {
+        io.to(porteur.socket_id).emit('notification', {
+          message: `${validateur.pseudo} a valide un objectif de l'allegeance ${allegeance ? allegeance.nom : ''} !`
+        });
+      }
+    }
 
     if (socket.data.code && obtenirParametre(db, 'tableau_de_bord_actif') === 'true') {
       io.to(socket.data.code).emit('tableau_de_bord_maj');
     }
 
-    if (estJoueurTermine(db, joueurId) && socket.data.code) {
-      db.prepare("UPDATE parties SET statut = 'terminee' WHERE id = ?").run(partieId);
-      const classement = db
-        .prepare(
-          `SELECT j.id, j.pseudo, COUNT(g.id) AS valides
-           FROM joueurs j LEFT JOIN grille_objectifs g ON g.joueur_id = j.id AND g.statut = 'valide'
-           WHERE j.partie_id = ?
-           GROUP BY j.id
-           ORDER BY valides DESC`
-        )
-        .all(partieId);
-      io.to(socket.data.code).emit('partie_terminee', { classement });
+    // Verifie la victoire pour TOUS les porteurs : la completion de l'allegeance peut
+    // declencher la victoire d'un co-porteur dont la race etait deja terminee.
+    if (socket.data.code) {
+      const vainqueur = porteurs.find((p) => estJoueurTermine(db, p.id));
+      if (vainqueur) {
+        db.prepare("UPDATE parties SET statut = 'terminee' WHERE id = ?").run(partieId);
+        const classement = db
+          .prepare(
+            `SELECT j.id, j.pseudo, COUNT(g.id) AS valides
+             FROM joueurs j LEFT JOIN grille_objectifs g ON g.joueur_id = j.id AND g.statut = 'valide'
+             WHERE j.partie_id = ?
+             GROUP BY j.id
+             ORDER BY valides DESC`
+          )
+          .all(partieId);
+        io.to(socket.data.code).emit('partie_terminee', { classement });
+      }
     }
   });
 
