@@ -41,7 +41,7 @@
     <nav class="onglets">
       <button class="onglet actif" data-onglet="races">Races</button>
       <button class="onglet" data-onglet="representants">Representants</button>
-      <button class="onglet" data-onglet="dialogues">Dialogues</button>
+
       <button class="onglet" data-onglet="objectifs">Objectifs</button>
       <button class="onglet" data-onglet="fonds">Fonds</button>
       <button class="onglet" data-onglet="scenario">Scenario</button>
@@ -92,33 +92,6 @@
       </div>
     </section>
 
-    <section id="onglet-dialogues" class="contenu-onglet cachee">
-      <div class="carte">
-        <h2>Choisir un representant</h2>
-        <select id="select-race-dialogues"></select>
-        <select id="select-representant-dialogues"></select>
-      </div>
-
-      <div class="carte">
-        <h2>Ajouter un dialogue</h2>
-        <p class="astuce">Utilisez <code>{nom}</code> dans le texte : il sera remplace par le prenom du joueur.</p>
-        <form id="form-nouveau-dialogue" class="formulaire">
-          <input name="contexte" type="text" placeholder="Contexte (ex: accueil, victoire, defi)" required />
-          <textarea name="texte" placeholder="Texte du dialogue, ex: Bienvenue {nom} !" required></textarea>
-          <button type="submit">Ajouter le dialogue</button>
-        </form>
-      </div>
-
-      <div class="carte">
-        <h2>Apercu avec un prenom de test</h2>
-        <input id="champ-prenom-test" type="text" placeholder="Prenom de test (ex: Alice)" value="Alice" />
-      </div>
-
-      <div class="carte">
-        <h2>Dialogues existants</h2>
-        <ul id="liste-dialogues" class="liste-elements"></ul>
-      </div>
-    </section>
 
     <section id="onglet-objectifs" class="contenu-onglet cachee">
       <div class="carte">

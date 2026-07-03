@@ -220,18 +220,31 @@ async function chargerRepresentants() {
 function creerElementRepresentant(rep) {
   const li = document.createElement('li');
   li.className = 'element-carte';
+  li.style.flexDirection = 'column';
+  li.style.alignItems = 'stretch';
   li.innerHTML = `
-    <div class="element-infos">
-      ${rep.image_depart ? `<img src="${rep.image_depart}" alt="depart" />` : ''}
-      ${rep.image_sourire ? `<img src="${rep.image_sourire}" alt="sourire" />` : ''}
-      <div>
-        <strong>Rang ${rep.rang} - ${rep.nom}</strong>
-        <div>${rep.description || ''}</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+      <div class="element-infos" style="flex:1">
+        ${rep.image_depart ? `<img src="${rep.image_depart}" alt="depart" />` : ''}
+        ${rep.image_sourire ? `<img src="${rep.image_sourire}" alt="sourire" />` : ''}
+        <div>
+          <strong>Rang ${rep.rang} - ${rep.nom}</strong>
+          <div>${rep.description || ''}</div>
+        </div>
+      </div>
+      <div class="element-actions" style="flex-shrink:0">
+        <button class="btn-modifier">Modifier</button>
+        <button class="btn-supprimer bouton-danger">Supprimer</button>
       </div>
     </div>
-    <div class="element-actions">
-      <button class="btn-modifier">Modifier</button>
-      <button class="btn-supprimer bouton-danger">Supprimer</button>
+    <div class="section-dialogues" style="margin-top:.75rem;border-top:1px solid rgba(255,255,255,.1);padding-top:.75rem">
+      <p class="astuce" style="margin:0 0 .4rem">Dialogues — utilisez <code>{nom}</code> pour le prenom du joueur</p>
+      <div class="dialogues-liste"></div>
+      <form class="form-ajout-dialogue formulaire" style="margin-top:.5rem">
+        <input name="contexte" type="text" placeholder="Contexte (ex: accueil, victoire)" required />
+        <textarea name="texte" placeholder="Texte (ex: Bienvenue {nom} !)" required></textarea>
+        <button type="submit" class="bouton-secondaire">+ Ajouter un dialogue</button>
+      </form>
     </div>
   `;
 
@@ -243,7 +256,82 @@ function creerElementRepresentant(rep) {
     await chargerTout();
   });
 
+  li.querySelector('.form-ajout-dialogue').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const d = new FormData(e.target);
+    const resultat = await requeteJSON(`/api/representants/${rep.id}/dialogues`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contexte: d.get('contexte'), texte: d.get('texte') })
+    });
+    afficherSync(resultat.synchronisation);
+    e.target.reset();
+    await rafraichirDialogues(li, rep.id);
+  });
+
+  rafraichirDialogues(li, rep.id);
+
   return li;
+}
+
+async function rafraichirDialogues(li, repId) {
+  const dialogues = await requeteJSON(`/api/representants/${repId}/dialogues`);
+  const conteneur = li.querySelector('.dialogues-liste');
+  conteneur.innerHTML = '';
+
+  if (dialogues.length === 0) {
+    conteneur.innerHTML = '<p style="margin:0;opacity:.6;font-size:.875rem">Aucun dialogue.</p>';
+    return;
+  }
+
+  dialogues.forEach((d) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;padding:.4rem 0;border-bottom:1px solid rgba(255,255,255,.07)';
+    div.innerHTML = `
+      <div style="flex:1">
+        <strong style="font-size:.875rem">${d.contexte}</strong>
+        <div style="font-size:.875rem;opacity:.8">${d.texte}</div>
+      </div>
+      <div class="element-actions" style="flex-shrink:0">
+        <button class="btn-modifier-dialogue bouton-secondaire">Modifier</button>
+        <button class="btn-supprimer-dialogue bouton-danger">Supprimer</button>
+      </div>
+    `;
+
+    div.querySelector('.btn-modifier-dialogue').addEventListener('click', () => {
+      div.innerHTML = `
+        <form class="formulaire" style="width:100%">
+          <input name="contexte" type="text" value="${d.contexte}" required />
+          <textarea name="texte" required>${d.texte}</textarea>
+          <div class="element-actions">
+            <button type="submit">Enregistrer</button>
+            <button type="button" class="btn-annuler bouton-secondaire">Annuler</button>
+          </div>
+        </form>
+      `;
+      div.querySelector('.btn-annuler').addEventListener('click', () => rafraichirDialogues(li, repId));
+      div.querySelector('form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const resultat = await requeteJSON(`/api/dialogues/${d.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contexte: fd.get('contexte'), texte: fd.get('texte') })
+        });
+        afficherSync(resultat.synchronisation);
+        await rafraichirDialogues(li, repId);
+      });
+    });
+
+    div.querySelector('.btn-supprimer-dialogue').addEventListener('click', async () => {
+      if (!confirm('Supprimer ce dialogue ?')) return;
+      const resultat = await requeteJSON(`/api/dialogues/${d.id}`, { method: 'DELETE' });
+      afficherSync(resultat.synchronisation);
+      await rafraichirDialogues(li, repId);
+    });
+
+    conteneur.appendChild(div);
+  });
 }
 
 function afficherFormulaireModifRepresentant(li, rep) {
@@ -449,116 +537,6 @@ document.getElementById('form-nouveau-representant-allegiance').addEventListener
   await chargerRepresentantsAllegiance();
 });
 
-// --- Dialogues ---
-
-async function chargerReprésentantsPourDialogues() {
-  const raceId = document.getElementById('select-race-dialogues').value;
-  if (!raceId) return;
-
-  const representants = await requeteJSON(`/api/races/${raceId}/representants`);
-  const select = document.getElementById('select-representant-dialogues');
-  const valeurPrecedente = select.value;
-  select.innerHTML = representants.map((r) => `<option value="${r.id}">${r.nom}</option>`).join('');
-  if (valeurPrecedente && representants.some((r) => String(r.id) === valeurPrecedente)) {
-    select.value = valeurPrecedente;
-  }
-
-  await chargerDialogues();
-}
-
-function texteAvecVariante(texte) {
-  const prenom = document.getElementById('champ-prenom-test').value.trim() || '{nom}';
-  return texte.replaceAll('{nom}', prenom);
-}
-
-async function chargerDialogues() {
-  const representantId = document.getElementById('select-representant-dialogues').value;
-  const liste = document.getElementById('liste-dialogues');
-  liste.innerHTML = '';
-  if (!representantId) return;
-
-  const dialogues = await requeteJSON(`/api/representants/${representantId}/dialogues`);
-  dialogues.forEach((dialogue) => liste.appendChild(creerElementDialogue(dialogue)));
-}
-
-function creerElementDialogue(dialogue) {
-  const li = document.createElement('li');
-  li.className = 'element-carte';
-  li.dataset.texteOriginal = dialogue.texte;
-  li.innerHTML = `
-    <div class="element-infos">
-      <div>
-        <strong>${dialogue.contexte}</strong>
-        <div>${dialogue.texte}</div>
-        <div class="apercu-dialogue">Apercu : ${texteAvecVariante(dialogue.texte)}</div>
-      </div>
-    </div>
-    <div class="element-actions">
-      <button class="btn-modifier">Modifier</button>
-      <button class="btn-supprimer bouton-danger">Supprimer</button>
-    </div>
-  `;
-
-  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifDialogue(li, dialogue));
-  li.querySelector('.btn-supprimer').addEventListener('click', async () => {
-    if (!confirm('Supprimer ce dialogue ?')) return;
-    const resultat = await requeteJSON(`/api/dialogues/${dialogue.id}`, { method: 'DELETE' });
-    afficherSync(resultat.synchronisation);
-    await chargerDialogues();
-  });
-
-  return li;
-}
-
-function afficherFormulaireModifDialogue(li, dialogue) {
-  li.innerHTML = `
-    <form class="formulaire" style="width:100%">
-      <input name="contexte" type="text" value="${dialogue.contexte}" required />
-      <textarea name="texte" required>${dialogue.texte}</textarea>
-      <div class="element-actions">
-        <button type="submit">Enregistrer</button>
-        <button type="button" class="bouton-secondaire btn-annuler">Annuler</button>
-      </div>
-    </form>
-  `;
-  li.querySelector('.btn-annuler').addEventListener('click', () => chargerDialogues());
-  li.querySelector('form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const donnees = new FormData(e.target);
-    const resultat = await requeteJSON(`/api/dialogues/${dialogue.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contexte: donnees.get('contexte'), texte: donnees.get('texte') })
-    });
-    afficherSync(resultat.synchronisation);
-    await chargerDialogues();
-  });
-}
-
-document.getElementById('select-race-dialogues').addEventListener('change', chargerReprésentantsPourDialogues);
-document.getElementById('select-representant-dialogues').addEventListener('change', chargerDialogues);
-document.getElementById('champ-prenom-test').addEventListener('input', () => {
-  document.querySelectorAll('#liste-dialogues li').forEach((li) => {
-    const apercu = li.querySelector('.apercu-dialogue');
-    if (apercu) apercu.textContent = `Apercu : ${texteAvecVariante(li.dataset.texteOriginal)}`;
-  });
-});
-
-document.getElementById('form-nouveau-dialogue').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const representantId = document.getElementById('select-representant-dialogues').value;
-  if (!representantId) return alert('Choisissez un representant');
-
-  const donnees = new FormData(e.target);
-  const resultat = await requeteJSON(`/api/representants/${representantId}/dialogues`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contexte: donnees.get('contexte'), texte: donnees.get('texte') })
-  });
-  afficherSync(resultat.synchronisation);
-  e.target.reset();
-  await chargerDialogues();
-});
 
 // --- Objectifs ---
 
@@ -995,7 +973,6 @@ async function chargerTout() {
   await chargerRaces();
   await chargerAllegiances();
   await chargerRepresentants();
-  await chargerReprésentantsPourDialogues();
   await chargerObjectifs();
   chargerFond();
   await chargerScenario();
