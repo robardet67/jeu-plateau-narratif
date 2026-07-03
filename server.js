@@ -362,85 +362,85 @@ app.delete('/api/dialogues/:id', exigerAdmin, gerer(async (req, res) => {
   res.json({ ok: true, synchronisation });
 }));
 
-// --- API : runes (3 max, chacune avec 0-3 representants) ---
+// --- API : allegiances (3 max, chacune avec 0-3 representants) ---
 
-app.get('/api/runes', (req, res) => {
-  res.json(db.prepare('SELECT * FROM runes ORDER BY id').all());
+app.get('/api/allegiances', (req, res) => {
+  res.json(db.prepare('SELECT * FROM allegiances ORDER BY id').all());
 });
 
-app.post('/api/runes', exigerAdmin, uploadImagesRepresentant.single('portrait'), gerer(async (req, res) => {
+app.post('/api/allegiances', exigerAdmin, uploadImagesRepresentant.single('portrait'), gerer(async (req, res) => {
   const { nom } = req.body;
   if (!nom) return res.status(400).json({ error: 'Le nom est requis' });
 
-  const nb = db.prepare('SELECT COUNT(*) AS n FROM runes').get().n;
-  if (nb >= 3) return res.status(400).json({ error: 'Maximum 3 runes autorisees' });
+  const nb = db.prepare('SELECT COUNT(*) AS n FROM allegiances').get().n;
+  if (nb >= 3) return res.status(400).json({ error: 'Maximum 3 allegiances autorisees' });
 
   const portrait = req.file ? `/uploads/${req.file.filename}` : null;
-  const result = db.prepare('INSERT INTO runes (nom, portrait) VALUES (?, ?)').run(nom, portrait);
+  const result = db.prepare('INSERT INTO allegiances (nom, portrait) VALUES (?, ?)').run(nom, portrait);
 
-  const synchronisation = await commiterEtPousser(`Admin : ajout de la rune "${nom}"`);
+  const synchronisation = await commiterEtPousser(`Admin : ajout de l'allegiance "${nom}"`);
   res.status(201).json({ id: result.lastInsertRowid, synchronisation });
 }));
 
-app.put('/api/runes/:id', exigerAdmin, uploadImagesRepresentant.single('portrait'), gerer(async (req, res) => {
-  const rune = db.prepare('SELECT * FROM runes WHERE id = ?').get(req.params.id);
-  if (!rune) return res.status(404).json({ error: 'Rune introuvable' });
+app.put('/api/allegiances/:id', exigerAdmin, uploadImagesRepresentant.single('portrait'), gerer(async (req, res) => {
+  const allegiance = db.prepare('SELECT * FROM allegiances WHERE id = ?').get(req.params.id);
+  if (!allegiance) return res.status(404).json({ error: 'Allegiance introuvable' });
 
-  const nom = req.body.nom || rune.nom;
-  let portrait = rune.portrait;
+  const nom = req.body.nom || allegiance.nom;
+  let portrait = allegiance.portrait;
   if (req.file) {
-    supprimerFichierUpload(rune.portrait);
+    supprimerFichierUpload(allegiance.portrait);
     portrait = `/uploads/${req.file.filename}`;
   }
 
-  db.prepare('UPDATE runes SET nom = ?, portrait = ? WHERE id = ?').run(nom, portrait, rune.id);
+  db.prepare('UPDATE allegiances SET nom = ?, portrait = ? WHERE id = ?').run(nom, portrait, allegiance.id);
 
-  const synchronisation = await commiterEtPousser(`Admin : modification de la rune "${nom}"`);
+  const synchronisation = await commiterEtPousser(`Admin : modification de l'allegiance "${nom}"`);
   res.json({ ok: true, synchronisation });
 }));
 
-app.delete('/api/runes/:id', exigerAdmin, gerer(async (req, res) => {
-  const rune = db.prepare('SELECT * FROM runes WHERE id = ?').get(req.params.id);
-  if (!rune) return res.status(404).json({ error: 'Rune introuvable' });
+app.delete('/api/allegiances/:id', exigerAdmin, gerer(async (req, res) => {
+  const allegiance = db.prepare('SELECT * FROM allegiances WHERE id = ?').get(req.params.id);
+  if (!allegiance) return res.status(404).json({ error: 'Allegiance introuvable' });
 
-  const reps = db.prepare('SELECT * FROM representants_rune WHERE rune_id = ?').all(rune.id);
-  db.prepare('DELETE FROM runes WHERE id = ?').run(rune.id);
+  const reps = db.prepare('SELECT * FROM representants_allegiance WHERE allegiance_id = ?').all(allegiance.id);
+  db.prepare('DELETE FROM allegiances WHERE id = ?').run(allegiance.id);
 
-  supprimerFichierUpload(rune.portrait);
+  supprimerFichierUpload(allegiance.portrait);
   reps.forEach((r) => {
     supprimerFichierUpload(r.image_depart);
     supprimerFichierUpload(r.image_sourire);
   });
 
-  const synchronisation = await commiterEtPousser(`Admin : suppression de la rune "${rune.nom}"`);
+  const synchronisation = await commiterEtPousser(`Admin : suppression de l'allegiance "${allegiance.nom}"`);
   res.json({ ok: true, synchronisation });
 }));
 
-// --- API : representants de rune ---
+// --- API : representants d'allegiance ---
 
-app.get('/api/runes/:runeId/representants', (req, res) => {
+app.get('/api/allegiances/:allegianceId/representants', (req, res) => {
   res.json(
-    db.prepare('SELECT * FROM representants_rune WHERE rune_id = ? ORDER BY rang').all(req.params.runeId)
+    db.prepare('SELECT * FROM representants_allegiance WHERE allegiance_id = ? ORDER BY rang').all(req.params.allegianceId)
   );
 });
 
 app.post(
-  '/api/runes/:runeId/representants',
+  '/api/allegiances/:allegianceId/representants',
   exigerAdmin,
   uploadImagesRepresentant.fields([
     { name: 'image_depart', maxCount: 1 },
     { name: 'image_sourire', maxCount: 1 }
   ]),
   gerer(async (req, res) => {
-    const rune = db.prepare('SELECT * FROM runes WHERE id = ?').get(req.params.runeId);
-    if (!rune) return res.status(404).json({ error: 'Rune introuvable' });
+    const allegiance = db.prepare('SELECT * FROM allegiances WHERE id = ?').get(req.params.allegianceId);
+    if (!allegiance) return res.status(404).json({ error: 'Allegiance introuvable' });
 
     const rangsExistants = db
-      .prepare('SELECT rang FROM representants_rune WHERE rune_id = ?')
-      .all(rune.id)
+      .prepare('SELECT rang FROM representants_allegiance WHERE allegiance_id = ?')
+      .all(allegiance.id)
       .map((r) => r.rang);
     const rang = [1, 2, 3].find((r) => !rangsExistants.includes(r));
-    if (!rang) return res.status(400).json({ error: 'Cette rune possede deja 3 representants (maximum)' });
+    if (!rang) return res.status(400).json({ error: 'Cette allegiance possede deja 3 representants (maximum)' });
 
     const { nom, dialogue } = req.body;
     if (!nom) return res.status(400).json({ error: 'Le nom est requis' });
@@ -449,24 +449,24 @@ app.post(
     const imageSourire = req.files?.image_sourire?.[0] ? `/uploads/${req.files.image_sourire[0].filename}` : null;
 
     const result = db
-      .prepare('INSERT INTO representants_rune (rune_id, rang, nom, image_depart, image_sourire, dialogue) VALUES (?, ?, ?, ?, ?, ?)')
-      .run(rune.id, rang, nom, imageDepart, imageSourire, dialogue || null);
+      .prepare('INSERT INTO representants_allegiance (allegiance_id, rang, nom, image_depart, image_sourire, dialogue) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(allegiance.id, rang, nom, imageDepart, imageSourire, dialogue || null);
 
-    const synchronisation = await commiterEtPousser(`Admin : ajout du representant de rune "${nom}"`);
+    const synchronisation = await commiterEtPousser(`Admin : ajout du representant d'allegiance "${nom}"`);
     res.status(201).json({ id: result.lastInsertRowid, synchronisation });
   })
 );
 
 app.put(
-  '/api/representants-rune/:id',
+  '/api/representants-allegiance/:id',
   exigerAdmin,
   uploadImagesRepresentant.fields([
     { name: 'image_depart', maxCount: 1 },
     { name: 'image_sourire', maxCount: 1 }
   ]),
   gerer(async (req, res) => {
-    const rep = db.prepare('SELECT * FROM representants_rune WHERE id = ?').get(req.params.id);
-    if (!rep) return res.status(404).json({ error: 'Representant de rune introuvable' });
+    const rep = db.prepare('SELECT * FROM representants_allegiance WHERE id = ?').get(req.params.id);
+    if (!rep) return res.status(404).json({ error: "Representant d'allegiance introuvable" });
 
     let imageDepart = rep.image_depart;
     let imageSourire = rep.image_sourire;
@@ -482,23 +482,23 @@ app.put(
     const nom = req.body.nom || rep.nom;
     const dialogue = req.body.dialogue !== undefined ? req.body.dialogue : rep.dialogue;
 
-    db.prepare('UPDATE representants_rune SET nom = ?, image_depart = ?, image_sourire = ?, dialogue = ? WHERE id = ?')
+    db.prepare('UPDATE representants_allegiance SET nom = ?, image_depart = ?, image_sourire = ?, dialogue = ? WHERE id = ?')
       .run(nom, imageDepart, imageSourire, dialogue, rep.id);
 
-    const synchronisation = await commiterEtPousser(`Admin : modification du representant de rune "${nom}"`);
+    const synchronisation = await commiterEtPousser(`Admin : modification du representant d'allegiance "${nom}"`);
     res.json({ ok: true, synchronisation });
   })
 );
 
-app.delete('/api/representants-rune/:id', exigerAdmin, gerer(async (req, res) => {
-  const rep = db.prepare('SELECT * FROM representants_rune WHERE id = ?').get(req.params.id);
-  if (!rep) return res.status(404).json({ error: 'Representant de rune introuvable' });
+app.delete('/api/representants-allegiance/:id', exigerAdmin, gerer(async (req, res) => {
+  const rep = db.prepare('SELECT * FROM representants_allegiance WHERE id = ?').get(req.params.id);
+  if (!rep) return res.status(404).json({ error: "Representant d'allegiance introuvable" });
 
-  db.prepare('DELETE FROM representants_rune WHERE id = ?').run(rep.id);
+  db.prepare('DELETE FROM representants_allegiance WHERE id = ?').run(rep.id);
   supprimerFichierUpload(rep.image_depart);
   supprimerFichierUpload(rep.image_sourire);
 
-  const synchronisation = await commiterEtPousser(`Admin : suppression du representant de rune "${rep.nom}"`);
+  const synchronisation = await commiterEtPousser(`Admin : suppression du representant d'allegiance "${rep.nom}"`);
   res.json({ ok: true, synchronisation });
 }));
 
@@ -548,6 +548,8 @@ app.delete('/api/objectifs/:id', exigerAdmin, gerer(async (req, res) => {
 app.post('/api/objectifs/import', exigerAdmin, uploadCsv.single('fichier'), gerer(async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Un fichier CSV est requis' });
 
+  const mode = req.body.mode === 'remplacer' ? 'remplacer' : 'ajouter';
+
   let lignes;
   try {
     lignes = parse(req.file.buffer, { columns: true, skip_empty_lines: true, trim: true, bom: true });
@@ -564,10 +566,13 @@ app.post('/api/objectifs/import', exigerAdmin, uploadCsv.single('fichier'), gere
   });
 
   // Colonnes utilisees : description (obligatoire) et niveau (entier, optionnel).
-  // Les autres colonnes (type, categorie…) sont ignorees pour rester compatibles
-  // avec les anciens fichiers CSV.
+  // Les autres colonnes (type, categorie…) sont ignorees — compatibles avec anciens CSV.
   const insertion = db.prepare('INSERT INTO objectifs (description, niveau) VALUES (?, ?)');
   const importerTout = db.transaction((rows) => {
+    let supprimes = 0;
+    if (mode === 'remplacer') {
+      supprimes = db.prepare('DELETE FROM objectifs').run().changes;
+    }
     let compteur = 0;
     for (const ligne of rows) {
       if (!ligne.description) continue;
@@ -575,13 +580,13 @@ app.post('/api/objectifs/import', exigerAdmin, uploadCsv.single('fichier'), gere
       insertion.run(ligne.description, isNaN(niveauVal) ? null : niveauVal);
       compteur++;
     }
-    return compteur;
+    return { importes: compteur, supprimes };
   });
 
-  const importes = importerTout(lignesNormalisees);
+  const { importes, supprimes } = importerTout(lignesNormalisees);
 
-  const synchronisation = await commiterEtPousser(`Admin : import CSV de ${importes} objectifs`);
-  res.json({ ok: true, importes, synchronisation });
+  const synchronisation = await commiterEtPousser(`Admin : import CSV de ${importes} objectifs (mode ${mode})`);
+  res.json({ ok: true, importes, supprimes, mode, synchronisation });
 }));
 
 // --- API : scenario (images ordonnees, defilees par le maitre du jeu) ---
@@ -835,10 +840,10 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
 
   const nbJoueursAttendu = parseInt(req.body.nb_joueurs_attendus) || 0;
   const nbRepRace = Math.min(3, Math.max(0, parseInt(req.body.nb_representants_race) ?? 2));
-  const nbRepRune = Math.min(3, Math.max(0, parseInt(req.body.nb_representants_rune) ?? 2));
+  const nbRepAllegiance = Math.min(3, Math.max(0, parseInt(req.body.nb_representants_allegiance) ?? 2));
 
-  if (nbRepRace === 0 && nbRepRune === 0) {
-    return res.status(400).json({ error: 'Il faut au moins 1 representant actif (race ou rune)' });
+  if (nbRepRace === 0 && nbRepAllegiance === 0) {
+    return res.status(400).json({ error: "Il faut au moins 1 representant actif (race ou allegiance)" });
   }
 
   const parseConfig = (val, defaut) => {
@@ -850,7 +855,7 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
   };
 
   const configRace = parseConfig(req.body.config_objectifs_race, '[2,2,2]');
-  const configRune = parseConfig(req.body.config_objectifs_rune, '[2,2,2]');
+  const configAllegiance = parseConfig(req.body.config_objectifs_allegiance, '[2,2,2]');
 
   let code;
   do {
@@ -859,9 +864,9 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
 
   const partie = db
     .prepare(
-      'INSERT INTO parties (code, nom, nb_joueurs_attendus, nb_representants_race, nb_representants_rune, config_objectifs_race, config_objectifs_rune) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO parties (code, nom, nb_joueurs_attendus, nb_representants_race, nb_representants_allegiance, config_objectifs_race, config_objectifs_allegiance) VALUES (?, ?, ?, ?, ?, ?, ?)'
     )
-    .run(code, `Partie ${code}`, nbJoueursAttendu, nbRepRace, nbRepRune, configRace, configRune);
+    .run(code, `Partie ${code}`, nbJoueursAttendu, nbRepRace, nbRepAllegiance, configRace, configAllegiance);
   const nouvelle = db.prepare('SELECT * FROM parties WHERE id = ?').get(partie.lastInsertRowid);
   res.status(201).json({ active: true, ...nouvelle, joueurs: [] });
 });

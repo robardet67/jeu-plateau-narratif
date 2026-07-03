@@ -24,9 +24,9 @@ function regenererExportContenu() {
     objectifs: db
       .prepare('SELECT id, description, niveau, created_at FROM objectifs ORDER BY id')
       .all(),
-    runes: db.prepare('SELECT id, nom, portrait, created_at FROM runes ORDER BY id').all(),
-    representants_rune: db
-      .prepare('SELECT id, rune_id, rang, nom, image_depart, image_sourire, dialogue, created_at FROM representants_rune ORDER BY rune_id, rang')
+    allegiances: db.prepare('SELECT id, nom, portrait, created_at FROM allegiances ORDER BY id').all(),
+    representants_allegiance: db
+      .prepare('SELECT id, allegiance_id, rang, nom, image_depart, image_sourire, dialogue, created_at FROM representants_allegiance ORDER BY allegiance_id, rang')
       .all(),
     scenario_images: db.prepare('SELECT id, ordre, image, created_at FROM scenario_images ORDER BY ordre').all()
   };

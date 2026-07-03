@@ -5,7 +5,7 @@ const indicateurSync = document.getElementById('indicateur-sync');
 let racesEnCache = [];
 let representantsEnCache = [];
 let objectifsEnCache = [];
-let runesEnCache = [];
+let allegiancesEnCache = [];
 
 async function requeteJSON(url, options = {}) {
   const reponse = await fetch(url, options);
@@ -289,36 +289,36 @@ document.getElementById('form-nouveau-representant').addEventListener('submit', 
   await chargerTout();
 });
 
-// --- Runes ---
+// --- Allegeances ---
 
-async function chargerRunes() {
-  runesEnCache = await requeteJSON('/api/runes');
+async function chargerAllegiances() {
+  allegiancesEnCache = await requeteJSON('/api/allegiances');
 
-  const compteur = document.getElementById('compteur-runes');
-  compteur.textContent = `(${runesEnCache.length}/3)`;
+  const compteur = document.getElementById('compteur-allegiances');
+  compteur.textContent = `(${allegiancesEnCache.length}/3)`;
 
-  const btnSubmit = document.querySelector('#form-nouvelle-rune button[type=submit]');
-  if (btnSubmit) btnSubmit.disabled = runesEnCache.length >= 3;
+  const btnSubmit = document.querySelector('#form-nouvelle-allegiance button[type=submit]');
+  if (btnSubmit) btnSubmit.disabled = allegiancesEnCache.length >= 3;
 
-  const liste = document.getElementById('liste-runes');
+  const liste = document.getElementById('liste-allegiances');
   liste.innerHTML = '';
-  runesEnCache.forEach((rune) => liste.appendChild(creerElementRune(rune)));
+  allegiancesEnCache.forEach((a) => liste.appendChild(creerElementAllegiance(a)));
 
-  const select = document.getElementById('select-rune-representants');
+  const select = document.getElementById('select-allegiance-representants');
   const valeurPrecedente = select.value;
-  select.innerHTML = runesEnCache.map((r) => `<option value="${r.id}">${r.nom}</option>`).join('');
-  if (valeurPrecedente && runesEnCache.some((r) => String(r.id) === valeurPrecedente)) {
+  select.innerHTML = allegiancesEnCache.map((a) => `<option value="${a.id}">${a.nom}</option>`).join('');
+  if (valeurPrecedente && allegiancesEnCache.some((a) => String(a.id) === valeurPrecedente)) {
     select.value = valeurPrecedente;
   }
 }
 
-function creerElementRune(rune) {
+function creerElementAllegiance(allegiance) {
   const li = document.createElement('li');
   li.className = 'element-carte';
   li.innerHTML = `
     <div class="element-infos">
-      ${rune.portrait ? `<img src="${rune.portrait}" alt="portrait" style="width:48px;height:48px;object-fit:cover;border-radius:.25rem" />` : ''}
-      <strong>${rune.nom}</strong>
+      ${allegiance.portrait ? `<img src="${allegiance.portrait}" alt="portrait" style="width:48px;height:48px;object-fit:cover;border-radius:.25rem" />` : ''}
+      <strong>${allegiance.nom}</strong>
     </div>
     <div class="element-actions">
       <button class="btn-modifier">Modifier</button>
@@ -326,10 +326,10 @@ function creerElementRune(rune) {
     </div>
   `;
 
-  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifRune(li, rune));
+  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifAllegiance(li, allegiance));
   li.querySelector('.btn-supprimer').addEventListener('click', async () => {
-    if (!confirm(`Supprimer la rune "${rune.nom}" et tous ses representants ?`)) return;
-    const resultat = await requeteJSON(`/api/runes/${rune.id}`, { method: 'DELETE' });
+    if (!confirm(`Supprimer l'allegiance "${allegiance.nom}" et tous ses representants ?`)) return;
+    const resultat = await requeteJSON(`/api/allegiances/${allegiance.id}`, { method: 'DELETE' });
     afficherSync(resultat.synchronisation);
     await chargerTout();
   });
@@ -337,10 +337,10 @@ function creerElementRune(rune) {
   return li;
 }
 
-function afficherFormulaireModifRune(li, rune) {
+function afficherFormulaireModifAllegiance(li, allegiance) {
   li.innerHTML = `
     <form class="formulaire" style="width:100%" enctype="multipart/form-data">
-      <input name="nom" type="text" value="${rune.nom}" required />
+      <input name="nom" type="text" value="${allegiance.nom}" required />
       <label class="champ-fichier">Nouveau portrait (PNG, optionnel)
         <input name="portrait" type="file" accept="image/png" />
       </label>
@@ -350,39 +350,39 @@ function afficherFormulaireModifRune(li, rune) {
       </div>
     </form>
   `;
-  li.querySelector('.btn-annuler').addEventListener('click', () => chargerRunes());
+  li.querySelector('.btn-annuler').addEventListener('click', () => chargerAllegiances());
   li.querySelector('form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const resultat = await requeteJSON(`/api/runes/${rune.id}`, { method: 'PUT', body: new FormData(e.target) });
+    const resultat = await requeteJSON(`/api/allegiances/${allegiance.id}`, { method: 'PUT', body: new FormData(e.target) });
     afficherSync(resultat.synchronisation);
     await chargerTout();
   });
 }
 
-document.getElementById('form-nouvelle-rune').addEventListener('submit', async (e) => {
+document.getElementById('form-nouvelle-allegiance').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const resultat = await requeteJSON('/api/runes', { method: 'POST', body: new FormData(e.target) });
+  const resultat = await requeteJSON('/api/allegiances', { method: 'POST', body: new FormData(e.target) });
   afficherSync(resultat.synchronisation);
   e.target.reset();
   await chargerTout();
 });
 
-// --- Representants de rune ---
+// --- Representants d'allegiance ---
 
-async function chargerRepresentantsRune() {
-  const runeId = document.getElementById('select-rune-representants').value;
-  const liste = document.getElementById('liste-representants-rune');
+async function chargerRepresentantsAllegiance() {
+  const allegianceId = document.getElementById('select-allegiance-representants').value;
+  const liste = document.getElementById('liste-representants-allegiance');
   liste.innerHTML = '';
-  if (!runeId) return;
+  if (!allegianceId) return;
 
-  const reps = await requeteJSON(`/api/runes/${runeId}/representants`);
-  const compteur = document.getElementById('compteur-representants-rune');
+  const reps = await requeteJSON(`/api/allegiances/${allegianceId}/representants`);
+  const compteur = document.getElementById('compteur-representants-allegiance');
   compteur.textContent = `(${reps.length}/3)`;
-  document.querySelector('#form-nouveau-representant-rune button[type=submit]').disabled = reps.length >= 3;
-  reps.forEach((rep) => liste.appendChild(creerElementRepresentantRune(rep)));
+  document.querySelector('#form-nouveau-representant-allegiance button[type=submit]').disabled = reps.length >= 3;
+  reps.forEach((rep) => liste.appendChild(creerElementRepresentantAllegiance(rep)));
 }
 
-function creerElementRepresentantRune(rep) {
+function creerElementRepresentantAllegiance(rep) {
   const li = document.createElement('li');
   li.className = 'element-carte';
   li.innerHTML = `
@@ -400,18 +400,18 @@ function creerElementRepresentantRune(rep) {
     </div>
   `;
 
-  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifRepresentantRune(li, rep));
+  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifRepresentantAllegiance(li, rep));
   li.querySelector('.btn-supprimer').addEventListener('click', async () => {
     if (!confirm(`Supprimer le representant "${rep.nom}" ?`)) return;
-    const resultat = await requeteJSON(`/api/representants-rune/${rep.id}`, { method: 'DELETE' });
+    const resultat = await requeteJSON(`/api/representants-allegiance/${rep.id}`, { method: 'DELETE' });
     afficherSync(resultat.synchronisation);
-    await chargerRepresentantsRune();
+    await chargerRepresentantsAllegiance();
   });
 
   return li;
 }
 
-function afficherFormulaireModifRepresentantRune(li, rep) {
+function afficherFormulaireModifRepresentantAllegiance(li, rep) {
   li.innerHTML = `
     <form class="formulaire" style="width:100%" enctype="multipart/form-data">
       <input name="nom" type="text" value="${rep.nom}" required />
@@ -428,25 +428,25 @@ function afficherFormulaireModifRepresentantRune(li, rep) {
       </div>
     </form>
   `;
-  li.querySelector('.btn-annuler').addEventListener('click', () => chargerRepresentantsRune());
+  li.querySelector('.btn-annuler').addEventListener('click', () => chargerRepresentantsAllegiance());
   li.querySelector('form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const resultat = await requeteJSON(`/api/representants-rune/${rep.id}`, { method: 'PUT', body: new FormData(e.target) });
+    const resultat = await requeteJSON(`/api/representants-allegiance/${rep.id}`, { method: 'PUT', body: new FormData(e.target) });
     afficherSync(resultat.synchronisation);
-    await chargerRepresentantsRune();
+    await chargerRepresentantsAllegiance();
   });
 }
 
-document.getElementById('select-rune-representants').addEventListener('change', chargerRepresentantsRune);
+document.getElementById('select-allegiance-representants').addEventListener('change', chargerRepresentantsAllegiance);
 
-document.getElementById('form-nouveau-representant-rune').addEventListener('submit', async (e) => {
+document.getElementById('form-nouveau-representant-allegiance').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const runeId = document.getElementById('select-rune-representants').value;
-  if (!runeId) return alert('Choisissez une rune');
-  const resultat = await requeteJSON(`/api/runes/${runeId}/representants`, { method: 'POST', body: new FormData(e.target) });
+  const allegianceId = document.getElementById('select-allegiance-representants').value;
+  if (!allegianceId) return alert("Choisissez une allegiance");
+  const resultat = await requeteJSON(`/api/allegiances/${allegianceId}/representants`, { method: 'POST', body: new FormData(e.target) });
   afficherSync(resultat.synchronisation);
   e.target.reset();
-  await chargerRepresentantsRune();
+  await chargerRepresentantsAllegiance();
 });
 
 // --- Dialogues ---
@@ -641,14 +641,26 @@ document.getElementById('form-import-objectifs').addEventListener('submit', asyn
   const fichier = document.getElementById('champ-csv-objectifs').files[0];
   if (!fichier) return;
 
+  const mode = document.querySelector('input[name="mode-import"]:checked').value;
+
+  if (mode === 'remplacer') {
+    const total = objectifsEnCache.length;
+    const msg = total > 0
+      ? `Cette action supprimera definitivement les ${total} objectif(s) existants. Confirmer ?`
+      : "Remplacer les objectifs existants ? (la liste est vide)";
+    if (!confirm(msg)) return;
+  }
+
   const donnees = new FormData();
   donnees.append('fichier', fichier);
+  donnees.append('mode', mode);
 
   const messageEl = document.getElementById('message-import-objectifs');
   try {
     const resultat = await requeteJSON('/api/objectifs/import', { method: 'POST', body: donnees });
     afficherSync(resultat.synchronisation);
-    messageEl.textContent = `${resultat.importes} objectif(s) importe(s).`;
+    const partieSupprime = resultat.supprimes > 0 ? ` (${resultat.supprimes} supprime(s))` : '';
+    messageEl.textContent = `${resultat.importes} objectif(s) importe(s)${partieSupprime}.`;
     messageEl.classList.remove('cachee');
     e.target.reset();
     await chargerObjectifs();
@@ -905,13 +917,13 @@ function lireConfigObjectifs(conteneurId) {
 document.getElementById('config-nb-rep-race').addEventListener('input', (e) => {
   mettreAJourConfigObjectifs('config-obj-race', parseInt(e.target.value) || 0);
 });
-document.getElementById('config-nb-rep-rune').addEventListener('input', (e) => {
-  mettreAJourConfigObjectifs('config-obj-rune', parseInt(e.target.value) || 0);
+document.getElementById('config-nb-rep-allegiance').addEventListener('input', (e) => {
+  mettreAJourConfigObjectifs('config-obj-allegiance', parseInt(e.target.value) || 0);
 });
 
 // Initialisation des sous-formulaires au chargement
 mettreAJourConfigObjectifs('config-obj-race', parseInt(document.getElementById('config-nb-rep-race').value) || 2);
-mettreAJourConfigObjectifs('config-obj-rune', parseInt(document.getElementById('config-nb-rep-rune').value) || 2);
+mettreAJourConfigObjectifs('config-obj-allegiance', parseInt(document.getElementById('config-nb-rep-allegiance').value) || 2);
 
 document.getElementById('btn-forcer-lancement').addEventListener('click', async () => {
   if (!confirm('Forcer le lancement maintenant ? La partie demarrera meme si tous les joueurs n\'ont pas choisi leur race.')) return;
@@ -935,18 +947,18 @@ document.getElementById('btn-reinitialiser-partie').addEventListener('click', as
 document.getElementById('btn-creer-partie-active').addEventListener('click', async () => {
   const nbJoueurs = parseInt(document.getElementById('config-nb-joueurs').value) || 0;
   const nbRepRace = parseInt(document.getElementById('config-nb-rep-race').value) || 0;
-  const nbRepRune = parseInt(document.getElementById('config-nb-rep-rune').value) || 0;
+  const nbRepAllegiance = parseInt(document.getElementById('config-nb-rep-allegiance').value) || 0;
 
   const erreurEl = document.getElementById('erreur-config-partie');
-  if (nbRepRace === 0 && nbRepRune === 0) {
-    erreurEl.textContent = 'Il faut au moins 1 representant actif (race ou rune).';
+  if (nbRepRace === 0 && nbRepAllegiance === 0) {
+    erreurEl.textContent = "Il faut au moins 1 representant actif (race ou allegiance).";
     erreurEl.classList.remove('cachee');
     return;
   }
   erreurEl.classList.add('cachee');
 
   const configRace = JSON.stringify(lireConfigObjectifs('config-obj-race'));
-  const configRune = JSON.stringify(lireConfigObjectifs('config-obj-rune'));
+  const configAllegiance = JSON.stringify(lireConfigObjectifs('config-obj-allegiance'));
 
   try {
     await requeteJSON('/api/admin/partie-active/creer', {
@@ -955,9 +967,9 @@ document.getElementById('btn-creer-partie-active').addEventListener('click', asy
       body: JSON.stringify({
         nb_joueurs_attendus: nbJoueurs,
         nb_representants_race: nbRepRace,
-        nb_representants_rune: nbRepRune,
+        nb_representants_allegiance: nbRepAllegiance,
         config_objectifs_race: configRace,
-        config_objectifs_rune: configRune
+        config_objectifs_allegiance: configAllegiance
       })
     });
     await chargerPartieActive();
@@ -980,7 +992,7 @@ document.getElementById('btn-terminer-partie').addEventListener('click', async (
 
 async function chargerTout() {
   await chargerRaces();
-  await chargerRunes();
+  await chargerAllegiances();
   await chargerRepresentants();
   await chargerReprésentantsPourDialogues();
   await chargerObjectifs();

@@ -45,7 +45,7 @@
       <button class="onglet" data-onglet="objectifs">Objectifs</button>
       <button class="onglet" data-onglet="fonds">Fonds</button>
       <button class="onglet" data-onglet="scenario">Scenario</button>
-      <button class="onglet" data-onglet="runes">Runes</button>
+      <button class="onglet" data-onglet="allegiances">Allegeances</button>
       <button class="onglet" data-onglet="parametres">Parametres</button>
       <button class="onglet" data-onglet="partie">Configuration de partie</button>
     </nav>
@@ -128,8 +128,12 @@
           Les autres colonnes (<code>type</code>, <code>categorie</code>…) sont ignorees —
           compatibles avec les anciens fichiers.
         </p>
-        <form id="form-import-objectifs" class="formulaire-ligne">
+        <form id="form-import-objectifs" class="formulaire">
           <input id="champ-csv-objectifs" type="file" accept=".csv,text/csv" required />
+          <div style="display:flex;gap:1.5rem;margin:.5rem 0">
+            <label><input type="radio" name="mode-import" value="ajouter" checked /> Ajouter a la liste existante</label>
+            <label><input type="radio" name="mode-import" value="remplacer" /> Remplacer tous les objectifs</label>
+          </div>
           <button type="submit">Importer</button>
         </form>
         <p id="message-import-objectifs" class="message-info cachee"></p>
@@ -183,32 +187,32 @@
       </div>
     </section>
 
-    <section id="onglet-runes" class="contenu-onglet cachee">
+    <section id="onglet-allegiances" class="contenu-onglet cachee">
       <div class="carte">
-        <h2>Ajouter une rune <span id="compteur-runes" class="compteur"></span></h2>
-        <p class="astuce">Maximum 3 runes dans le jeu.</p>
-        <form id="form-nouvelle-rune" class="formulaire" enctype="multipart/form-data">
-          <input name="nom" type="text" placeholder="Nom de la rune" required />
+        <h2>Ajouter une allegiance <span id="compteur-allegiances" class="compteur"></span></h2>
+        <p class="astuce">Maximum 3 allegiances dans le jeu.</p>
+        <form id="form-nouvelle-allegiance" class="formulaire" enctype="multipart/form-data">
+          <input name="nom" type="text" placeholder="Nom de l'allegiance" required />
           <label class="champ-fichier">Portrait (PNG, optionnel)
             <input name="portrait" type="file" accept="image/png" />
           </label>
-          <button type="submit">Creer la rune</button>
+          <button type="submit">Creer l'allegiance</button>
         </form>
       </div>
 
       <div class="carte">
-        <h2>Runes existantes</h2>
-        <ul id="liste-runes" class="liste-elements"></ul>
+        <h2>Allegiances existantes</h2>
+        <ul id="liste-allegiances" class="liste-elements"></ul>
       </div>
 
       <div class="carte">
-        <h2>Choisir une rune</h2>
-        <select id="select-rune-representants"></select>
+        <h2>Choisir une allegiance</h2>
+        <select id="select-allegiance-representants"></select>
       </div>
 
       <div class="carte">
-        <h2>Ajouter un representant <span id="compteur-representants-rune" class="compteur"></span></h2>
-        <form id="form-nouveau-representant-rune" class="formulaire" enctype="multipart/form-data">
+        <h2>Ajouter un representant <span id="compteur-representants-allegiance" class="compteur"></span></h2>
+        <form id="form-nouveau-representant-allegiance" class="formulaire" enctype="multipart/form-data">
           <input name="nom" type="text" placeholder="Nom du representant" required />
           <textarea name="dialogue" placeholder="Texte de dialogue (utilisez {nom} pour le prenom du joueur)"></textarea>
           <label class="champ-fichier">Image de depart (PNG)
@@ -222,8 +226,8 @@
       </div>
 
       <div class="carte">
-        <h2>Representants de cette rune</h2>
-        <ul id="liste-representants-rune" class="liste-elements"></ul>
+        <h2>Representants de cette allegiance</h2>
+        <ul id="liste-representants-allegiance" class="liste-elements"></ul>
       </div>
     </section>
 
@@ -258,11 +262,11 @@
           </fieldset>
 
           <fieldset style="border:1px solid #ccc;padding:.75rem;border-radius:.5rem">
-            <legend>Representants de rune</legend>
+            <legend>Representants d'allegiance</legend>
             <label>Representants actifs (0-3)
-              <input id="config-nb-rep-rune" type="number" min="0" max="3" value="2" />
+              <input id="config-nb-rep-allegiance" type="number" min="0" max="3" value="2" />
             </label>
-            <div id="config-obj-rune" class="formulaire" style="margin-top:.5rem"></div>
+            <div id="config-obj-allegiance" class="formulaire" style="margin-top:.5rem"></div>
           </fieldset>
         </div>
 

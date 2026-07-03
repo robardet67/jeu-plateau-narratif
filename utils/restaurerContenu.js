@@ -67,18 +67,18 @@ function restaurerSiVide(db) {
       compteurs.objectifs++;
     });
 
-    const insererRune = db.prepare('INSERT INTO runes (id, nom, portrait, created_at) VALUES (?, ?, ?, ?)');
-    (contenu.runes || []).forEach((r) => {
-      insererRune.run(r.id, r.nom, r.portrait, r.created_at);
-      compteurs.runes = (compteurs.runes || 0) + 1;
+    const insererAllegiance = db.prepare('INSERT INTO allegiances (id, nom, portrait, created_at) VALUES (?, ?, ?, ?)');
+    (contenu.allegiances || []).forEach((r) => {
+      insererAllegiance.run(r.id, r.nom, r.portrait, r.created_at);
+      compteurs.allegiances = (compteurs.allegiances || 0) + 1;
     });
 
-    const insererRepRune = db.prepare(
-      'INSERT INTO representants_rune (id, rune_id, rang, nom, image_depart, image_sourire, dialogue, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    const insererRepAllegiance = db.prepare(
+      'INSERT INTO representants_allegiance (id, allegiance_id, rang, nom, image_depart, image_sourire, dialogue, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     );
-    (contenu.representants_rune || []).forEach((r) => {
-      insererRepRune.run(r.id, r.rune_id, r.rang, r.nom, r.image_depart, r.image_sourire, r.dialogue ?? null, r.created_at);
-      compteurs.representants_rune = (compteurs.representants_rune || 0) + 1;
+    (contenu.representants_allegiance || []).forEach((r) => {
+      insererRepAllegiance.run(r.id, r.allegiance_id, r.rang, r.nom, r.image_depart, r.image_sourire, r.dialogue ?? null, r.created_at);
+      compteurs.representants_allegiance = (compteurs.representants_allegiance || 0) + 1;
     });
 
     const insererScenario = db.prepare(
