@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-03T13:18:49.368Z",
+  "genere_le": "2026-07-03T14:03:25.996Z",
   "races": [
     {
       "id": 1,
@@ -110,7 +110,608 @@
       "created_at": "2026-07-01 13:23:56"
     }
   ],
-  "objectifs": [],
+  "objectifs": [
+    {
+      "id": 171,
+      "description": "Trouve une pierre gravée cachée près de la Fontaine Ancienne.",
+      "niveau": 1,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 172,
+      "description": "Ramène une pierre runique tombée dans les Ruines Oubliées.",
+      "niveau": 1,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 173,
+      "description": "Prépare une potion de soin avec les herbes de la Fontaine Ancienne.",
+      "niveau": 1,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 174,
+      "description": "Récupère une fiole de potion oubliée à les Ruines Oubliées.",
+      "niveau": 1,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 175,
+      "description": "Traque un petit monstre qui rôde près de la Fontaine Ancienne.",
+      "niveau": 1,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 176,
+      "description": "Chasse le monstre qui effraie les habitants de les Ruines Oubliées.",
+      "niveau": 1,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 177,
+      "description": "Ouvre le coffre verrouillé caché à la Fontaine Ancienne.",
+      "niveau": 1,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 178,
+      "description": "Trouve la clé du coffre perdu près de les Ruines Oubliées.",
+      "niveau": 1,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 179,
+      "description": "Répare une arme cassée trouvée à la Fontaine Ancienne.",
+      "niveau": 1,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 180,
+      "description": "Récupère une arme perdue au combat près de les Ruines Oubliées.",
+      "niveau": 1,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 181,
+      "description": "Récupère un éclat de pierre bleue à la Forge Sacrée.",
+      "niveau": 2,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 182,
+      "description": "Déterre une pierre ancienne enfouie sous le Marché Couvert.",
+      "niveau": 2,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 183,
+      "description": "Livre une potion fragile jusqu'à la Forge Sacrée.",
+      "niveau": 2,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 184,
+      "description": "Trouve l'ingrédient manquant pour la potion à le Marché Couvert.",
+      "niveau": 2,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 185,
+      "description": "Capture un jeune monstre égaré à la Forge Sacrée.",
+      "niveau": 2,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 186,
+      "description": "Repousse un monstre affamé loin de le Marché Couvert.",
+      "niveau": 2,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 187,
+      "description": "Déplace un coffre lourd jusqu'à la Forge Sacrée.",
+      "niveau": 2,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 188,
+      "description": "Récupère le contenu d'un coffre renversé à le Marché Couvert.",
+      "niveau": 2,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 189,
+      "description": "Livre une arme neuve forgée pour la Forge Sacrée.",
+      "niveau": 2,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 190,
+      "description": "Trouve le fourreau manquant d'une arme à le Marché Couvert.",
+      "niveau": 2,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 191,
+      "description": "Rapporte une pierre polie trouvée au fond de la Crypte Silencieuse.",
+      "niveau": 3,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 192,
+      "description": "Localise la pierre fissurée qui marque l'entrée de le Pont Brisé.",
+      "niveau": 3,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 193,
+      "description": "Échange une potion contre un service à la Crypte Silencieuse.",
+      "niveau": 3,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 194,
+      "description": "Teste une potion suspecte trouvée près de le Pont Brisé.",
+      "niveau": 3,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 195,
+      "description": "Découvre la tanière du monstre proche de la Crypte Silencieuse.",
+      "niveau": 3,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 196,
+      "description": "Négocie avec le monstre gardien de le Pont Brisé.",
+      "niveau": 3,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 197,
+      "description": "Désamorce le piège d'un coffre trouvé à la Crypte Silencieuse.",
+      "niveau": 3,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 198,
+      "description": "Localise le coffre enterré sous le Pont Brisé.",
+      "niveau": 3,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 199,
+      "description": "Nettoie une arme rouillée découverte à la Crypte Silencieuse.",
+      "niveau": 3,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 200,
+      "description": "Échange une vieille arme contre une meilleure à le Pont Brisé.",
+      "niveau": 3,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 201,
+      "description": "Vole une pierre précieuse gardée près de la Clairière Grise.",
+      "niveau": 4,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 202,
+      "description": "Identifie la pierre qui brille la nuit à le Vieux Moulin.",
+      "niveau": 4,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 203,
+      "description": "Vole la recette de potion gardée à la Clairière Grise.",
+      "niveau": 4,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 204,
+      "description": "Récupère trois potions renversées à le Vieux Moulin.",
+      "niveau": 4,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 205,
+      "description": "Soigne un monstre blessé trouvé à la Clairière Grise.",
+      "niveau": 4,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 206,
+      "description": "Piste les traces d'un monstre autour de le Vieux Moulin.",
+      "niveau": 4,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 207,
+      "description": "Rapporte un coffre scellé depuis la Clairière Grise.",
+      "niveau": 4,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 208,
+      "description": "Force un coffre rouillé abandonné à le Vieux Moulin.",
+      "niveau": 4,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 209,
+      "description": "Cache une arme dangereuse loin de la Clairière Grise.",
+      "niveau": 4,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 210,
+      "description": "Identifie l'origine d'une arme trouvée à le Vieux Moulin.",
+      "niveau": 4,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 211,
+      "description": "Assemble les fragments de pierre dispersés autour de la Tour Effondrée.",
+      "niveau": 5,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 212,
+      "description": "Purifie une pierre corrompue trouvée à le Sanctuaire Caché.",
+      "niveau": 5,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 213,
+      "description": "Prépare une potion antidote pour un blessé à la Tour Effondrée.",
+      "niveau": 5,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 214,
+      "description": "Porte une potion explosive loin de le Sanctuaire Caché.",
+      "niveau": 5,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 215,
+      "description": "Libère un monstre enchaîné injustement à la Tour Effondrée.",
+      "niveau": 5,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 216,
+      "description": "Affronte le monstre qui garde l'accès à le Sanctuaire Caché.",
+      "niveau": 5,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 217,
+      "description": "Échange un coffre vide contre un service à la Tour Effondrée.",
+      "niveau": 5,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 218,
+      "description": "Protège un coffre précieux en route vers le Sanctuaire Caché.",
+      "niveau": 5,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 219,
+      "description": "Aiguise une arme émoussée pour un allié à la Tour Effondrée.",
+      "niveau": 5,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 220,
+      "description": "Rapporte une arme cérémonielle volée à le Sanctuaire Caché.",
+      "niveau": 5,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 221,
+      "description": "Échange une pierre magique contre un service à la Fontaine Ancienne.",
+      "niveau": 6,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 222,
+      "description": "Protège la pierre sacrée exposée à les Ruines Oubliées.",
+      "niveau": 6,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 223,
+      "description": "Distille une potion rare dans les caves de la Fontaine Ancienne.",
+      "niveau": 6,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 224,
+      "description": "Retrouve le flacon de potion perdu à les Ruines Oubliées.",
+      "niveau": 6,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 225,
+      "description": "Endors un monstre agité rôdant près de la Fontaine Ancienne.",
+      "niveau": 6,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 226,
+      "description": "Étudie le comportement d'un monstre observé à les Ruines Oubliées.",
+      "niveau": 6,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 227,
+      "description": "Répare la serrure d'un coffre cassé à la Fontaine Ancienne.",
+      "niveau": 6,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 228,
+      "description": "Cache un coffre important avant l'arrivée à les Ruines Oubliées.",
+      "niveau": 6,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 229,
+      "description": "Désarme un piège lié à une arme ancienne à la Fontaine Ancienne.",
+      "niveau": 6,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 230,
+      "description": "Grave un symbole sur une arme forgée à les Ruines Oubliées.",
+      "niveau": 6,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 231,
+      "description": "Grave un message sur une pierre à la Forge Sacrée.",
+      "niveau": 7,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 232,
+      "description": "Retrouve la pierre volée et cachée à le Marché Couvert.",
+      "niveau": 7,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 233,
+      "description": "Neutralise une potion toxique renversée à la Forge Sacrée.",
+      "niveau": 7,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 234,
+      "description": "Offre une potion de courage à un garde de le Marché Couvert.",
+      "niveau": 7,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 235,
+      "description": "Nourris un monstre affamé caché à la Forge Sacrée.",
+      "niveau": 7,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 236,
+      "description": "Éloigne un monstre curieux des abords de le Marché Couvert.",
+      "niveau": 7,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 237,
+      "description": "Vide le contenu d'un coffre partagé à la Forge Sacrée.",
+      "niveau": 7,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 238,
+      "description": "Livre un petit coffre scellé jusqu'à le Marché Couvert.",
+      "niveau": 7,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 239,
+      "description": "Retrouve le manche perdu d'une arme à la Forge Sacrée.",
+      "niveau": 7,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 240,
+      "description": "Enterre une arme maudite loin de le Marché Couvert.",
+      "niveau": 7,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 241,
+      "description": "Polis une pierre brute rapportée de la Crypte Silencieuse.",
+      "niveau": 8,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 242,
+      "description": "Livre une pierre précieuse jusqu'à le Pont Brisé.",
+      "niveau": 8,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 243,
+      "description": "Mélange deux potions instables loin de la Crypte Silencieuse.",
+      "niveau": 8,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 244,
+      "description": "Cache une potion précieuse avant l'arrivée à le Pont Brisé.",
+      "niveau": 8,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 245,
+      "description": "Récupère une écaille de monstre tombée à la Crypte Silencieuse.",
+      "niveau": 8,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 246,
+      "description": "Guide un monstre perdu jusqu'à le Pont Brisé.",
+      "niveau": 8,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 247,
+      "description": "Retrouve le double de la clé d'un coffre à la Crypte Silencieuse.",
+      "niveau": 8,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 248,
+      "description": "Soulève un coffre coincé sous des débris à le Pont Brisé.",
+      "niveau": 8,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 249,
+      "description": "Vends une arme rare au forgeron de la Crypte Silencieuse.",
+      "niveau": 8,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 250,
+      "description": "Répare le fil tranchant d'une lame à le Pont Brisé.",
+      "niveau": 8,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 251,
+      "description": "Brise une pierre maudite trouvée à la Clairière Grise.",
+      "niveau": 9,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 252,
+      "description": "Rassemble deux moitiés de pierre séparées à le Vieux Moulin.",
+      "niveau": 9,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 253,
+      "description": "Récupère une potion gelée dans les glaces de la Clairière Grise.",
+      "niveau": 9,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 254,
+      "description": "Vends une potion rare au marchand de le Vieux Moulin.",
+      "niveau": 9,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 255,
+      "description": "Calme un monstre furieux réveillé à la Clairière Grise.",
+      "niveau": 9,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 256,
+      "description": "Enferme un monstre dangereux échappé de le Vieux Moulin.",
+      "niveau": 9,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 257,
+      "description": "Identifie le propriétaire d'un coffre abandonné à la Clairière Grise.",
+      "niveau": 9,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 258,
+      "description": "Transporte un coffre fragile sans le briser jusqu'à le Vieux Moulin.",
+      "niveau": 9,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 259,
+      "description": "Transporte une arme lourde jusqu'à la Clairière Grise.",
+      "niveau": 9,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 260,
+      "description": "Confie une arme de famille à un héritier à le Vieux Moulin.",
+      "niveau": 9,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 261,
+      "description": "Confie une pierre porte-bonheur à un habitant de la Tour Effondrée.",
+      "niveau": 10,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 262,
+      "description": "Recharge une pierre d'énergie à le Sanctuaire Caché.",
+      "niveau": 10,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 263,
+      "description": "Réchauffe une potion figée près de la Tour Effondrée.",
+      "niveau": 10,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 264,
+      "description": "Filtre une potion trouble ramassée à le Sanctuaire Caché.",
+      "niveau": 10,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 265,
+      "description": "Convainc un monstre de quitter la Tour Effondrée.",
+      "niveau": 10,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 266,
+      "description": "Documente l'apparition d'un monstre à le Sanctuaire Caché.",
+      "niveau": 10,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 267,
+      "description": "Marque un coffre pour le retrouver plus tard à la Tour Effondrée.",
+      "niveau": 10,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 268,
+      "description": "Récupère un coffre englouti près de le Sanctuaire Caché.",
+      "niveau": 10,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 269,
+      "description": "Récupère une arme jetée dans les eaux de la Tour Effondrée.",
+      "niveau": 10,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 270,
+      "description": "Bénis une arme avant un affrontement à le Sanctuaire Caché.",
+      "niveau": 10,
+      "created_at": "2026-07-03 14:03:25"
+    }
+  ],
   "allegiances": [
     {
       "id": 1,
