@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-03T18:11:14.442Z",
+  "genere_le": "2026-07-03T18:12:10.005Z",
   "races": [
     {
       "id": 1,
@@ -756,6 +756,16 @@
       "image_sourire": "/uploads/1783084365155-de5b92df5e11cad6.png",
       "dialogue": null,
       "created_at": "2026-07-03 13:12:45"
+    },
+    {
+      "id": 3,
+      "allegeance_id": 1,
+      "rang": 3,
+      "nom": "standard",
+      "image_depart": "/uploads/1783102330001-4c0d6bb3ee46f398.png",
+      "image_sourire": "/uploads/1783102330003-2a060eaf5e15306c.png",
+      "dialogue": "vous etes dans le royaume de la rune d'or",
+      "created_at": "2026-07-03 18:12:10"
     }
   ],
   "scenario_images": [
