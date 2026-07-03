@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-02T12:12:01.608Z",
+  "genere_le": "2026-07-03T08:46:38.483Z",
   "races": [
     {
       "id": 1,
@@ -70,42 +70,42 @@
     {
       "id": 1,
       "representant_id": 1,
-      "contexte": "comunautÃ© de gobelin",
+      "contexte": "comunauté de gobelin",
       "texte": "bienvenue chez les gobelin",
       "created_at": "2026-07-01 13:21:31"
     },
     {
       "id": 2,
       "representant_id": 2,
-      "contexte": "comunautÃ© de gobelin",
+      "contexte": "comunauté de gobelin",
       "texte": "bienvenu {nom} chez les gobelin magicien",
       "created_at": "2026-07-01 13:22:09"
     },
     {
       "id": 3,
       "representant_id": 2,
-      "contexte": "comunautÃ© de gobelin",
+      "contexte": "comunauté de gobelin",
       "texte": "{nom} , nous t'attendions aux royaume de gobelin",
       "created_at": "2026-07-01 13:22:36"
     },
     {
       "id": 4,
       "representant_id": 4,
-      "contexte": "comunautÃ© d'elfe noir ",
+      "contexte": "comunauté d'elfe noir ",
       "texte": "bienvenu chez les elfe noirs",
       "created_at": "2026-07-01 13:23:08"
     },
     {
       "id": 5,
       "representant_id": 5,
-      "contexte": "comunautÃ© d 'elfes noirs",
+      "contexte": "comunauté d 'elfes noirs",
       "texte": "bienvenu chez les elfe noirs magicien",
       "created_at": "2026-07-01 13:23:29"
     },
     {
       "id": 6,
       "representant_id": 5,
-      "contexte": "La communautÃ© Ã  besoin de valeureux aventurier pour l'aider dans ses quÃªtes.",
+      "contexte": "La communauté à besoin de valeureux aventurier pour l'aider dans ses quêtes.",
       "texte": "bienvenu {nom} chez les elfe noirs le royaume",
       "created_at": "2026-07-01 13:23:56"
     }
@@ -113,85 +113,110 @@
   "objectifs": [
     {
       "id": 1,
-      "description": "Dï¿½poser uneï¿½ pï¿½ee bleu au village.",
+      "description": "D�poser une� p�ee bleu au village.",
+      "niveau": null,
       "created_at": "2026-07-01 13:24:09"
     },
     {
       "id": 2,
       "description": "ramener une larve de ciraya au lieu7.",
+      "niveau": null,
       "created_at": "2026-07-01 13:24:09"
     },
     {
       "id": 3,
       "description": "Tuer un monstre de niveau 4.",
+      "niveau": null,
       "created_at": "2026-07-01 13:24:09"
     },
     {
       "id": 4,
-      "description": "Dï¿½poser un bouclier bleu au village.",
+      "description": "D�poser un bouclier bleu au village.",
+      "niveau": null,
       "created_at": "2026-07-01 13:24:09"
     },
     {
       "id": 5,
       "description": "ramener une pierre bleue de ciraya au lieu7.",
+      "niveau": null,
       "created_at": "2026-07-01 13:24:09"
     },
     {
       "id": 6,
       "description": "Explorer une crypte de niveau 4.",
+      "niveau": null,
       "created_at": "2026-07-01 13:24:09"
     },
     {
       "id": 7,
-      "description": "Dï¿½poser un outil au village au village.",
+      "description": "D�poser un outil au village au village.",
+      "niveau": null,
       "created_at": "2026-07-01 13:24:09"
     },
     {
       "id": 8,
       "description": "ramener une larve de ciraya au lieu7.",
+      "niveau": null,
       "created_at": "2026-07-01 13:24:09"
     },
     {
       "id": 9,
       "description": "capturer un animal.",
+      "niveau": null,
       "created_at": "2026-07-01 13:24:09"
     },
     {
       "id": 10,
-      "description": "Dï¿½poser une pierre rouge bleu au village.",
+      "description": "D�poser une pierre rouge bleu au village.",
+      "niveau": null,
       "created_at": "2026-07-01 13:24:09"
     },
     {
       "id": 11,
       "description": "ramener une pierre rouge au lieu7.",
+      "niveau": null,
       "created_at": "2026-07-01 13:24:09"
     },
     {
       "id": 12,
       "description": "ramener au lieu 4 le sacre de Ramok.",
+      "niveau": null,
       "created_at": "2026-07-01 13:24:09"
     },
     {
       "id": 13,
       "description": "derober un objet commun a un autre joueur.",
+      "niveau": null,
       "created_at": "2026-07-01 13:24:09"
     },
     {
       "id": 14,
-      "description": "Dï¿½poser une pierre verte au village.",
+      "description": "D�poser une pierre verte au village.",
+      "niveau": null,
       "created_at": "2026-07-01 13:24:09"
     },
     {
       "id": 15,
       "description": "ramener deux outils au lieu7.",
+      "niveau": null,
       "created_at": "2026-07-01 13:24:09"
     },
     {
       "id": 16,
       "description": "ramener au lieu 4 la tete de cyraya.",
+      "niveau": null,
       "created_at": "2026-07-01 13:24:09"
     }
   ],
+  "runes": [
+    {
+      "id": 1,
+      "nom": "or",
+      "portrait": "/uploads/1783068398440-abf9ef76ac0b0564.png",
+      "created_at": "2026-07-03 08:46:38"
+    }
+  ],
+  "representants_rune": [],
   "scenario_images": [
     {
       "id": 1,
