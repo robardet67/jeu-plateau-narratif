@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-03T08:57:18.183Z",
+  "genere_le": "2026-07-03T13:10:13.120Z",
   "races": [
     {
       "id": 1,
@@ -110,111 +110,8 @@
       "created_at": "2026-07-01 13:23:56"
     }
   ],
-  "objectifs": [
-    {
-      "id": 1,
-      "description": "D�poser une� p�ee bleu au village.",
-      "niveau": null,
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 2,
-      "description": "ramener une larve de ciraya au lieu7.",
-      "niveau": null,
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 3,
-      "description": "Tuer un monstre de niveau 4.",
-      "niveau": null,
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 4,
-      "description": "D�poser un bouclier bleu au village.",
-      "niveau": null,
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 5,
-      "description": "ramener une pierre bleue de ciraya au lieu7.",
-      "niveau": null,
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 6,
-      "description": "Explorer une crypte de niveau 4.",
-      "niveau": null,
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 7,
-      "description": "D�poser un outil au village au village.",
-      "niveau": null,
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 8,
-      "description": "ramener une larve de ciraya au lieu7.",
-      "niveau": null,
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 9,
-      "description": "capturer un animal.",
-      "niveau": null,
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 10,
-      "description": "D�poser une pierre rouge bleu au village.",
-      "niveau": null,
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 11,
-      "description": "ramener une pierre rouge au lieu7.",
-      "niveau": null,
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 12,
-      "description": "ramener au lieu 4 le sacre de Ramok.",
-      "niveau": null,
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 13,
-      "description": "derober un objet commun a un autre joueur.",
-      "niveau": null,
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 14,
-      "description": "D�poser une pierre verte au village.",
-      "niveau": null,
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 15,
-      "description": "ramener deux outils au lieu7.",
-      "niveau": null,
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 16,
-      "description": "ramener au lieu 4 la tete de cyraya.",
-      "niveau": null,
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 170,
-      "description": "parler au mage",
-      "niveau": 2,
-      "created_at": "2026-07-03 08:55:14"
-    }
-  ],
-  "runes": [
+  "objectifs": [],
+  "allegiances": [
     {
       "id": 1,
       "nom": "or",
@@ -228,10 +125,10 @@
       "created_at": "2026-07-03 08:47:20"
     }
   ],
-  "representants_rune": [
+  "representants_allegiance": [
     {
       "id": 1,
-      "rune_id": 1,
+      "allegiance_id": 1,
       "rang": 1,
       "nom": "standard",
       "image_depart": "/uploads/1783068501397-410b1bd2cc460a5f.png",
