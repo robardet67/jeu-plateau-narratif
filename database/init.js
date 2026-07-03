@@ -295,6 +295,7 @@ function initDatabase() {
 
   assurerColonne(db, 'parties', 'nb_representants_allegeance', 'INTEGER NOT NULL DEFAULT 2');
   assurerColonne(db, 'parties', 'config_objectifs_allegeance', "TEXT NOT NULL DEFAULT '[2,2,2]'");
+  assurerColonne(db, 'parties', 'config_niveaux_race', "TEXT NOT NULL DEFAULT '[[null,null],[null,null],[null,null]]'");
 
   const parametresParDefaut = { tableau_de_bord_actif: 'false' };
   const insererParametre = db.prepare('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)');

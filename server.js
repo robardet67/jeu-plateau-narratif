@@ -144,7 +144,14 @@ app.post('/api/admin/mot-de-passe', exigerAdmin, (req, res) => {
 // --- API : races ---
 
 app.get('/api/races', (req, res) => {
-  res.json(db.prepare('SELECT * FROM races ORDER BY nom').all());
+  const races = db.prepare('SELECT * FROM races ORDER BY nom').all();
+  const result = races.map((race) => {
+    const rep1 = db
+      .prepare('SELECT id, nom, rang, image_depart, image_sourire FROM representants WHERE race_id = ? AND rang = 1')
+      .get(race.id);
+    return { ...race, representant1: rep1 || null };
+  });
+  res.json(result);
 });
 
 app.post('/api/races', exigerAdmin, gerer(async (req, res) => {
@@ -733,12 +740,17 @@ function tenterLancementPartie(partieId) {
     return { lance: false, raison: 'Deux joueurs ont choisi la meme race' };
   }
 
-  const nbObjectifsNecessaires = joueurs.length * 6;
+  let configObj;
+  try { configObj = JSON.parse(partie.config_objectifs_race || '[2,2,2]'); } catch { configObj = [2, 2, 2]; }
+  const nbRepRace = partie.nb_representants_race ?? 3;
+  const nbObjectifsParJoueur = configObj.slice(0, nbRepRace).reduce((s, n) => s + n, 0);
+  const nbObjectifsNecessaires = joueurs.length * nbObjectifsParJoueur;
+
   const { n: nbObjectifsDisponibles } = db.prepare('SELECT COUNT(*) AS n FROM objectifs').get();
   if (nbObjectifsDisponibles < nbObjectifsNecessaires) {
     return {
       lance: false,
-      raison: `Pool insuffisant : ${nbObjectifsDisponibles} objectif(s) disponible(s), ${nbObjectifsNecessaires} requis (${joueurs.length} joueur(s) x 6)`
+      raison: `Pool insuffisant : ${nbObjectifsDisponibles} objectif(s) disponible(s), ${nbObjectifsNecessaires} requis (${joueurs.length} joueur(s) x ${nbObjectifsParJoueur})`
     };
   }
 
@@ -806,8 +818,9 @@ app.get('/api/partie-active', (req, res) => {
 });
 
 app.post('/api/partie-active/rejoindre', (req, res) => {
-  const { pseudo, password } = req.body;
+  const { pseudo, password, race_id, allegeance_ids } = req.body;
   if (!pseudo) return res.status(400).json({ error: 'Le pseudo est requis' });
+  if (!race_id) return res.status(400).json({ error: 'La race est requise' });
 
   const partie = obtenirPartieActive(db);
   if (!partie) return res.status(404).json({ error: 'Aucune partie configuree par le maitre du jeu pour le moment' });
@@ -815,13 +828,39 @@ app.post('/api/partie-active/rejoindre', (req, res) => {
     return res.status(400).json({ error: 'La partie a deja demarre, impossible de la rejoindre' });
   }
 
+  const race = db.prepare('SELECT * FROM races WHERE id = ?').get(race_id);
+  if (!race) return res.status(404).json({ error: 'Race introuvable' });
+
+  const dejaPrise = db.prepare('SELECT id FROM joueurs WHERE partie_id = ? AND race_id = ?').get(partie.id, race_id);
+  if (dejaPrise) return res.status(409).json({ error: 'Cette race est deja jouee par un autre joueur' });
+
+  const idsAllegeances = Array.isArray(allegeance_ids)
+    ? [...new Set(allegeance_ids.map(Number).filter(Boolean))].slice(0, 2)
+    : [];
+
   const premierJoueur = !db.prepare('SELECT id FROM joueurs WHERE partie_id = ? LIMIT 1').get(partie.id);
   const passwordHash = password ? bcrypt.hashSync(password, 10) : null;
-  const joueur = db
-    .prepare('INSERT INTO joueurs (partie_id, pseudo, password_hash, est_hote) VALUES (?, ?, ?, ?)')
-    .run(partie.id, pseudo, passwordHash, premierJoueur ? 1 : 0);
 
-  res.status(201).json({ partieId: partie.id, code: partie.code, joueurId: joueur.lastInsertRowid });
+  const rangUn = db.prepare('SELECT id FROM representants WHERE race_id = ? AND rang = 1').get(race_id);
+
+  const joueur = db
+    .prepare(
+      'INSERT INTO joueurs (partie_id, pseudo, password_hash, race_id, representant_id, est_hote) VALUES (?, ?, ?, ?, ?, ?)'
+    )
+    .run(partie.id, pseudo, passwordHash, race_id, rangUn ? rangUn.id : null, premierJoueur ? 1 : 0);
+
+  const joueurId = joueur.lastInsertRowid;
+
+  const insAllegeance = db.prepare(
+    'INSERT OR IGNORE INTO joueur_allegeances (joueur_id, allegeance_id) VALUES (?, ?)'
+  );
+  for (const aid of idsAllegeances) {
+    if (db.prepare('SELECT id FROM allegeances WHERE id = ?').get(aid)) {
+      insAllegeance.run(joueurId, aid);
+    }
+  }
+
+  res.status(201).json({ partieId: partie.id, code: partie.code, joueurId });
 });
 
 // --- Cote MJ (admin) ---
@@ -858,6 +897,12 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
   const configRace = parseConfig(req.body.config_objectifs_race, '[2,2,2]');
   const configAllegeance = parseConfig(req.body.config_objectifs_allegeance, '[2,2,2]');
 
+  let configNiveauxRace = '[[null,null],[null,null],[null,null]]';
+  try {
+    const parsed = JSON.parse(req.body.config_niveaux_race);
+    if (Array.isArray(parsed)) configNiveauxRace = JSON.stringify(parsed);
+  } catch {}
+
   let code;
   do {
     code = genererCodePartie();
@@ -865,9 +910,9 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
 
   const partie = db
     .prepare(
-      'INSERT INTO parties (code, nom, nb_joueurs_attendus, nb_representants_race, nb_representants_allegeance, config_objectifs_race, config_objectifs_allegeance) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO parties (code, nom, nb_joueurs_attendus, nb_representants_race, nb_representants_allegeance, config_objectifs_race, config_objectifs_allegeance, config_niveaux_race) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     )
-    .run(code, `Partie ${code}`, nbJoueursAttendu, nbRepRace, nbRepAllegeance, configRace, configAllegeance);
+    .run(code, `Partie ${code}`, nbJoueursAttendu, nbRepRace, nbRepAllegeance, configRace, configAllegeance, configNiveauxRace);
   const nouvelle = db.prepare('SELECT * FROM parties WHERE id = ?').get(partie.lastInsertRowid);
   res.status(201).json({ active: true, ...nouvelle, joueurs: [] });
 });

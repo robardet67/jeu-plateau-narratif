@@ -894,14 +894,69 @@ function lireConfigObjectifs(conteneurId) {
   });
 }
 
+// Config race : objectifs par rang + niveau par slot
+function mettreAJourConfigRace(nb) {
+  const conteneur = document.getElementById('config-obj-race');
+  conteneur.innerHTML = '';
+  for (let rang = 1; rang <= 3; rang++) {
+    const actif = rang <= nb;
+    const div = document.createElement('div');
+    div.style.cssText = `opacity:${actif ? 1 : 0.4};margin-bottom:.6rem`;
+    div.innerHTML = `
+      <label>Rep ${rang} — objectifs :
+        <input type="number" min="1" max="3" value="2"
+               id="race-nb-obj-rang-${rang}" style="width:3.5rem" ${actif ? '' : 'disabled'} />
+      </label>
+      <div id="race-niveaux-rang-${rang}" style="margin-left:1rem;margin-top:.2rem;display:flex;gap:.5rem;flex-wrap:wrap"></div>
+    `;
+    conteneur.appendChild(div);
+
+    if (actif) {
+      const inputNb = div.querySelector(`#race-nb-obj-rang-${rang}`);
+      const niveauxDiv = div.querySelector(`#race-niveaux-rang-${rang}`);
+
+      const rafraichirNiveaux = () => {
+        const n = parseInt(inputNb.value) || 0;
+        niveauxDiv.innerHTML = '';
+        for (let pos = 1; pos <= n; pos++) {
+          const lbl = document.createElement('label');
+          lbl.style.fontSize = '.85rem';
+          lbl.innerHTML = `Slot ${pos} niv.: <input type="number" min="1" max="99" value="${rang}"
+            id="race-niv-rang-${rang}-pos-${pos}" style="width:3.2rem" />`;
+          niveauxDiv.appendChild(lbl);
+        }
+      };
+      inputNb.addEventListener('input', rafraichirNiveaux);
+      rafraichirNiveaux();
+    }
+  }
+}
+
+function lireConfigRace() {
+  const objectifs = [];
+  const niveaux = [];
+  for (let rang = 1; rang <= 3; rang++) {
+    const nbInput = document.getElementById(`race-nb-obj-rang-${rang}`);
+    const nb = nbInput && !nbInput.disabled ? (parseInt(nbInput.value) || 2) : 2;
+    objectifs.push(nb);
+    const nvsRang = [];
+    for (let pos = 1; pos <= nb; pos++) {
+      const nvInput = document.getElementById(`race-niv-rang-${rang}-pos-${pos}`);
+      nvsRang.push(nvInput ? (parseInt(nvInput.value) || null) : null);
+    }
+    niveaux.push(nvsRang);
+  }
+  return { objectifs, niveaux };
+}
+
 document.getElementById('config-nb-rep-race').addEventListener('input', (e) => {
-  mettreAJourConfigObjectifs('config-obj-race', parseInt(e.target.value) || 0);
+  mettreAJourConfigRace(parseInt(e.target.value) || 0);
 });
 document.getElementById('config-nb-rep-allegeance').addEventListener('input', (e) => {
   mettreAJourConfigObjectifs('config-obj-allegeance', parseInt(e.target.value) || 0);
 });
 
-mettreAJourConfigObjectifs('config-obj-race', parseInt(document.getElementById('config-nb-rep-race').value) || 2);
+mettreAJourConfigRace(parseInt(document.getElementById('config-nb-rep-race').value) || 2);
 mettreAJourConfigObjectifs('config-obj-allegeance', parseInt(document.getElementById('config-nb-rep-allegeance').value) || 2);
 
 document.getElementById('btn-forcer-lancement').addEventListener('click', async () => {
@@ -936,7 +991,9 @@ document.getElementById('btn-creer-partie-active').addEventListener('click', asy
   }
   erreurEl.classList.add('cachee');
 
-  const configRace = JSON.stringify(lireConfigObjectifs('config-obj-race'));
+  const { objectifs: objsRace, niveaux: niveauxRace } = lireConfigRace();
+  const configRace = JSON.stringify(objsRace);
+  const configNiveauxRace = JSON.stringify(niveauxRace);
   const configAllegeance = JSON.stringify(lireConfigObjectifs('config-obj-allegeance'));
 
   try {
@@ -948,6 +1005,7 @@ document.getElementById('btn-creer-partie-active').addEventListener('click', asy
         nb_representants_race: nbRepRace,
         nb_representants_allegeance: nbRepAllegeance,
         config_objectifs_race: configRace,
+        config_niveaux_race: configNiveauxRace,
         config_objectifs_allegeance: configAllegeance
       })
     });
