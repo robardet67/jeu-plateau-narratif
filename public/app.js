@@ -6,6 +6,7 @@ let etatJoueur = null;
 let rangAffiche = null;
 let allegeanceAffichee = null;
 let rangAllegeanceAffiche = null;
+let vueAvantChangement = null;
 
 let scenarioImages = [];
 let scenarioIndexActuel = 0;
@@ -441,6 +442,95 @@ function afficherRepAllegeanceIndividuel(allegeanceId, rang) {
 document.getElementById('btn-retour-parcours-allegeance').addEventListener('click', () => {
   if (allegeanceAffichee) afficherParcoursAllegeance(allegeanceAffichee);
   else afficherHub();
+});
+
+// --- Changer de joueur ---
+
+function afficherEcranChangerJoueur() {
+  vueAvantChangement = vueActuelleId();
+
+  // "Nouveau joueur" n'est utile qu'en phase d'attente ; en cours de partie, la liste suffit
+  document.getElementById('changer-section-nouveau').classList.toggle(
+    'cachee',
+    etatCourant.partieStatut === 'en_cours'
+  );
+
+  chargerListeJoueursExistants();
+  afficherVue('ecran-changer-joueur');
+}
+
+async function chargerListeJoueursExistants() {
+  const liste = document.getElementById('liste-joueurs-existants');
+  const vide = document.getElementById('changer-joueur-vide');
+  liste.innerHTML = '<li style="opacity:.6;padding:.4rem 0">Chargement…</li>';
+  vide.classList.add('cachee');
+
+  const [partie, races] = await Promise.all([
+    requeteJSON('/api/partie-active').catch(() => ({ active: false, joueurs: [] })),
+    requeteJSON('/api/races').catch(() => [])
+  ]);
+
+  const joueurs = partie.joueurs || [];
+  const raceMap = {};
+  races.forEach((r) => { raceMap[r.id] = r.nom; });
+
+  liste.innerHTML = '';
+
+  if (joueurs.length === 0) {
+    vide.classList.remove('cachee');
+    return;
+  }
+
+  joueurs.forEach((j) => {
+    const estMoi = j.id === etatCourant.joueurId;
+    const raceNom = j.race_id ? (raceMap[j.race_id] || 'Race #' + j.race_id) : 'Sans race';
+
+    const li = document.createElement('li');
+    li.className = 'element-carte element-joueur-session';
+    li.innerHTML = `
+      <div class="element-infos">
+        <div>
+          <strong>${j.pseudo}</strong>
+          <span class="badge-info">${raceNom}</span>
+          ${estMoi ? '<span class="badge-info badge-actuel">session actuelle</span>' : ''}
+        </div>
+      </div>
+      ${!estMoi ? '<button class="btn-reprendre-joueur bouton-secondaire">Reprendre</button>' : ''}
+    `;
+
+    if (!estMoi) {
+      li.querySelector('.btn-reprendre-joueur').addEventListener('click', () => {
+        rejoindreJoueurExistant(j);
+      });
+    }
+
+    liste.appendChild(li);
+  });
+}
+
+function rejoindreJoueurExistant(joueur) {
+  etatCourant = { ...etatCourant, joueurId: joueur.id, pseudo: joueur.pseudo };
+  // Remet a zero l'etat local : le serveur fait foi
+  etatJoueur = null;
+  rangAffiche = null;
+  allegeanceAffichee = null;
+  rangAllegeanceAffiche = null;
+  // Le handler etat_partie declenchera afficherHub() ou ecran-attente-lancement
+  socket.emit('rejoindre_partie', { code: etatCourant.code, joueurId: joueur.id });
+}
+
+document.getElementById('btn-nouveau-joueur-changer').addEventListener('click', ouvrirModalCreation);
+
+document.getElementById('btn-retour-depuis-changer').addEventListener('click', () => {
+  if (vueAvantChangement && vueAvantChangement !== 'ecran-changer-joueur') {
+    afficherVue(vueAvantChangement);
+  } else {
+    afficherHub();
+  }
+});
+
+document.querySelectorAll('.btn-changer-joueur').forEach((btn) => {
+  btn.addEventListener('click', afficherEcranChangerJoueur);
 });
 
 // --- Tableau de bord global ---

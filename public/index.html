@@ -29,6 +29,7 @@
         <h2>En attente du lancement</h2>
         <p>Le maitre du jeu prepare la partie. Restez sur cette page, elle demarrera automatiquement.</p>
         <div id="attente-info-joueur" class="attente-info"></div>
+        <button class="btn-changer-joueur bouton-secondaire" style="margin-top:1rem">Changer de joueur</button>
       </div>
       <div class="carte">
         <h3>Joueurs presents</h3>
@@ -41,6 +42,7 @@
       <div class="entete-jeu">
         <div></div>
         <div class="entete-jeu-actions">
+          <button class="btn-changer-joueur bouton-secondaire">Changer de joueur</button>
           <button id="btn-tableau-de-bord-hub" class="bouton-secondaire cachee">Tableau de bord</button>
           <button id="btn-scenario-hub">Scenario</button>
         </div>
@@ -61,6 +63,7 @@
       <div class="entete-jeu">
         <button id="btn-retour-hub" class="bouton-secondaire">&larr; Village</button>
         <div class="entete-jeu-actions">
+          <button class="btn-changer-joueur bouton-secondaire">Changer de joueur</button>
           <button id="btn-tableau-de-bord-representants" class="bouton-secondaire cachee">Tableau de bord</button>
           <button id="btn-scenario-representants">Scenario</button>
         </div>
@@ -76,6 +79,7 @@
       <div class="entete-jeu">
         <button id="btn-retour-representants" class="bouton-secondaire">&larr; Retour</button>
         <div class="entete-jeu-actions">
+          <button class="btn-changer-joueur bouton-secondaire">Changer de joueur</button>
           <button id="btn-tableau-de-bord-individuel" class="bouton-secondaire cachee">Tableau de bord</button>
         </div>
       </div>
@@ -93,6 +97,7 @@
       <div class="entete-jeu">
         <button id="btn-retour-hub-allegeance" class="bouton-secondaire">&larr; Village</button>
         <div class="entete-jeu-actions">
+          <button class="btn-changer-joueur bouton-secondaire">Changer de joueur</button>
           <button id="btn-tableau-de-bord-allegeance" class="bouton-secondaire cachee">Tableau de bord</button>
           <button id="btn-scenario-allegeance">Scenario</button>
         </div>
@@ -107,6 +112,7 @@
       <div class="entete-jeu">
         <button id="btn-retour-parcours-allegeance" class="bouton-secondaire">&larr; Retour</button>
         <div class="entete-jeu-actions">
+          <button class="btn-changer-joueur bouton-secondaire">Changer de joueur</button>
           <button id="btn-tableau-de-bord-rep-allegeance" class="bouton-secondaire cachee">Tableau de bord</button>
         </div>
       </div>
@@ -115,6 +121,29 @@
         <div id="couronne-rep-allegeance" class="couronne cachee">&#128081;</div>
         <div id="dialogues-rep-allegeance" class="dialogues"></div>
         <div id="objectifs-rep-allegeance" class="enveloppes-objectifs"></div>
+      </div>
+    </section>
+
+    <!-- Changer de joueur : choix nouveau joueur ou reprise d'une session existante -->
+    <section id="ecran-changer-joueur" class="ecran cachee">
+      <div class="contenu-changer-joueur">
+        <div class="entete-changer">
+          <button id="btn-retour-depuis-changer" class="bouton-secondaire">&larr; Retour</button>
+          <h2>Changer de joueur</h2>
+        </div>
+
+        <div id="changer-section-nouveau" class="carte">
+          <h3>Nouveau joueur</h3>
+          <p>Rejoindre la partie avec un nouveau compte</p>
+          <button id="btn-nouveau-joueur-changer">Nouveau joueur</button>
+        </div>
+
+        <div class="carte">
+          <h3>Reprendre une session</h3>
+          <p>Retrouvez votre progression exactement ou vous l'avez laissee</p>
+          <ul id="liste-joueurs-existants" class="liste-elements"></ul>
+          <p id="changer-joueur-vide" class="cachee" style="opacity:.6;margin-top:.5rem">Aucun joueur inscrit dans cette partie.</p>
+        </div>
       </div>
     </section>
 
