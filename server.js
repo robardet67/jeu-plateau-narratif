@@ -552,7 +552,7 @@ app.post('/api/objectifs/import', exigerAdmin, uploadCsv.single('fichier'), gere
 
   let lignes;
   try {
-    lignes = parse(req.file.buffer, { columns: true, skip_empty_lines: true, trim: true, bom: true });
+    lignes = parse(req.file.buffer, { columns: true, skip_empty_lines: true, trim: true, bom: true, delimiter: [',', ';'] });
   } catch (erreur) {
     return res.status(400).json({ error: `Fichier CSV invalide : ${erreur.message}` });
   }
