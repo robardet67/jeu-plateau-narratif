@@ -567,11 +567,12 @@ app.post('/api/objectifs/import', exigerAdmin, uploadCsv.single('fichier'), gere
 
   // Colonnes utilisees : description (obligatoire) et niveau (entier, optionnel).
   // Les autres colonnes (type, categorie…) sont ignorees — compatibles avec anciens CSV.
+  const supprimerTout = db.prepare('DELETE FROM objectifs');
   const insertion = db.prepare('INSERT INTO objectifs (description, niveau) VALUES (?, ?)');
   const importerTout = db.transaction((rows) => {
     let supprimes = 0;
     if (mode === 'remplacer') {
-      supprimes = db.prepare('DELETE FROM objectifs').run().changes;
+      supprimes = supprimerTout.run().changes;
     }
     let compteur = 0;
     for (const ligne of rows) {

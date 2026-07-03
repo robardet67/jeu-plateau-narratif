@@ -667,6 +667,7 @@ document.getElementById('form-import-objectifs').addEventListener('submit', asyn
   } catch (err) {
     messageEl.textContent = err.message;
     messageEl.classList.remove('cachee');
+    await chargerObjectifs();
   }
 });
 
