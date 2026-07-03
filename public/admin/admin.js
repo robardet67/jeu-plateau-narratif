@@ -3,16 +3,15 @@ const ecranAdmin = document.getElementById('ecran-admin');
 const indicateurSync = document.getElementById('indicateur-sync');
 
 let racesEnCache = [];
-let representantsEnCache = [];
 let objectifsEnCache = [];
-let allegiancesEnCache = [];
+let allegeancesEnCache = [];
 
 async function requeteJSON(url, options = {}) {
   const reponse = await fetch(url, options);
   const donnees = await reponse.json().catch(() => ({}));
   if (!reponse.ok) {
     const erreur = new Error(donnees.error || 'Erreur inconnue');
-    erreur.donnees = donnees; // conserve le corps complet (ex: emplacements partiels)
+    erreur.donnees = donnees;
     throw erreur;
   }
   return donnees;
@@ -26,7 +25,6 @@ function afficherSync(sync) {
     indicateurSync.classList.add('succes');
   } else {
     const raison = sync.raison || '';
-    // Raisons silencieuses : desactivation volontaire ou rien a commiter
     const silencieux =
       raison.includes('desactivee') ||
       raison.includes('aucun fichier');
@@ -116,7 +114,7 @@ document.querySelectorAll('.onglet').forEach((bouton) => {
   });
 });
 
-// --- Races ---
+// --- Races (avec representants integres inline) ---
 
 async function chargerRaces() {
   racesEnCache = await requeteJSON('/api/races');
@@ -125,30 +123,35 @@ async function chargerRaces() {
   liste.innerHTML = '';
   racesEnCache.forEach((race) => liste.appendChild(creerElementRace(race)));
 
-  const selects = [
-    document.getElementById('select-race-representants'),
-    document.getElementById('select-race-dialogues'),
-    document.getElementById('select-race-fond')
-  ];
-  selects.forEach((select) => {
-    const valeurPrecedente = select.value;
-    select.innerHTML = racesEnCache
-      .map((r) => `<option value="${r.id}">${r.nom}</option>`)
-      .join('');
-    if (valeurPrecedente) select.value = valeurPrecedente;
-  });
+  const selectFond = document.getElementById('select-race-fond');
+  const valeurPrecedente = selectFond.value;
+  selectFond.innerHTML = racesEnCache.map((r) => `<option value="${r.id}">${r.nom}</option>`).join('');
+  if (valeurPrecedente) selectFond.value = valeurPrecedente;
 }
 
 function creerElementRace(race) {
   const li = document.createElement('li');
   li.className = 'element-carte';
+  li.style.flexDirection = 'column';
+  li.style.alignItems = 'stretch';
   li.innerHTML = `
-    <div class="element-infos">
-      <strong>${race.nom}</strong>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="element-infos"><strong>${race.nom}</strong></div>
+      <div class="element-actions">
+        <button class="btn-modifier">Modifier</button>
+        <button class="btn-supprimer bouton-danger">Supprimer</button>
+      </div>
     </div>
-    <div class="element-actions">
-      <button class="btn-modifier">Modifier</button>
-      <button class="btn-supprimer bouton-danger">Supprimer</button>
+    <div class="section-representants" style="margin-top:.75rem;border-top:1px solid rgba(255,255,255,.1);padding-top:.75rem">
+      <ul class="liste-reps-race liste-elements" style="margin:0 0 .5rem"></ul>
+      <form class="form-rep-race formulaire" enctype="multipart/form-data">
+        <h4 style="margin:0 0 .4rem;font-size:.875rem">Ajouter un representant (max. 3)</h4>
+        <input name="nom" type="text" placeholder="Nom du representant" required />
+        <textarea name="description" placeholder="Description (optionnel)"></textarea>
+        <label class="champ-fichier">Image de depart (PNG)<input name="image_depart" type="file" accept="image/png" required /></label>
+        <label class="champ-fichier">Image de sourire (PNG)<input name="image_sourire" type="file" accept="image/png" required /></label>
+        <button type="submit" class="btn-creer-rep">Creer le representant</button>
+      </form>
     </div>
   `;
 
@@ -160,7 +163,29 @@ function creerElementRace(race) {
     await chargerTout();
   });
 
+  li.querySelector('.form-rep-race').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const resultat = await requeteJSON(`/api/races/${race.id}/representants`, {
+      method: 'POST',
+      body: new FormData(e.target)
+    });
+    afficherSync(resultat.synchronisation);
+    e.target.reset();
+    await rafraichirRepresentantsRace(li, race.id);
+  });
+
+  rafraichirRepresentantsRace(li, race.id);
   return li;
+}
+
+async function rafraichirRepresentantsRace(li, raceId) {
+  const reps = await requeteJSON(`/api/races/${raceId}/representants`);
+  const liste = li.querySelector('.liste-reps-race');
+  liste.innerHTML = '';
+  const btnCreer = li.querySelector('.btn-creer-rep');
+  if (btnCreer) btnCreer.disabled = reps.length >= 3;
+  const rafraichir = () => rafraichirRepresentantsRace(li, raceId);
+  reps.forEach((rep) => liste.appendChild(creerElementRepresentant(rep, rafraichir)));
 }
 
 function afficherFormulaireModifRace(li, race) {
@@ -200,24 +225,9 @@ document.getElementById('form-nouvelle-race').addEventListener('submit', async (
   await chargerTout();
 });
 
-// --- Representants ---
+// --- Representants de race ---
 
-async function chargerRepresentants() {
-  const raceId = document.getElementById('select-race-representants').value;
-  if (!raceId) return;
-
-  representantsEnCache = await requeteJSON(`/api/races/${raceId}/representants`);
-
-  document.getElementById('compteur-representants').textContent = `(${representantsEnCache.length}/3)`;
-  document.getElementById('form-nouveau-representant').querySelector('button[type=submit]').disabled =
-    representantsEnCache.length >= 3;
-
-  const liste = document.getElementById('liste-representants');
-  liste.innerHTML = '';
-  representantsEnCache.forEach((rep) => liste.appendChild(creerElementRepresentant(rep)));
-}
-
-function creerElementRepresentant(rep) {
+function creerElementRepresentant(rep, rafraichir) {
   const li = document.createElement('li');
   li.className = 'element-carte';
   li.style.flexDirection = 'column';
@@ -248,12 +258,12 @@ function creerElementRepresentant(rep) {
     </div>
   `;
 
-  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifRepresentant(li, rep));
+  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifRepresentant(li, rep, rafraichir));
   li.querySelector('.btn-supprimer').addEventListener('click', async () => {
     if (!confirm(`Supprimer le representant "${rep.nom}" ?`)) return;
     const resultat = await requeteJSON(`/api/representants/${rep.id}`, { method: 'DELETE' });
     afficherSync(resultat.synchronisation);
-    await chargerTout();
+    await rafraichir();
   });
 
   li.querySelector('.form-ajout-dialogue').addEventListener('submit', async (e) => {
@@ -270,7 +280,6 @@ function creerElementRepresentant(rep) {
   });
 
   rafraichirDialogues(li, rep.id);
-
   return li;
 }
 
@@ -334,7 +343,7 @@ async function rafraichirDialogues(li, repId) {
   });
 }
 
-function afficherFormulaireModifRepresentant(li, rep) {
+function afficherFormulaireModifRepresentant(li, rep, rafraichir) {
   li.innerHTML = `
     <form class="formulaire" style="width:100%" enctype="multipart/form-data">
       <input name="nom" type="text" value="${rep.nom}" required />
@@ -351,7 +360,7 @@ function afficherFormulaireModifRepresentant(li, rep) {
       </div>
     </form>
   `;
-  li.querySelector('.btn-annuler').addEventListener('click', () => chargerRepresentants());
+  li.querySelector('.btn-annuler').addEventListener('click', () => rafraichir());
   li.querySelector('form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const resultat = await requeteJSON(`/api/representants/${rep.id}`, {
@@ -359,118 +368,89 @@ function afficherFormulaireModifRepresentant(li, rep) {
       body: new FormData(e.target)
     });
     afficherSync(resultat.synchronisation);
-    await chargerTout();
+    await rafraichir();
   });
 }
 
-document.getElementById('select-race-representants').addEventListener('change', chargerRepresentants);
+// --- Allegeances (avec representants integres inline) ---
 
-document.getElementById('form-nouveau-representant').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const raceId = document.getElementById('select-race-representants').value;
-  const resultat = await requeteJSON(`/api/races/${raceId}/representants`, {
-    method: 'POST',
-    body: new FormData(e.target)
-  });
-  afficherSync(resultat.synchronisation);
-  e.target.reset();
-  await chargerTout();
-});
+async function chargerAllegeances() {
+  allegeancesEnCache = await requeteJSON('/api/allegeances');
 
-// --- Allegeances ---
+  const compteur = document.getElementById('compteur-allegeances');
+  compteur.textContent = `(${allegeancesEnCache.length}/3)`;
 
-async function chargerAllegiances() {
-  allegiancesEnCache = await requeteJSON('/api/allegiances');
+  const btnSubmit = document.querySelector('#form-nouvelle-allegeance button[type=submit]');
+  if (btnSubmit) btnSubmit.disabled = allegeancesEnCache.length >= 3;
 
-  const compteur = document.getElementById('compteur-allegiances');
-  compteur.textContent = `(${allegiancesEnCache.length}/3)`;
-
-  const btnSubmit = document.querySelector('#form-nouvelle-allegiance button[type=submit]');
-  if (btnSubmit) btnSubmit.disabled = allegiancesEnCache.length >= 3;
-
-  const liste = document.getElementById('liste-allegiances');
+  const liste = document.getElementById('liste-allegeances');
   liste.innerHTML = '';
-  allegiancesEnCache.forEach((a) => liste.appendChild(creerElementAllegiance(a)));
-
-  const select = document.getElementById('select-allegiance-representants');
-  const valeurPrecedente = select.value;
-  select.innerHTML = allegiancesEnCache.map((a) => `<option value="${a.id}">${a.nom}</option>`).join('');
-  if (valeurPrecedente && allegiancesEnCache.some((a) => String(a.id) === valeurPrecedente)) {
-    select.value = valeurPrecedente;
-  }
+  allegeancesEnCache.forEach((a) => liste.appendChild(creerElementAllegeance(a)));
 }
 
-function creerElementAllegiance(allegiance) {
+function creerElementAllegeance(allegeance) {
   const li = document.createElement('li');
   li.className = 'element-carte';
+  li.style.flexDirection = 'column';
+  li.style.alignItems = 'stretch';
   li.innerHTML = `
-    <div class="element-infos">
-      ${allegiance.portrait ? `<img src="${allegiance.portrait}" alt="portrait" style="width:48px;height:48px;object-fit:cover;border-radius:.25rem" />` : ''}
-      <strong>${allegiance.nom}</strong>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="element-infos">
+        ${allegeance.portrait ? `<img src="${allegeance.portrait}" alt="portrait" style="width:48px;height:48px;object-fit:cover;border-radius:.25rem" />` : ''}
+        <strong>${allegeance.nom}</strong>
+      </div>
+      <div class="element-actions">
+        <button class="btn-modifier">Modifier</button>
+        <button class="btn-supprimer bouton-danger">Supprimer</button>
+      </div>
     </div>
-    <div class="element-actions">
-      <button class="btn-modifier">Modifier</button>
-      <button class="btn-supprimer bouton-danger">Supprimer</button>
+    <div class="section-representants" style="margin-top:.75rem;border-top:1px solid rgba(255,255,255,.1);padding-top:.75rem">
+      <ul class="liste-reps-allegeance liste-elements" style="margin:0 0 .5rem"></ul>
+      <form class="form-rep-allegeance formulaire" enctype="multipart/form-data">
+        <h4 style="margin:0 0 .4rem;font-size:.875rem">Ajouter un representant (max. 3)</h4>
+        <input name="nom" type="text" placeholder="Nom du representant" required />
+        <textarea name="dialogue" placeholder="Texte de dialogue (utilisez {nom} pour le prenom du joueur)"></textarea>
+        <label class="champ-fichier">Image de depart (PNG)<input name="image_depart" type="file" accept="image/png" required /></label>
+        <label class="champ-fichier">Image de sourire (PNG)<input name="image_sourire" type="file" accept="image/png" required /></label>
+        <button type="submit" class="btn-creer-rep-allegeance">Creer le representant</button>
+      </form>
     </div>
   `;
 
-  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifAllegiance(li, allegiance));
+  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifAllegeance(li, allegeance));
   li.querySelector('.btn-supprimer').addEventListener('click', async () => {
-    if (!confirm(`Supprimer l'allegiance "${allegiance.nom}" et tous ses representants ?`)) return;
-    const resultat = await requeteJSON(`/api/allegiances/${allegiance.id}`, { method: 'DELETE' });
+    if (!confirm(`Supprimer l'allegeance "${allegeance.nom}" et tous ses representants ?`)) return;
+    const resultat = await requeteJSON(`/api/allegeances/${allegeance.id}`, { method: 'DELETE' });
     afficherSync(resultat.synchronisation);
     await chargerTout();
   });
 
+  li.querySelector('.form-rep-allegeance').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const resultat = await requeteJSON(`/api/allegeances/${allegeance.id}/representants`, {
+      method: 'POST',
+      body: new FormData(e.target)
+    });
+    afficherSync(resultat.synchronisation);
+    e.target.reset();
+    await rafraichirRepresentantsAllegeance(li, allegeance.id);
+  });
+
+  rafraichirRepresentantsAllegeance(li, allegeance.id);
   return li;
 }
 
-function afficherFormulaireModifAllegiance(li, allegiance) {
-  li.innerHTML = `
-    <form class="formulaire" style="width:100%" enctype="multipart/form-data">
-      <input name="nom" type="text" value="${allegiance.nom}" required />
-      <label class="champ-fichier">Nouveau portrait (PNG, optionnel)
-        <input name="portrait" type="file" accept="image/png" />
-      </label>
-      <div class="element-actions">
-        <button type="submit">Enregistrer</button>
-        <button type="button" class="bouton-secondaire btn-annuler">Annuler</button>
-      </div>
-    </form>
-  `;
-  li.querySelector('.btn-annuler').addEventListener('click', () => chargerAllegiances());
-  li.querySelector('form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const resultat = await requeteJSON(`/api/allegiances/${allegiance.id}`, { method: 'PUT', body: new FormData(e.target) });
-    afficherSync(resultat.synchronisation);
-    await chargerTout();
-  });
-}
-
-document.getElementById('form-nouvelle-allegiance').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const resultat = await requeteJSON('/api/allegiances', { method: 'POST', body: new FormData(e.target) });
-  afficherSync(resultat.synchronisation);
-  e.target.reset();
-  await chargerTout();
-});
-
-// --- Representants d'allegiance ---
-
-async function chargerRepresentantsAllegiance() {
-  const allegianceId = document.getElementById('select-allegiance-representants').value;
-  const liste = document.getElementById('liste-representants-allegiance');
+async function rafraichirRepresentantsAllegeance(li, allegeanceId) {
+  const reps = await requeteJSON(`/api/allegeances/${allegeanceId}/representants`);
+  const liste = li.querySelector('.liste-reps-allegeance');
   liste.innerHTML = '';
-  if (!allegianceId) return;
-
-  const reps = await requeteJSON(`/api/allegiances/${allegianceId}/representants`);
-  const compteur = document.getElementById('compteur-representants-allegiance');
-  compteur.textContent = `(${reps.length}/3)`;
-  document.querySelector('#form-nouveau-representant-allegiance button[type=submit]').disabled = reps.length >= 3;
-  reps.forEach((rep) => liste.appendChild(creerElementRepresentantAllegiance(rep)));
+  const btnCreer = li.querySelector('.btn-creer-rep-allegeance');
+  if (btnCreer) btnCreer.disabled = reps.length >= 3;
+  const rafraichir = () => rafraichirRepresentantsAllegeance(li, allegeanceId);
+  reps.forEach((rep) => liste.appendChild(creerElementRepresentantAllegeance(rep, rafraichir)));
 }
 
-function creerElementRepresentantAllegiance(rep) {
+function creerElementRepresentantAllegeance(rep, rafraichir) {
   const li = document.createElement('li');
   li.className = 'element-carte';
   li.innerHTML = `
@@ -488,18 +468,43 @@ function creerElementRepresentantAllegiance(rep) {
     </div>
   `;
 
-  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifRepresentantAllegiance(li, rep));
+  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifRepresentantAllegeance(li, rep, rafraichir));
   li.querySelector('.btn-supprimer').addEventListener('click', async () => {
     if (!confirm(`Supprimer le representant "${rep.nom}" ?`)) return;
-    const resultat = await requeteJSON(`/api/representants-allegiance/${rep.id}`, { method: 'DELETE' });
+    const resultat = await requeteJSON(`/api/representants-allegeance/${rep.id}`, { method: 'DELETE' });
     afficherSync(resultat.synchronisation);
-    await chargerRepresentantsAllegiance();
+    await rafraichir();
   });
 
   return li;
 }
 
-function afficherFormulaireModifRepresentantAllegiance(li, rep) {
+function afficherFormulaireModifAllegeance(li, allegeance) {
+  li.innerHTML = `
+    <form class="formulaire" style="width:100%" enctype="multipart/form-data">
+      <input name="nom" type="text" value="${allegeance.nom}" required />
+      <label class="champ-fichier">Nouveau portrait (PNG, optionnel)
+        <input name="portrait" type="file" accept="image/png" />
+      </label>
+      <div class="element-actions">
+        <button type="submit">Enregistrer</button>
+        <button type="button" class="bouton-secondaire btn-annuler">Annuler</button>
+      </div>
+    </form>
+  `;
+  li.querySelector('.btn-annuler').addEventListener('click', () => chargerAllegeances());
+  li.querySelector('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const resultat = await requeteJSON(`/api/allegeances/${allegeance.id}`, {
+      method: 'PUT',
+      body: new FormData(e.target)
+    });
+    afficherSync(resultat.synchronisation);
+    await chargerTout();
+  });
+}
+
+function afficherFormulaireModifRepresentantAllegeance(li, rep, rafraichir) {
   li.innerHTML = `
     <form class="formulaire" style="width:100%" enctype="multipart/form-data">
       <input name="nom" type="text" value="${rep.nom}" required />
@@ -516,27 +521,25 @@ function afficherFormulaireModifRepresentantAllegiance(li, rep) {
       </div>
     </form>
   `;
-  li.querySelector('.btn-annuler').addEventListener('click', () => chargerRepresentantsAllegiance());
+  li.querySelector('.btn-annuler').addEventListener('click', () => rafraichir());
   li.querySelector('form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const resultat = await requeteJSON(`/api/representants-allegiance/${rep.id}`, { method: 'PUT', body: new FormData(e.target) });
+    const resultat = await requeteJSON(`/api/representants-allegeance/${rep.id}`, {
+      method: 'PUT',
+      body: new FormData(e.target)
+    });
     afficherSync(resultat.synchronisation);
-    await chargerRepresentantsAllegiance();
+    await rafraichir();
   });
 }
 
-document.getElementById('select-allegiance-representants').addEventListener('change', chargerRepresentantsAllegiance);
-
-document.getElementById('form-nouveau-representant-allegiance').addEventListener('submit', async (e) => {
+document.getElementById('form-nouvelle-allegeance').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const allegianceId = document.getElementById('select-allegiance-representants').value;
-  if (!allegianceId) return alert("Choisissez une allegiance");
-  const resultat = await requeteJSON(`/api/allegiances/${allegianceId}/representants`, { method: 'POST', body: new FormData(e.target) });
+  const resultat = await requeteJSON('/api/allegeances', { method: 'POST', body: new FormData(e.target) });
   afficherSync(resultat.synchronisation);
   e.target.reset();
-  await chargerRepresentantsAllegiance();
+  await chargerTout();
 });
-
 
 // --- Objectifs ---
 
@@ -850,15 +853,13 @@ async function rafraichirJoueursConfig() {
     const partie = await requeteJSON('/api/admin/partie-active');
     if (!partie.active) return;
     if (partie.statut !== 'en_attente') {
-      // La partie a ete lancee automatiquement pendant l'attente : recharger la vue complete
       await chargerPartieActive();
       return;
     }
     afficherListeJoueursConfig(partie.joueurs);
     afficherProgressionLancement(partie);
   } catch (err) {
-    // Rafraichissement silencieux en arriere-plan : une erreur ponctuelle n'a pas besoin
-    // d'interrompre le MJ.
+    // Rafraichissement silencieux en arriere-plan
   }
 }
 
@@ -896,13 +897,12 @@ function lireConfigObjectifs(conteneurId) {
 document.getElementById('config-nb-rep-race').addEventListener('input', (e) => {
   mettreAJourConfigObjectifs('config-obj-race', parseInt(e.target.value) || 0);
 });
-document.getElementById('config-nb-rep-allegiance').addEventListener('input', (e) => {
-  mettreAJourConfigObjectifs('config-obj-allegiance', parseInt(e.target.value) || 0);
+document.getElementById('config-nb-rep-allegeance').addEventListener('input', (e) => {
+  mettreAJourConfigObjectifs('config-obj-allegeance', parseInt(e.target.value) || 0);
 });
 
-// Initialisation des sous-formulaires au chargement
 mettreAJourConfigObjectifs('config-obj-race', parseInt(document.getElementById('config-nb-rep-race').value) || 2);
-mettreAJourConfigObjectifs('config-obj-allegiance', parseInt(document.getElementById('config-nb-rep-allegiance').value) || 2);
+mettreAJourConfigObjectifs('config-obj-allegeance', parseInt(document.getElementById('config-nb-rep-allegeance').value) || 2);
 
 document.getElementById('btn-forcer-lancement').addEventListener('click', async () => {
   if (!confirm('Forcer le lancement maintenant ? La partie demarrera meme si tous les joueurs n\'ont pas choisi leur race.')) return;
@@ -926,18 +926,18 @@ document.getElementById('btn-reinitialiser-partie').addEventListener('click', as
 document.getElementById('btn-creer-partie-active').addEventListener('click', async () => {
   const nbJoueurs = parseInt(document.getElementById('config-nb-joueurs').value) || 0;
   const nbRepRace = parseInt(document.getElementById('config-nb-rep-race').value) || 0;
-  const nbRepAllegiance = parseInt(document.getElementById('config-nb-rep-allegiance').value) || 0;
+  const nbRepAllegeance = parseInt(document.getElementById('config-nb-rep-allegeance').value) || 0;
 
   const erreurEl = document.getElementById('erreur-config-partie');
-  if (nbRepRace === 0 && nbRepAllegiance === 0) {
-    erreurEl.textContent = "Il faut au moins 1 representant actif (race ou allegiance).";
+  if (nbRepRace === 0 && nbRepAllegeance === 0) {
+    erreurEl.textContent = "Il faut au moins 1 representant actif (race ou allegeance).";
     erreurEl.classList.remove('cachee');
     return;
   }
   erreurEl.classList.add('cachee');
 
   const configRace = JSON.stringify(lireConfigObjectifs('config-obj-race'));
-  const configAllegiance = JSON.stringify(lireConfigObjectifs('config-obj-allegiance'));
+  const configAllegeance = JSON.stringify(lireConfigObjectifs('config-obj-allegeance'));
 
   try {
     await requeteJSON('/api/admin/partie-active/creer', {
@@ -946,9 +946,9 @@ document.getElementById('btn-creer-partie-active').addEventListener('click', asy
       body: JSON.stringify({
         nb_joueurs_attendus: nbJoueurs,
         nb_representants_race: nbRepRace,
-        nb_representants_allegiance: nbRepAllegiance,
+        nb_representants_allegeance: nbRepAllegeance,
         config_objectifs_race: configRace,
-        config_objectifs_allegiance: configAllegiance
+        config_objectifs_allegeance: configAllegeance
       })
     });
     await chargerPartieActive();
@@ -965,14 +965,10 @@ document.getElementById('btn-terminer-partie').addEventListener('click', async (
 });
 
 // --- Chargement global ---
-// Chaque mutation (races, representants, dialogues...) appelle chargerTout() afin que
-// tous les selects/listes dependants (ex. Dialogues -> representants) restent synchronises,
-// meme lorsqu'ils sont modifies depuis un autre onglet.
 
 async function chargerTout() {
   await chargerRaces();
-  await chargerAllegiances();
-  await chargerRepresentants();
+  await chargerAllegeances();
   await chargerObjectifs();
   chargerFond();
   await chargerScenario();

@@ -40,12 +40,10 @@
 
     <nav class="onglets">
       <button class="onglet actif" data-onglet="races">Races</button>
-      <button class="onglet" data-onglet="representants">Representants</button>
-
       <button class="onglet" data-onglet="objectifs">Objectifs</button>
       <button class="onglet" data-onglet="fonds">Fonds</button>
       <button class="onglet" data-onglet="scenario">Scenario</button>
-      <button class="onglet" data-onglet="allegiances">Allegeances</button>
+      <button class="onglet" data-onglet="allegeances">Allegeances</button>
       <button class="onglet" data-onglet="parametres">Parametres</button>
       <button class="onglet" data-onglet="partie">Configuration de partie</button>
     </nav>
@@ -64,34 +62,6 @@
         <ul id="liste-races" class="liste-elements"></ul>
       </div>
     </section>
-
-    <section id="onglet-representants" class="contenu-onglet cachee">
-      <div class="carte">
-        <h2>Choisir une race</h2>
-        <select id="select-race-representants"></select>
-      </div>
-
-      <div class="carte">
-        <h2>Ajouter un representant <span id="compteur-representants" class="compteur"></span></h2>
-        <form id="form-nouveau-representant" class="formulaire" enctype="multipart/form-data">
-          <input name="nom" type="text" placeholder="Nom du representant" required />
-          <textarea name="description" placeholder="Description (optionnel)"></textarea>
-          <label class="champ-fichier">Image de depart (PNG)
-            <input name="image_depart" type="file" accept="image/png" required />
-          </label>
-          <label class="champ-fichier">Image de sourire (PNG)
-            <input name="image_sourire" type="file" accept="image/png" required />
-          </label>
-          <button type="submit">Creer le representant</button>
-        </form>
-      </div>
-
-      <div class="carte">
-        <h2>Representants de cette race</h2>
-        <ul id="liste-representants" class="liste-elements"></ul>
-      </div>
-    </section>
-
 
     <section id="onglet-objectifs" class="contenu-onglet cachee">
       <div class="carte">
@@ -160,47 +130,22 @@
       </div>
     </section>
 
-    <section id="onglet-allegiances" class="contenu-onglet cachee">
+    <section id="onglet-allegeances" class="contenu-onglet cachee">
       <div class="carte">
-        <h2>Ajouter une allegiance <span id="compteur-allegiances" class="compteur"></span></h2>
-        <p class="astuce">Maximum 3 allegiances dans le jeu.</p>
-        <form id="form-nouvelle-allegiance" class="formulaire" enctype="multipart/form-data">
-          <input name="nom" type="text" placeholder="Nom de l'allegiance" required />
+        <h2>Ajouter une allegeance <span id="compteur-allegeances" class="compteur"></span></h2>
+        <p class="astuce">Maximum 3 allegeances dans le jeu.</p>
+        <form id="form-nouvelle-allegeance" class="formulaire" enctype="multipart/form-data">
+          <input name="nom" type="text" placeholder="Nom de l'allegeance" required />
           <label class="champ-fichier">Portrait (PNG, optionnel)
             <input name="portrait" type="file" accept="image/png" />
           </label>
-          <button type="submit">Creer l'allegiance</button>
+          <button type="submit">Creer l'allegeance</button>
         </form>
       </div>
 
       <div class="carte">
-        <h2>Allegiances existantes</h2>
-        <ul id="liste-allegiances" class="liste-elements"></ul>
-      </div>
-
-      <div class="carte">
-        <h2>Choisir une allegiance</h2>
-        <select id="select-allegiance-representants"></select>
-      </div>
-
-      <div class="carte">
-        <h2>Ajouter un representant <span id="compteur-representants-allegiance" class="compteur"></span></h2>
-        <form id="form-nouveau-representant-allegiance" class="formulaire" enctype="multipart/form-data">
-          <input name="nom" type="text" placeholder="Nom du representant" required />
-          <textarea name="dialogue" placeholder="Texte de dialogue (utilisez {nom} pour le prenom du joueur)"></textarea>
-          <label class="champ-fichier">Image de depart (PNG)
-            <input name="image_depart" type="file" accept="image/png" required />
-          </label>
-          <label class="champ-fichier">Image de sourire (PNG)
-            <input name="image_sourire" type="file" accept="image/png" required />
-          </label>
-          <button type="submit">Creer le representant</button>
-        </form>
-      </div>
-
-      <div class="carte">
-        <h2>Representants de cette allegiance</h2>
-        <ul id="liste-representants-allegiance" class="liste-elements"></ul>
+        <h2>Allegeances existantes</h2>
+        <ul id="liste-allegeances" class="liste-elements"></ul>
       </div>
     </section>
 
@@ -235,11 +180,11 @@
           </fieldset>
 
           <fieldset style="border:1px solid #ccc;padding:.75rem;border-radius:.5rem">
-            <legend>Representants d'allegiance</legend>
+            <legend>Representants d'allegeance</legend>
             <label>Representants actifs (0-3)
-              <input id="config-nb-rep-allegiance" type="number" min="0" max="3" value="2" />
+              <input id="config-nb-rep-allegeance" type="number" min="0" max="3" value="2" />
             </label>
-            <div id="config-obj-allegiance" class="formulaire" style="margin-top:.5rem"></div>
+            <div id="config-obj-allegeance" class="formulaire" style="margin-top:.5rem"></div>
           </fieldset>
         </div>
 

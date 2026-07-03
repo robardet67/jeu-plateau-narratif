@@ -362,85 +362,85 @@ app.delete('/api/dialogues/:id', exigerAdmin, gerer(async (req, res) => {
   res.json({ ok: true, synchronisation });
 }));
 
-// --- API : allegiances (3 max, chacune avec 0-3 representants) ---
+// --- API : allegeances (3 max, chacune avec 0-3 representants) ---
 
-app.get('/api/allegiances', (req, res) => {
-  res.json(db.prepare('SELECT * FROM allegiances ORDER BY id').all());
+app.get('/api/allegeances', (req, res) => {
+  res.json(db.prepare('SELECT * FROM allegeances ORDER BY id').all());
 });
 
-app.post('/api/allegiances', exigerAdmin, uploadImagesRepresentant.single('portrait'), gerer(async (req, res) => {
+app.post('/api/allegeances', exigerAdmin, uploadImagesRepresentant.single('portrait'), gerer(async (req, res) => {
   const { nom } = req.body;
   if (!nom) return res.status(400).json({ error: 'Le nom est requis' });
 
-  const nb = db.prepare('SELECT COUNT(*) AS n FROM allegiances').get().n;
-  if (nb >= 3) return res.status(400).json({ error: 'Maximum 3 allegiances autorisees' });
+  const nb = db.prepare('SELECT COUNT(*) AS n FROM allegeances').get().n;
+  if (nb >= 3) return res.status(400).json({ error: 'Maximum 3 allegeances autorisees' });
 
   const portrait = req.file ? `/uploads/${req.file.filename}` : null;
-  const result = db.prepare('INSERT INTO allegiances (nom, portrait) VALUES (?, ?)').run(nom, portrait);
+  const result = db.prepare('INSERT INTO allegeances (nom, portrait) VALUES (?, ?)').run(nom, portrait);
 
-  const synchronisation = await commiterEtPousser(`Admin : ajout de l'allegiance "${nom}"`);
+  const synchronisation = await commiterEtPousser(`Admin : ajout de l'allegeance "${nom}"`);
   res.status(201).json({ id: result.lastInsertRowid, synchronisation });
 }));
 
-app.put('/api/allegiances/:id', exigerAdmin, uploadImagesRepresentant.single('portrait'), gerer(async (req, res) => {
-  const allegiance = db.prepare('SELECT * FROM allegiances WHERE id = ?').get(req.params.id);
-  if (!allegiance) return res.status(404).json({ error: 'Allegiance introuvable' });
+app.put('/api/allegeances/:id', exigerAdmin, uploadImagesRepresentant.single('portrait'), gerer(async (req, res) => {
+  const allegeance = db.prepare('SELECT * FROM allegeances WHERE id = ?').get(req.params.id);
+  if (!allegeance) return res.status(404).json({ error: 'Allegeance introuvable' });
 
-  const nom = req.body.nom || allegiance.nom;
-  let portrait = allegiance.portrait;
+  const nom = req.body.nom || allegeance.nom;
+  let portrait = allegeance.portrait;
   if (req.file) {
-    supprimerFichierUpload(allegiance.portrait);
+    supprimerFichierUpload(allegeance.portrait);
     portrait = `/uploads/${req.file.filename}`;
   }
 
-  db.prepare('UPDATE allegiances SET nom = ?, portrait = ? WHERE id = ?').run(nom, portrait, allegiance.id);
+  db.prepare('UPDATE allegeances SET nom = ?, portrait = ? WHERE id = ?').run(nom, portrait, allegeance.id);
 
-  const synchronisation = await commiterEtPousser(`Admin : modification de l'allegiance "${nom}"`);
+  const synchronisation = await commiterEtPousser(`Admin : modification de l'allegeance "${nom}"`);
   res.json({ ok: true, synchronisation });
 }));
 
-app.delete('/api/allegiances/:id', exigerAdmin, gerer(async (req, res) => {
-  const allegiance = db.prepare('SELECT * FROM allegiances WHERE id = ?').get(req.params.id);
-  if (!allegiance) return res.status(404).json({ error: 'Allegiance introuvable' });
+app.delete('/api/allegeances/:id', exigerAdmin, gerer(async (req, res) => {
+  const allegeance = db.prepare('SELECT * FROM allegeances WHERE id = ?').get(req.params.id);
+  if (!allegeance) return res.status(404).json({ error: 'Allegeance introuvable' });
 
-  const reps = db.prepare('SELECT * FROM representants_allegiance WHERE allegiance_id = ?').all(allegiance.id);
-  db.prepare('DELETE FROM allegiances WHERE id = ?').run(allegiance.id);
+  const reps = db.prepare('SELECT * FROM representants_allegeance WHERE allegeance_id = ?').all(allegeance.id);
+  db.prepare('DELETE FROM allegeances WHERE id = ?').run(allegeance.id);
 
-  supprimerFichierUpload(allegiance.portrait);
+  supprimerFichierUpload(allegeance.portrait);
   reps.forEach((r) => {
     supprimerFichierUpload(r.image_depart);
     supprimerFichierUpload(r.image_sourire);
   });
 
-  const synchronisation = await commiterEtPousser(`Admin : suppression de l'allegiance "${allegiance.nom}"`);
+  const synchronisation = await commiterEtPousser(`Admin : suppression de l'allegeance "${allegeance.nom}"`);
   res.json({ ok: true, synchronisation });
 }));
 
-// --- API : representants d'allegiance ---
+// --- API : representants d'allegeance ---
 
-app.get('/api/allegiances/:allegianceId/representants', (req, res) => {
+app.get('/api/allegeances/:allegeanceId/representants', (req, res) => {
   res.json(
-    db.prepare('SELECT * FROM representants_allegiance WHERE allegiance_id = ? ORDER BY rang').all(req.params.allegianceId)
+    db.prepare('SELECT * FROM representants_allegeance WHERE allegeance_id = ? ORDER BY rang').all(req.params.allegeanceId)
   );
 });
 
 app.post(
-  '/api/allegiances/:allegianceId/representants',
+  '/api/allegeances/:allegeanceId/representants',
   exigerAdmin,
   uploadImagesRepresentant.fields([
     { name: 'image_depart', maxCount: 1 },
     { name: 'image_sourire', maxCount: 1 }
   ]),
   gerer(async (req, res) => {
-    const allegiance = db.prepare('SELECT * FROM allegiances WHERE id = ?').get(req.params.allegianceId);
-    if (!allegiance) return res.status(404).json({ error: 'Allegiance introuvable' });
+    const allegeance = db.prepare('SELECT * FROM allegeances WHERE id = ?').get(req.params.allegeanceId);
+    if (!allegeance) return res.status(404).json({ error: 'Allegeance introuvable' });
 
     const rangsExistants = db
-      .prepare('SELECT rang FROM representants_allegiance WHERE allegiance_id = ?')
-      .all(allegiance.id)
+      .prepare('SELECT rang FROM representants_allegeance WHERE allegeance_id = ?')
+      .all(allegeance.id)
       .map((r) => r.rang);
     const rang = [1, 2, 3].find((r) => !rangsExistants.includes(r));
-    if (!rang) return res.status(400).json({ error: 'Cette allegiance possede deja 3 representants (maximum)' });
+    if (!rang) return res.status(400).json({ error: 'Cette allegeance possede deja 3 representants (maximum)' });
 
     const { nom, dialogue } = req.body;
     if (!nom) return res.status(400).json({ error: 'Le nom est requis' });
@@ -449,24 +449,24 @@ app.post(
     const imageSourire = req.files?.image_sourire?.[0] ? `/uploads/${req.files.image_sourire[0].filename}` : null;
 
     const result = db
-      .prepare('INSERT INTO representants_allegiance (allegiance_id, rang, nom, image_depart, image_sourire, dialogue) VALUES (?, ?, ?, ?, ?, ?)')
-      .run(allegiance.id, rang, nom, imageDepart, imageSourire, dialogue || null);
+      .prepare('INSERT INTO representants_allegeance (allegeance_id, rang, nom, image_depart, image_sourire, dialogue) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(allegeance.id, rang, nom, imageDepart, imageSourire, dialogue || null);
 
-    const synchronisation = await commiterEtPousser(`Admin : ajout du representant d'allegiance "${nom}"`);
+    const synchronisation = await commiterEtPousser(`Admin : ajout du representant d'allegeance "${nom}"`);
     res.status(201).json({ id: result.lastInsertRowid, synchronisation });
   })
 );
 
 app.put(
-  '/api/representants-allegiance/:id',
+  '/api/representants-allegeance/:id',
   exigerAdmin,
   uploadImagesRepresentant.fields([
     { name: 'image_depart', maxCount: 1 },
     { name: 'image_sourire', maxCount: 1 }
   ]),
   gerer(async (req, res) => {
-    const rep = db.prepare('SELECT * FROM representants_allegiance WHERE id = ?').get(req.params.id);
-    if (!rep) return res.status(404).json({ error: "Representant d'allegiance introuvable" });
+    const rep = db.prepare('SELECT * FROM representants_allegeance WHERE id = ?').get(req.params.id);
+    if (!rep) return res.status(404).json({ error: "Representant d'allegeance introuvable" });
 
     let imageDepart = rep.image_depart;
     let imageSourire = rep.image_sourire;
@@ -482,23 +482,23 @@ app.put(
     const nom = req.body.nom || rep.nom;
     const dialogue = req.body.dialogue !== undefined ? req.body.dialogue : rep.dialogue;
 
-    db.prepare('UPDATE representants_allegiance SET nom = ?, image_depart = ?, image_sourire = ?, dialogue = ? WHERE id = ?')
+    db.prepare('UPDATE representants_allegeance SET nom = ?, image_depart = ?, image_sourire = ?, dialogue = ? WHERE id = ?')
       .run(nom, imageDepart, imageSourire, dialogue, rep.id);
 
-    const synchronisation = await commiterEtPousser(`Admin : modification du representant d'allegiance "${nom}"`);
+    const synchronisation = await commiterEtPousser(`Admin : modification du representant d'allegeance "${nom}"`);
     res.json({ ok: true, synchronisation });
   })
 );
 
-app.delete('/api/representants-allegiance/:id', exigerAdmin, gerer(async (req, res) => {
-  const rep = db.prepare('SELECT * FROM representants_allegiance WHERE id = ?').get(req.params.id);
-  if (!rep) return res.status(404).json({ error: "Representant d'allegiance introuvable" });
+app.delete('/api/representants-allegeance/:id', exigerAdmin, gerer(async (req, res) => {
+  const rep = db.prepare('SELECT * FROM representants_allegeance WHERE id = ?').get(req.params.id);
+  if (!rep) return res.status(404).json({ error: "Representant d'allegeance introuvable" });
 
-  db.prepare('DELETE FROM representants_allegiance WHERE id = ?').run(rep.id);
+  db.prepare('DELETE FROM representants_allegeance WHERE id = ?').run(rep.id);
   supprimerFichierUpload(rep.image_depart);
   supprimerFichierUpload(rep.image_sourire);
 
-  const synchronisation = await commiterEtPousser(`Admin : suppression du representant d'allegiance "${rep.nom}"`);
+  const synchronisation = await commiterEtPousser(`Admin : suppression du representant d'allegeance "${rep.nom}"`);
   res.json({ ok: true, synchronisation });
 }));
 
@@ -841,10 +841,10 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
 
   const nbJoueursAttendu = parseInt(req.body.nb_joueurs_attendus) || 0;
   const nbRepRace = Math.min(3, Math.max(0, parseInt(req.body.nb_representants_race) ?? 2));
-  const nbRepAllegiance = Math.min(3, Math.max(0, parseInt(req.body.nb_representants_allegiance) ?? 2));
+  const nbRepAllegeance = Math.min(3, Math.max(0, parseInt(req.body.nb_representants_allegeance) ?? 2));
 
-  if (nbRepRace === 0 && nbRepAllegiance === 0) {
-    return res.status(400).json({ error: "Il faut au moins 1 representant actif (race ou allegiance)" });
+  if (nbRepRace === 0 && nbRepAllegeance === 0) {
+    return res.status(400).json({ error: "Il faut au moins 1 representant actif (race ou allegeance)" });
   }
 
   const parseConfig = (val, defaut) => {
@@ -856,7 +856,7 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
   };
 
   const configRace = parseConfig(req.body.config_objectifs_race, '[2,2,2]');
-  const configAllegiance = parseConfig(req.body.config_objectifs_allegiance, '[2,2,2]');
+  const configAllegeance = parseConfig(req.body.config_objectifs_allegeance, '[2,2,2]');
 
   let code;
   do {
@@ -865,9 +865,9 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
 
   const partie = db
     .prepare(
-      'INSERT INTO parties (code, nom, nb_joueurs_attendus, nb_representants_race, nb_representants_allegiance, config_objectifs_race, config_objectifs_allegiance) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO parties (code, nom, nb_joueurs_attendus, nb_representants_race, nb_representants_allegeance, config_objectifs_race, config_objectifs_allegeance) VALUES (?, ?, ?, ?, ?, ?, ?)'
     )
-    .run(code, `Partie ${code}`, nbJoueursAttendu, nbRepRace, nbRepAllegiance, configRace, configAllegiance);
+    .run(code, `Partie ${code}`, nbJoueursAttendu, nbRepRace, nbRepAllegeance, configRace, configAllegeance);
   const nouvelle = db.prepare('SELECT * FROM parties WHERE id = ?').get(partie.lastInsertRowid);
   res.status(201).json({ active: true, ...nouvelle, joueurs: [] });
 });
