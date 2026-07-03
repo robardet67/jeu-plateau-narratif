@@ -191,6 +191,51 @@ function initDatabase() {
   }
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_representants_race_rang ON representants(race_id, rang)');
 
+  // --- v2 : Runes ---
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS runes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nom TEXT NOT NULL UNIQUE,
+      portrait TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS representants_rune (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      rune_id INTEGER NOT NULL,
+      rang INTEGER NOT NULL CHECK (rang IN (1, 2, 3)),
+      nom TEXT NOT NULL,
+      image_depart TEXT,
+      image_sourire TEXT,
+      dialogue TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (rune_id) REFERENCES runes(id) ON DELETE CASCADE,
+      UNIQUE (rune_id, rang)
+    );
+
+    CREATE TABLE IF NOT EXISTS joueur_runes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      joueur_id INTEGER NOT NULL,
+      rune_id INTEGER NOT NULL,
+      progression INTEGER NOT NULL DEFAULT 0,
+      FOREIGN KEY (joueur_id) REFERENCES joueurs(id) ON DELETE CASCADE,
+      FOREIGN KEY (rune_id) REFERENCES runes(id) ON DELETE CASCADE,
+      UNIQUE (joueur_id, rune_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_repr_rune ON representants_rune(rune_id);
+    CREATE INDEX IF NOT EXISTS idx_joueur_runes ON joueur_runes(joueur_id);
+  `);
+
+  // v2 : niveau (entier) revient dans les objectifs — pool unique race+rune
+  assurerColonne(db, 'objectifs', 'niveau', 'INTEGER');
+
+  // v2 : configuration de partie (representants actifs et nb d'objectifs par rang)
+  assurerColonne(db, 'parties', 'nb_representants_race', 'INTEGER NOT NULL DEFAULT 2');
+  assurerColonne(db, 'parties', 'nb_representants_rune', 'INTEGER NOT NULL DEFAULT 2');
+  assurerColonne(db, 'parties', 'config_objectifs_race', "TEXT NOT NULL DEFAULT '[2,2,2]'");
+  assurerColonne(db, 'parties', 'config_objectifs_rune', "TEXT NOT NULL DEFAULT '[2,2,2]'");
+
   const parametresParDefaut = { tableau_de_bord_actif: 'false' };
   const insererParametre = db.prepare('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)');
   for (const [cle, valeur] of Object.entries(parametresParDefaut)) {

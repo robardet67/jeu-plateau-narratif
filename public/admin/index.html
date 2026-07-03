@@ -45,6 +45,7 @@
       <button class="onglet" data-onglet="objectifs">Objectifs</button>
       <button class="onglet" data-onglet="fonds">Fonds</button>
       <button class="onglet" data-onglet="scenario">Scenario</button>
+      <button class="onglet" data-onglet="runes">Runes</button>
       <button class="onglet" data-onglet="parametres">Parametres</button>
       <button class="onglet" data-onglet="partie">Configuration de partie</button>
     </nav>
@@ -123,9 +124,9 @@
       <div class="carte">
         <h2>Importer des objectifs (CSV)</h2>
         <p class="astuce">
-          Colonne requise : <code>description</code>. Les colonnes <code>niveau</code>,
-          <code>type</code> et <code>categorie</code> sont ignorees si presentes (compatibilite
-          avec les anciens fichiers).
+          Colonnes : <code>description</code> (obligatoire) et <code>niveau</code> (entier, optionnel).
+          Les autres colonnes (<code>type</code>, <code>categorie</code>…) sont ignorees —
+          compatibles avec les anciens fichiers.
         </p>
         <form id="form-import-objectifs" class="formulaire-ligne">
           <input id="champ-csv-objectifs" type="file" accept=".csv,text/csv" required />
@@ -138,6 +139,7 @@
         <h2>Ajouter un objectif</h2>
         <form id="form-nouvel-objectif" class="formulaire">
           <textarea name="description" placeholder="Description de l'objectif" required></textarea>
+          <input name="niveau" type="number" min="1" placeholder="Niveau (entier, optionnel)" />
           <button type="submit">Ajouter l'objectif</button>
         </form>
       </div>
@@ -181,6 +183,50 @@
       </div>
     </section>
 
+    <section id="onglet-runes" class="contenu-onglet cachee">
+      <div class="carte">
+        <h2>Ajouter une rune <span id="compteur-runes" class="compteur"></span></h2>
+        <p class="astuce">Maximum 3 runes dans le jeu.</p>
+        <form id="form-nouvelle-rune" class="formulaire" enctype="multipart/form-data">
+          <input name="nom" type="text" placeholder="Nom de la rune" required />
+          <label class="champ-fichier">Portrait (PNG, optionnel)
+            <input name="portrait" type="file" accept="image/png" />
+          </label>
+          <button type="submit">Creer la rune</button>
+        </form>
+      </div>
+
+      <div class="carte">
+        <h2>Runes existantes</h2>
+        <ul id="liste-runes" class="liste-elements"></ul>
+      </div>
+
+      <div class="carte">
+        <h2>Choisir une rune</h2>
+        <select id="select-rune-representants"></select>
+      </div>
+
+      <div class="carte">
+        <h2>Ajouter un representant <span id="compteur-representants-rune" class="compteur"></span></h2>
+        <form id="form-nouveau-representant-rune" class="formulaire" enctype="multipart/form-data">
+          <input name="nom" type="text" placeholder="Nom du representant" required />
+          <textarea name="dialogue" placeholder="Texte de dialogue (utilisez {nom} pour le prenom du joueur)"></textarea>
+          <label class="champ-fichier">Image de depart (PNG)
+            <input name="image_depart" type="file" accept="image/png" required />
+          </label>
+          <label class="champ-fichier">Image de sourire (PNG)
+            <input name="image_sourire" type="file" accept="image/png" required />
+          </label>
+          <button type="submit">Creer le representant</button>
+        </form>
+      </div>
+
+      <div class="carte">
+        <h2>Representants de cette rune</h2>
+        <ul id="liste-representants-rune" class="liste-elements"></ul>
+      </div>
+    </section>
+
     <section id="onglet-parametres" class="contenu-onglet cachee">
       <div class="carte">
         <h2>Tableau de bord global</h2>
@@ -199,15 +245,28 @@
       <div id="partie-aucune" class="carte">
         <h2>Creer une nouvelle partie</h2>
         <div class="formulaire">
-          <label>Nombre de joueurs attendus pour le lancement automatique
+          <label>Nombre de joueurs attendus (lancement automatique, 0 = manuel)
             <input id="config-nb-joueurs" type="number" min="0" max="20" value="2" />
           </label>
+
+          <fieldset style="border:1px solid #ccc;padding:.75rem;border-radius:.5rem">
+            <legend>Representants de race</legend>
+            <label>Representants actifs (0-3)
+              <input id="config-nb-rep-race" type="number" min="0" max="3" value="2" />
+            </label>
+            <div id="config-obj-race" class="formulaire" style="margin-top:.5rem"></div>
+          </fieldset>
+
+          <fieldset style="border:1px solid #ccc;padding:.75rem;border-radius:.5rem">
+            <legend>Representants de rune</legend>
+            <label>Representants actifs (0-3)
+              <input id="config-nb-rep-rune" type="number" min="0" max="3" value="2" />
+            </label>
+            <div id="config-obj-rune" class="formulaire" style="margin-top:.5rem"></div>
+          </fieldset>
         </div>
-        <p class="astuce">
-          La partie se lancera automatiquement des que le nombre de joueurs configures
-          auront tous choisi leur race. Laissez 0 joueurs attendus pour un lancement
-          manuel uniquement (bouton secours dans la salle d'attente).
-        </p>
+
+        <p id="erreur-config-partie" class="message-erreur cachee"></p>
         <button id="btn-creer-partie-active">Creer la partie</button>
       </div>
 

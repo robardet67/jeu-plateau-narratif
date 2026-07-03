@@ -60,11 +60,25 @@ function restaurerSiVide(db) {
     });
 
     const insererObjectif = db.prepare(
-      'INSERT INTO objectifs (id, description, created_at) VALUES (?, ?, ?)'
+      'INSERT INTO objectifs (id, description, niveau, created_at) VALUES (?, ?, ?, ?)'
     );
     (contenu.objectifs || []).forEach((o) => {
-      insererObjectif.run(o.id, o.description, o.created_at);
+      insererObjectif.run(o.id, o.description, o.niveau ?? null, o.created_at);
       compteurs.objectifs++;
+    });
+
+    const insererRune = db.prepare('INSERT INTO runes (id, nom, portrait, created_at) VALUES (?, ?, ?, ?)');
+    (contenu.runes || []).forEach((r) => {
+      insererRune.run(r.id, r.nom, r.portrait, r.created_at);
+      compteurs.runes = (compteurs.runes || 0) + 1;
+    });
+
+    const insererRepRune = db.prepare(
+      'INSERT INTO representants_rune (id, rune_id, rang, nom, image_depart, image_sourire, dialogue, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    (contenu.representants_rune || []).forEach((r) => {
+      insererRepRune.run(r.id, r.rune_id, r.rang, r.nom, r.image_depart, r.image_sourire, r.dialogue ?? null, r.created_at);
+      compteurs.representants_rune = (compteurs.representants_rune || 0) + 1;
     });
 
     const insererScenario = db.prepare(
