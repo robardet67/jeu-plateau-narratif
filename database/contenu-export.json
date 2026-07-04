@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-04T12:21:19.394Z",
+  "genere_le": "2026-07-04T12:22:04.831Z",
   "races": [
     {
       "id": 1,
@@ -836,6 +836,16 @@
       "image_sourire": "/uploads/1783167661906-da8bed807bfe722a.png",
       "dialogue": null,
       "created_at": "2026-07-04 12:21:01"
+    },
+    {
+      "id": 7,
+      "allegeance_id": 2,
+      "rang": 3,
+      "nom": "super druide",
+      "image_depart": "/uploads/1783167724809-0a3a211eab2db5bb.png",
+      "image_sourire": "/uploads/1783167724812-74bd30a0f233b924.png",
+      "dialogue": "Enfin il était temps",
+      "created_at": "2026-07-04 12:22:04"
     }
   ],
   "scenario_images": [
