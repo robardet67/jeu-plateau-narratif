@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-04T12:04:20.966Z",
+  "genere_le": "2026-07-04T12:08:22.268Z",
   "races": [
     {
       "id": 1,
@@ -786,7 +786,7 @@
       "allegeance_id": 2,
       "rang": 1,
       "nom": "gobelin magicien",
-      "image_depart": "/uploads/1783153884652-9f7dea4f5b368a73.png",
+      "image_depart": "/uploads/1783166902261-0210d3fd220bfe31.png",
       "image_sourire": "/uploads/1783166660958-fc4f8e7653cdf5de.png",
       "dialogue": "rune d'argent",
       "created_at": "2026-07-04 08:31:29"
