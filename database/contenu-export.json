@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-04T10:39:43.532Z",
+  "genere_le": "2026-07-04T10:40:58.260Z",
   "races": [
     {
       "id": 1,
@@ -125,6 +125,13 @@
       "contexte": "Le royaume des elfes noirs",
       "texte": "Nous vous attendions {nom} venez découvrir votre quêtes !",
       "created_at": "2026-07-04 10:36:43"
+    },
+    {
+      "id": 8,
+      "representant_id": 3,
+      "contexte": "Le royaume des gobelins",
+      "texte": "Vous voilà enfin {nom}, nous avons une quête pour vous !",
+      "created_at": "2026-07-04 10:40:58"
     }
   ],
   "objectifs": [
