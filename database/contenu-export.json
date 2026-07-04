@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-04T10:31:53.233Z",
+  "genere_le": "2026-07-04T10:32:27.440Z",
   "races": [
     {
       "id": 1,
@@ -69,10 +69,10 @@
       "id": 6,
       "race_id": 2,
       "rang": 3,
-      "nom": "standard",
-      "description": null,
-      "image_depart": "/uploads/1783088972574-ef76be0fda9f6565.png",
-      "image_sourire": "/uploads/1783088972591-be7e93f76db4eb77.png",
+      "nom": "elfe noir chef",
+      "description": "",
+      "image_depart": "/uploads/1783161147434-22bb6a3399f25f39.png",
+      "image_sourire": "/uploads/1783161147437-50b5bf60ff3fe605.png",
       "created_at": "2026-07-03 14:29:32"
     }
   ],
