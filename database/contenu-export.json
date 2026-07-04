@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-04T12:08:51.370Z",
+  "genere_le": "2026-07-04T12:09:31.639Z",
   "races": [
     {
       "id": 1,
@@ -756,8 +756,8 @@
       "allegeance_id": 1,
       "rang": 1,
       "nom": "standard",
-      "image_depart": "/uploads/1783166931347-0be95438c68b1cf7.png",
-      "image_sourire": "/uploads/1783166931368-17ef1a38ba8ed642.png",
+      "image_depart": "/uploads/1783166971625-8fecc3c8de5bd8e5.png",
+      "image_sourire": "/uploads/1783166971636-7d7120e637f6e2c0.png",
       "dialogue": "bienvenue chez les representant de la rune",
       "created_at": "2026-07-03 08:48:21"
     },
