@@ -1,9 +1,9 @@
 {
-  "genere_le": "2026-07-02T12:12:01.608Z",
+  "genere_le": "2026-07-04T14:41:53.328Z",
   "races": [
     {
       "id": 1,
-      "nom": "gobelin",
+      "nom": "Gobelin",
       "image_fond": "/uploads/1782912265324-b54c560af3b939ab.png",
       "created_at": "2026-07-01 13:18:59"
     },
@@ -12,6 +12,12 @@
       "nom": "Elfe noir",
       "image_fond": "/uploads/1782912281584-1d204ba93e9df42e.png",
       "created_at": "2026-07-01 13:19:04"
+    },
+    {
+      "id": 3,
+      "nom": "Orc",
+      "image_fond": null,
+      "created_at": "2026-07-04 12:13:13"
     }
   ],
   "representants": [
@@ -20,9 +26,9 @@
       "race_id": 1,
       "rang": 1,
       "nom": "standard",
-      "description": null,
-      "image_depart": "/uploads/1782911962108-7a9961a89ca50def.png",
-      "image_sourire": "/uploads/1782911962114-dbac828dc51f8643.png",
+      "description": "",
+      "image_depart": "/uploads/1783161493187-07ffc2726ce27f0a.png",
+      "image_sourire": "/uploads/1783161469224-316af46975e6ffc4.png",
       "created_at": "2026-07-01 13:19:22"
     },
     {
@@ -30,9 +36,9 @@
       "race_id": 1,
       "rang": 2,
       "nom": "gobelin magicien",
-      "description": null,
-      "image_depart": "/uploads/1782911985949-a3943915f4724ae0.png",
-      "image_sourire": "/uploads/1782911985963-375f92b7d2031b84.png",
+      "description": "",
+      "image_depart": "/uploads/1783161564747-5842177dac0cdaba.png",
+      "image_sourire": "/uploads/1783161564748-657926db676bff8a.png",
       "created_at": "2026-07-01 13:19:45"
     },
     {
@@ -40,9 +46,9 @@
       "race_id": 1,
       "rang": 3,
       "nom": "gobelin chef",
-      "description": null,
-      "image_depart": "/uploads/1782912000071-e4859813bfd6f88b.png",
-      "image_sourire": "/uploads/1782912000098-0e0387d4384d10d8.png",
+      "description": "",
+      "image_depart": "/uploads/1783161583518-c551802e796569ea.png",
+      "image_sourire": "/uploads/1783161583530-bf2ebec944acbb74.png",
       "created_at": "2026-07-01 13:20:00"
     },
     {
@@ -50,9 +56,9 @@
       "race_id": 2,
       "rang": 1,
       "nom": "standard",
-      "description": null,
-      "image_depart": "/uploads/1782912017473-acf5ac7e995806ed.png",
-      "image_sourire": "/uploads/1782912017478-0237ff46c4de704c.png",
+      "description": "",
+      "image_depart": "/uploads/1783161113228-d67ae9a1a0036e1b.png",
+      "image_sourire": "/uploads/1783161113229-07d10d73af106607.png",
       "created_at": "2026-07-01 13:20:17"
     },
     {
@@ -60,136 +66,786 @@
       "race_id": 2,
       "rang": 2,
       "nom": "elfe noir magicien",
-      "description": null,
-      "image_depart": "/uploads/1782912053687-5fd7f9b2d7f344d5.png",
-      "image_sourire": "/uploads/1782912053691-c0f6162b3b713016.png",
+      "description": "",
+      "image_depart": "/uploads/1783102233035-3252e5ba7194d627.png",
+      "image_sourire": "/uploads/1783102233046-785fb351589b9526.png",
       "created_at": "2026-07-01 13:20:53"
+    },
+    {
+      "id": 6,
+      "race_id": 2,
+      "rang": 3,
+      "nom": "elfe noir chef",
+      "description": "",
+      "image_depart": "/uploads/1783161147434-22bb6a3399f25f39.png",
+      "image_sourire": "/uploads/1783161147437-50b5bf60ff3fe605.png",
+      "created_at": "2026-07-03 14:29:32"
+    },
+    {
+      "id": 7,
+      "race_id": 3,
+      "rang": 1,
+      "nom": "standard",
+      "description": "Un monde de géant très violent",
+      "image_depart": "/uploads/1783167426425-121deaa90d0cc311.png",
+      "image_sourire": "/uploads/1783167426431-4c41c888b8903e74.png",
+      "created_at": "2026-07-04 12:17:06"
+    },
+    {
+      "id": 8,
+      "race_id": 3,
+      "rang": 2,
+      "nom": "magicien",
+      "description": "on t'attendait",
+      "image_depart": "/uploads/1783167503313-b761c7240724f473.png",
+      "image_sourire": "/uploads/1783167503320-b4e993bd21e9222a.png",
+      "created_at": "2026-07-04 12:18:23"
+    },
+    {
+      "id": 9,
+      "race_id": 3,
+      "rang": 3,
+      "nom": "Chef orc",
+      "description": "Enfin te voilà !",
+      "image_depart": "/uploads/1783167539807-531c5d1efd691b79.png",
+      "image_sourire": "/uploads/1783167539813-059b5ca291c21907.png",
+      "created_at": "2026-07-04 12:18:59"
     }
   ],
   "dialogues": [
     {
       "id": 1,
       "representant_id": 1,
-      "contexte": "comunautÃ© de gobelin",
-      "texte": "bienvenue chez les gobelin",
+      "contexte": "Comunauté de gobelin",
+      "texte": "Bienvenue {nom} chez les gobelin",
       "created_at": "2026-07-01 13:21:31"
     },
     {
       "id": 2,
       "representant_id": 2,
-      "contexte": "comunautÃ© de gobelin",
+      "contexte": "comunauté de gobelin",
       "texte": "bienvenu {nom} chez les gobelin magicien",
       "created_at": "2026-07-01 13:22:09"
     },
     {
       "id": 3,
       "representant_id": 2,
-      "contexte": "comunautÃ© de gobelin",
+      "contexte": "comunauté de gobelin",
       "texte": "{nom} , nous t'attendions aux royaume de gobelin",
       "created_at": "2026-07-01 13:22:36"
     },
     {
       "id": 4,
       "representant_id": 4,
-      "contexte": "comunautÃ© d'elfe noir ",
-      "texte": "bienvenu chez les elfe noirs",
+      "contexte": "La communauté d'elfe noir ",
+      "texte": "Bienvenu {nom} chez les elfe noirs, nous avons une quête pour vous",
       "created_at": "2026-07-01 13:23:08"
     },
     {
       "id": 5,
       "representant_id": 5,
-      "contexte": "comunautÃ© d 'elfes noirs",
+      "contexte": "comunauté d 'elfes noirs",
       "texte": "bienvenu chez les elfe noirs magicien",
       "created_at": "2026-07-01 13:23:29"
     },
     {
       "id": 6,
       "representant_id": 5,
-      "contexte": "La communautÃ© Ã  besoin de valeureux aventurier pour l'aider dans ses quÃªtes.",
-      "texte": "bienvenu {nom} chez les elfe noirs le royaume",
+      "contexte": "le temple de la magie Elfe noir",
+      "texte": "La communauté à besoin de valeureux aventurier pour l'aider dans ses quêtes.",
       "created_at": "2026-07-01 13:23:56"
+    },
+    {
+      "id": 7,
+      "representant_id": 6,
+      "contexte": "Le royaume des elfes noirs",
+      "texte": "Nous vous attendions {nom} venez découvrir votre quêtes !",
+      "created_at": "2026-07-04 10:36:43"
+    },
+    {
+      "id": 8,
+      "representant_id": 3,
+      "contexte": "Le royaume des gobelins",
+      "texte": "Vous voilà enfin {nom}, nous avons une quête pour vous !",
+      "created_at": "2026-07-04 10:40:58"
     }
   ],
   "objectifs": [
     {
+      "id": 171,
+      "description": "Trouve une pierre gravée cachée près de la Fontaine Ancienne.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 172,
+      "description": "Ramène une pierre runique tombée dans les Ruines Oubliées.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 173,
+      "description": "Prépare une potion de soin avec les herbes de la Fontaine Ancienne.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 174,
+      "description": "Récupère une fiole de potion oubliée à les Ruines Oubliées.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 175,
+      "description": "Traque un petit monstre qui rôde près de la Fontaine Ancienne.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 176,
+      "description": "Chasse le monstre qui effraie les habitants de les Ruines Oubliées.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 177,
+      "description": "Ouvre le coffre verrouillé caché à la Fontaine Ancienne.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 178,
+      "description": "Trouve la clé du coffre perdu près de les Ruines Oubliées.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 179,
+      "description": "Répare une arme cassée trouvée à la Fontaine Ancienne.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 180,
+      "description": "Récupère une arme perdue au combat près de les Ruines Oubliées.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 181,
+      "description": "Récupère un éclat de pierre bleue à la Forge Sacrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 182,
+      "description": "Déterre une pierre ancienne enfouie sous le Marché Couvert.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 183,
+      "description": "Livre une potion fragile jusqu'à la Forge Sacrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 184,
+      "description": "Trouve l'ingrédient manquant pour la potion à le Marché Couvert.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 185,
+      "description": "Capture un jeune monstre égaré à la Forge Sacrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 186,
+      "description": "Repousse un monstre affamé loin de le Marché Couvert.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 187,
+      "description": "Déplace un coffre lourd jusqu'à la Forge Sacrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 188,
+      "description": "Récupère le contenu d'un coffre renversé à le Marché Couvert.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 189,
+      "description": "Livre une arme neuve forgée pour la Forge Sacrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 190,
+      "description": "Trouve le fourreau manquant d'une arme à le Marché Couvert.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 191,
+      "description": "Rapporte une pierre polie trouvée au fond de la Crypte Silencieuse.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 192,
+      "description": "Localise la pierre fissurée qui marque l'entrée de le Pont Brisé.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 193,
+      "description": "Échange une potion contre un service à la Crypte Silencieuse.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 194,
+      "description": "Teste une potion suspecte trouvée près de le Pont Brisé.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 195,
+      "description": "Découvre la tanière du monstre proche de la Crypte Silencieuse.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 196,
+      "description": "Négocie avec le monstre gardien de le Pont Brisé.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 197,
+      "description": "Désamorce le piège d'un coffre trouvé à la Crypte Silencieuse.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 198,
+      "description": "Localise le coffre enterré sous le Pont Brisé.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 199,
+      "description": "Nettoie une arme rouillée découverte à la Crypte Silencieuse.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 200,
+      "description": "Échange une vieille arme contre une meilleure à le Pont Brisé.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 201,
+      "description": "Vole une pierre précieuse gardée près de la Clairière Grise.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 202,
+      "description": "Identifie la pierre qui brille la nuit à le Vieux Moulin.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 203,
+      "description": "Vole la recette de potion gardée à la Clairière Grise.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 204,
+      "description": "Récupère trois potions renversées à le Vieux Moulin.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 205,
+      "description": "Soigne un monstre blessé trouvé à la Clairière Grise.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 206,
+      "description": "Piste les traces d'un monstre autour de le Vieux Moulin.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 207,
+      "description": "Rapporte un coffre scellé depuis la Clairière Grise.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 208,
+      "description": "Force un coffre rouillé abandonné à le Vieux Moulin.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 209,
+      "description": "Cache une arme dangereuse loin de la Clairière Grise.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 210,
+      "description": "Identifie l'origine d'une arme trouvée à le Vieux Moulin.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 211,
+      "description": "Assemble les fragments de pierre dispersés autour de la Tour Effondrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 212,
+      "description": "Purifie une pierre corrompue trouvée à le Sanctuaire Caché.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 213,
+      "description": "Prépare une potion antidote pour un blessé à la Tour Effondrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 214,
+      "description": "Porte une potion explosive loin de le Sanctuaire Caché.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 215,
+      "description": "Libère un monstre enchaîné injustement à la Tour Effondrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 216,
+      "description": "Affronte le monstre qui garde l'accès à le Sanctuaire Caché.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 217,
+      "description": "Échange un coffre vide contre un service à la Tour Effondrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 218,
+      "description": "Protège un coffre précieux en route vers le Sanctuaire Caché.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 219,
+      "description": "Aiguise une arme émoussée pour un allié à la Tour Effondrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 220,
+      "description": "Rapporte une arme cérémonielle volée à le Sanctuaire Caché.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 221,
+      "description": "Échange une pierre magique contre un service à la Fontaine Ancienne.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 222,
+      "description": "Protège la pierre sacrée exposée à les Ruines Oubliées.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 223,
+      "description": "Distille une potion rare dans les caves de la Fontaine Ancienne.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 224,
+      "description": "Retrouve le flacon de potion perdu à les Ruines Oubliées.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 225,
+      "description": "Endors un monstre agité rôdant près de la Fontaine Ancienne.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 226,
+      "description": "Étudie le comportement d'un monstre observé à les Ruines Oubliées.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 227,
+      "description": "Répare la serrure d'un coffre cassé à la Fontaine Ancienne.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 228,
+      "description": "Cache un coffre important avant l'arrivée à les Ruines Oubliées.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 229,
+      "description": "Désarme un piège lié à une arme ancienne à la Fontaine Ancienne.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 230,
+      "description": "Grave un symbole sur une arme forgée à les Ruines Oubliées.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 231,
+      "description": "Grave un message sur une pierre à la Forge Sacrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 232,
+      "description": "Retrouve la pierre volée et cachée à le Marché Couvert.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 233,
+      "description": "Neutralise une potion toxique renversée à la Forge Sacrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 234,
+      "description": "Offre une potion de courage à un garde de le Marché Couvert.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 235,
+      "description": "Nourris un monstre affamé caché à la Forge Sacrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 236,
+      "description": "Éloigne un monstre curieux des abords de le Marché Couvert.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 237,
+      "description": "Vide le contenu d'un coffre partagé à la Forge Sacrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 238,
+      "description": "Livre un petit coffre scellé jusqu'à le Marché Couvert.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 239,
+      "description": "Retrouve le manche perdu d'une arme à la Forge Sacrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 240,
+      "description": "Enterre une arme maudite loin de le Marché Couvert.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 241,
+      "description": "Polis une pierre brute rapportée de la Crypte Silencieuse.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 242,
+      "description": "Livre une pierre précieuse jusqu'à le Pont Brisé.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 243,
+      "description": "Mélange deux potions instables loin de la Crypte Silencieuse.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 244,
+      "description": "Cache une potion précieuse avant l'arrivée à le Pont Brisé.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 245,
+      "description": "Récupère une écaille de monstre tombée à la Crypte Silencieuse.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 246,
+      "description": "Guide un monstre perdu jusqu'à le Pont Brisé.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 247,
+      "description": "Retrouve le double de la clé d'un coffre à la Crypte Silencieuse.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 248,
+      "description": "Soulève un coffre coincé sous des débris à le Pont Brisé.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 249,
+      "description": "Vends une arme rare au forgeron de la Crypte Silencieuse.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 250,
+      "description": "Répare le fil tranchant d'une lame à le Pont Brisé.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 251,
+      "description": "Brise une pierre maudite trouvée à la Clairière Grise.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 252,
+      "description": "Rassemble deux moitiés de pierre séparées à le Vieux Moulin.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 253,
+      "description": "Récupère une potion gelée dans les glaces de la Clairière Grise.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 254,
+      "description": "Vends une potion rare au marchand de le Vieux Moulin.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 255,
+      "description": "Calme un monstre furieux réveillé à la Clairière Grise.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 256,
+      "description": "Enferme un monstre dangereux échappé de le Vieux Moulin.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 257,
+      "description": "Identifie le propriétaire d'un coffre abandonné à la Clairière Grise.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 258,
+      "description": "Transporte un coffre fragile sans le briser jusqu'à le Vieux Moulin.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 259,
+      "description": "Transporte une arme lourde jusqu'à la Clairière Grise.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 260,
+      "description": "Confie une arme de famille à un héritier à le Vieux Moulin.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 261,
+      "description": "Confie une pierre porte-bonheur à un habitant de la Tour Effondrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 262,
+      "description": "Recharge une pierre d'énergie à le Sanctuaire Caché.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 263,
+      "description": "Réchauffe une potion figée près de la Tour Effondrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 264,
+      "description": "Filtre une potion trouble ramassée à le Sanctuaire Caché.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 265,
+      "description": "Convainc un monstre de quitter la Tour Effondrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 266,
+      "description": "Documente l'apparition d'un monstre à le Sanctuaire Caché.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 267,
+      "description": "Marque un coffre pour le retrouver plus tard à la Tour Effondrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 268,
+      "description": "Récupère un coffre englouti près de le Sanctuaire Caché.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 269,
+      "description": "Récupère une arme jetée dans les eaux de la Tour Effondrée.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    },
+    {
+      "id": 270,
+      "description": "Bénis une arme avant un affrontement à le Sanctuaire Caché.",
+      "niveau": null,
+      "created_at": "2026-07-03 14:03:25"
+    }
+  ],
+  "allegeances": [
+    {
       "id": 1,
-      "description": "Dï¿½poser uneï¿½ pï¿½ee bleu au village.",
-      "created_at": "2026-07-01 13:24:09"
+      "nom": "or",
+      "portrait": "/uploads/1783176113327-8911d05acc07c523.png",
+      "created_at": "2026-07-03 08:46:38"
     },
     {
       "id": 2,
-      "description": "ramener une larve de ciraya au lieu7.",
-      "created_at": "2026-07-01 13:24:09"
+      "nom": "argent",
+      "portrait": "/uploads/1783068439969-04efc1ff4fded7fb.png",
+      "created_at": "2026-07-03 08:47:20"
+    }
+  ],
+  "representants_allegeance": [
+    {
+      "id": 1,
+      "allegeance_id": 1,
+      "rang": 1,
+      "nom": "standard",
+      "image_depart": "/uploads/1783166971625-8fecc3c8de5bd8e5.png",
+      "image_sourire": "/uploads/1783166971636-7d7120e637f6e2c0.png",
+      "dialogue": "bienvenue chez les representant de la rune",
+      "created_at": "2026-07-03 08:48:21"
+    },
+    {
+      "id": 2,
+      "allegeance_id": 1,
+      "rang": 2,
+      "nom": "druide",
+      "image_depart": "/uploads/1783167595302-bb4445da429b35c5.png",
+      "image_sourire": "/uploads/1783167595305-1c038641565c46b0.png",
+      "dialogue": "",
+      "created_at": "2026-07-03 13:12:45"
     },
     {
       "id": 3,
-      "description": "Tuer un monstre de niveau 4.",
-      "created_at": "2026-07-01 13:24:09"
+      "allegeance_id": 1,
+      "rang": 3,
+      "nom": "Super druide",
+      "image_depart": "/uploads/1783167620947-a5695ef934395b6b.png",
+      "image_sourire": "/uploads/1783167620950-729c48819cbc7c4e.png",
+      "dialogue": "vous etes dans le royaume de la rune d'or",
+      "created_at": "2026-07-03 18:12:10"
     },
     {
       "id": 4,
-      "description": "Dï¿½poser un bouclier bleu au village.",
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 5,
-      "description": "ramener une pierre bleue de ciraya au lieu7.",
-      "created_at": "2026-07-01 13:24:09"
+      "allegeance_id": 2,
+      "rang": 1,
+      "nom": "standard ",
+      "image_depart": "/uploads/1783167067932-97fb6fe023019813.png",
+      "image_sourire": "/uploads/1783167067933-3120fae8ff23f7fa.png",
+      "dialogue": "rune d'argent",
+      "created_at": "2026-07-04 08:31:29"
     },
     {
       "id": 6,
-      "description": "Explorer une crypte de niveau 4.",
-      "created_at": "2026-07-01 13:24:09"
+      "allegeance_id": 2,
+      "rang": 2,
+      "nom": "druide",
+      "image_depart": "/uploads/1783167661905-c32fd79c2002a2ec.png",
+      "image_sourire": "/uploads/1783167661906-da8bed807bfe722a.png",
+      "dialogue": null,
+      "created_at": "2026-07-04 12:21:01"
     },
     {
       "id": 7,
-      "description": "Dï¿½poser un outil au village au village.",
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 8,
-      "description": "ramener une larve de ciraya au lieu7.",
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 9,
-      "description": "capturer un animal.",
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 10,
-      "description": "Dï¿½poser une pierre rouge bleu au village.",
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 11,
-      "description": "ramener une pierre rouge au lieu7.",
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 12,
-      "description": "ramener au lieu 4 le sacre de Ramok.",
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 13,
-      "description": "derober un objet commun a un autre joueur.",
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 14,
-      "description": "Dï¿½poser une pierre verte au village.",
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 15,
-      "description": "ramener deux outils au lieu7.",
-      "created_at": "2026-07-01 13:24:09"
-    },
-    {
-      "id": 16,
-      "description": "ramener au lieu 4 la tete de cyraya.",
-      "created_at": "2026-07-01 13:24:09"
+      "allegeance_id": 2,
+      "rang": 3,
+      "nom": "super druide",
+      "image_depart": "/uploads/1783167724809-0a3a211eab2db5bb.png",
+      "image_sourire": "/uploads/1783167724812-74bd30a0f233b924.png",
+      "dialogue": "Enfin il était temps",
+      "created_at": "2026-07-04 12:22:04"
     }
   ],
   "scenario_images": [

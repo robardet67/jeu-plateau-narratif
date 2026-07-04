@@ -458,3 +458,318 @@ button:hover {
   width: 100%;
   max-width: 340px;
 }
+
+/* --- Modal creation : race + allegeances --- */
+
+.modal-creation {
+  width: 92vw;
+  max-width: 580px;
+  max-height: 88vh;
+  overflow-y: auto;
+  align-items: stretch;
+  gap: .75rem;
+}
+
+.label-champ {
+  display: block;
+  font-size: .9rem;
+  color: #cbb8e0;
+}
+
+.label-champ input {
+  margin-top: .25rem;
+}
+
+.titre-section-modal {
+  margin: .5rem 0 .25rem;
+  font-size: 1rem;
+}
+
+.sous-titre-section {
+  font-size: .8rem;
+  font-weight: normal;
+  color: #9b8fb0;
+}
+
+.requis {
+  color: #f06292;
+}
+
+.grille-choix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+  margin-bottom: .5rem;
+}
+
+.carte-choix-race {
+  cursor: pointer;
+  border: 2px solid #444;
+  border-radius: .5rem;
+  padding: .5rem;
+  text-align: center;
+  min-width: 90px;
+  max-width: 120px;
+  background: #1c1b29;
+  transition: border-color .15s, background .15s;
+  position: relative;
+}
+
+.carte-choix-race:hover:not(.indisponible) {
+  border-color: #6c5ce7;
+  background: #23214a;
+}
+
+.carte-choix-race.selectionnee {
+  border-color: #caa54d;
+  background: #2a2840;
+}
+
+.carte-choix-race.indisponible {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.carte-choix-race img {
+  width: 60px;
+  height: 75px;
+  object-fit: cover;
+  border-radius: .35rem;
+  display: block;
+  margin: 0 auto .3rem;
+}
+
+.placeholder-race {
+  width: 60px;
+  height: 75px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin: 0 auto .3rem;
+  background: #2a2840;
+  border-radius: .35rem;
+}
+
+.badge-prise {
+  font-size: .7rem;
+  background: #6c2c91;
+  color: #fff;
+  border-radius: .25rem;
+  padding: .1rem .35rem;
+  margin-top: .2rem;
+}
+
+.carte-choix-allegeance {
+  cursor: pointer;
+  border: 2px solid #444;
+  border-radius: .5rem;
+  padding: .5rem;
+  text-align: center;
+  min-width: 75px;
+  background: #1c1b29;
+  transition: border-color .15s;
+}
+
+.carte-choix-allegeance:hover {
+  border-color: #6c5ce7;
+}
+
+.carte-choix-allegeance.selectionnee {
+  border-color: #caa54d;
+}
+
+.carte-choix-allegeance .img-allegeance {
+  display: block;
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin: 0 auto .3rem;
+}
+
+.placeholder-allegeance {
+  font-size: 1.5rem;
+  margin-bottom: .3rem;
+}
+
+.nom-choix {
+  font-size: .78rem;
+  font-weight: bold;
+}
+
+/* --- Ecran d'attente --- */
+
+.attente-info {
+  color: #cbb8e0;
+  font-style: italic;
+  margin-top: .5rem;
+}
+
+/* --- Hub (village) --- */
+
+#ecran-hub {
+  background-size: cover;
+  background-position: center;
+  background-color: #1c1b29;
+}
+
+.hub-village {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: cover;
+  background-position: center;
+}
+
+.hub-portraits {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.portrait-race {
+  cursor: pointer;
+  text-align: center;
+  transition: transform .15s;
+}
+
+.portrait-race:hover {
+  transform: scale(1.03);
+}
+
+.portrait-race img {
+  width: min(35vw, 280px);
+  max-height: 55vh;
+  object-fit: contain;
+  border-radius: .75rem;
+  border: 2px solid transparent;
+  display: block;
+  margin: 0 auto;
+  transition: border-color .15s;
+}
+
+.portrait-race:hover img {
+  border-color: #caa54d;
+}
+
+.placeholder-portrait {
+  width: min(35vw, 280px);
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+  border-radius: .75rem;
+  background: rgba(42, 40, 64, .5);
+  margin: 0 auto;
+}
+
+.nom-portrait {
+  margin-top: .5rem;
+  font-weight: bold;
+  font-size: 1rem;
+  text-shadow: 0 1px 4px rgba(0,0,0,.7);
+}
+
+.portraits-allegeances {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.portrait-allegeance {
+  text-align: center;
+  opacity: .85;
+}
+
+.portrait-allegeance img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #caa54d;
+  display: block;
+  margin: 0 auto .3rem;
+}
+
+.placeholder-allegeance-hub {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid #caa54d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin: 0 auto .3rem;
+}
+
+/* --- Objectifs inline (page representant individuel) --- */
+
+.texte-obj {
+  flex: 1;
+  font-size: .95rem;
+  line-height: 1.45;
+  padding-right: .75rem;
+}
+
+.carte-enveloppe .btn-valider-obj {
+  flex-shrink: 0;
+  padding: .35rem .75rem;
+  font-size: .85rem;
+}
+
+/* --- Parcours race sans panneau joueurs --- */
+
+#ecran-representants {
+  background-size: cover;
+  background-position: center;
+  background-color: #1c1b29;
+}
+
+/* --- Ecran Changer de joueur --- */
+
+.contenu-changer-joueur {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.entete-changer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.entete-changer h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.element-joueur-session {
+  align-items: center;
+}
+
+.badge-info {
+  display: inline-block;
+  font-size: .75rem;
+  padding: .15rem .45rem;
+  border-radius: .25rem;
+  background: rgba(255,255,255,.12);
+  margin-left: .4rem;
+  vertical-align: middle;
+  opacity: .85;
+}
+
+.badge-actuel {
+  background: rgba(202,165,77,.25);
+  color: #ecd08a;
+  opacity: 1;
+}

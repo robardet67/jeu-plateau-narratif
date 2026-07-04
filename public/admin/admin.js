@@ -3,15 +3,15 @@ const ecranAdmin = document.getElementById('ecran-admin');
 const indicateurSync = document.getElementById('indicateur-sync');
 
 let racesEnCache = [];
-let representantsEnCache = [];
 let objectifsEnCache = [];
+let allegeancesEnCache = [];
 
 async function requeteJSON(url, options = {}) {
   const reponse = await fetch(url, options);
   const donnees = await reponse.json().catch(() => ({}));
   if (!reponse.ok) {
     const erreur = new Error(donnees.error || 'Erreur inconnue');
-    erreur.donnees = donnees; // conserve le corps complet (ex: emplacements partiels)
+    erreur.donnees = donnees;
     throw erreur;
   }
   return donnees;
@@ -25,7 +25,6 @@ function afficherSync(sync) {
     indicateurSync.classList.add('succes');
   } else {
     const raison = sync.raison || '';
-    // Raisons silencieuses : desactivation volontaire ou rien a commiter
     const silencieux =
       raison.includes('desactivee') ||
       raison.includes('aucun fichier');
@@ -115,7 +114,7 @@ document.querySelectorAll('.onglet').forEach((bouton) => {
   });
 });
 
-// --- Races ---
+// --- Races (avec representants integres inline) ---
 
 async function chargerRaces() {
   racesEnCache = await requeteJSON('/api/races');
@@ -124,30 +123,35 @@ async function chargerRaces() {
   liste.innerHTML = '';
   racesEnCache.forEach((race) => liste.appendChild(creerElementRace(race)));
 
-  const selects = [
-    document.getElementById('select-race-representants'),
-    document.getElementById('select-race-dialogues'),
-    document.getElementById('select-race-fond')
-  ];
-  selects.forEach((select) => {
-    const valeurPrecedente = select.value;
-    select.innerHTML = racesEnCache
-      .map((r) => `<option value="${r.id}">${r.nom}</option>`)
-      .join('');
-    if (valeurPrecedente) select.value = valeurPrecedente;
-  });
+  const selectFond = document.getElementById('select-race-fond');
+  const valeurPrecedente = selectFond.value;
+  selectFond.innerHTML = racesEnCache.map((r) => `<option value="${r.id}">${r.nom}</option>`).join('');
+  if (valeurPrecedente) selectFond.value = valeurPrecedente;
 }
 
 function creerElementRace(race) {
   const li = document.createElement('li');
   li.className = 'element-carte';
+  li.style.flexDirection = 'column';
+  li.style.alignItems = 'stretch';
   li.innerHTML = `
-    <div class="element-infos">
-      <strong>${race.nom}</strong>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="element-infos"><strong>${race.nom}</strong></div>
+      <div class="element-actions">
+        <button class="btn-modifier">Modifier</button>
+        <button class="btn-supprimer bouton-danger">Supprimer</button>
+      </div>
     </div>
-    <div class="element-actions">
-      <button class="btn-modifier">Modifier</button>
-      <button class="btn-supprimer bouton-danger">Supprimer</button>
+    <div class="section-representants" style="margin-top:.75rem;border-top:1px solid rgba(255,255,255,.1);padding-top:.75rem">
+      <ul class="liste-reps-race liste-elements" style="margin:0 0 .5rem"></ul>
+      <form class="form-rep-race formulaire" enctype="multipart/form-data">
+        <h4 style="margin:0 0 .4rem;font-size:.875rem">Ajouter un representant (max. 3)</h4>
+        <input name="nom" type="text" placeholder="Nom du representant" required />
+        <textarea name="description" placeholder="Description (optionnel)"></textarea>
+        <label class="champ-fichier">Image de depart (PNG)<input name="image_depart" type="file" accept="image/png" required /></label>
+        <label class="champ-fichier">Image de sourire (PNG)<input name="image_sourire" type="file" accept="image/png" required /></label>
+        <button type="submit" class="btn-creer-rep">Creer le representant</button>
+      </form>
     </div>
   `;
 
@@ -159,7 +163,29 @@ function creerElementRace(race) {
     await chargerTout();
   });
 
+  li.querySelector('.form-rep-race').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const resultat = await requeteJSON(`/api/races/${race.id}/representants`, {
+      method: 'POST',
+      body: new FormData(e.target)
+    });
+    afficherSync(resultat.synchronisation);
+    e.target.reset();
+    await rafraichirRepresentantsRace(li, race.id);
+  });
+
+  rafraichirRepresentantsRace(li, race.id);
   return li;
+}
+
+async function rafraichirRepresentantsRace(li, raceId) {
+  const reps = await requeteJSON(`/api/races/${raceId}/representants`);
+  const liste = li.querySelector('.liste-reps-race');
+  liste.innerHTML = '';
+  const btnCreer = li.querySelector('.btn-creer-rep');
+  if (btnCreer) btnCreer.disabled = reps.length >= 3;
+  const rafraichir = () => rafraichirRepresentantsRace(li, raceId);
+  reps.forEach((rep) => liste.appendChild(creerElementRepresentant(rep, rafraichir)));
 }
 
 function afficherFormulaireModifRace(li, race) {
@@ -199,53 +225,125 @@ document.getElementById('form-nouvelle-race').addEventListener('submit', async (
   await chargerTout();
 });
 
-// --- Representants ---
+// --- Representants de race ---
 
-async function chargerRepresentants() {
-  const raceId = document.getElementById('select-race-representants').value;
-  if (!raceId) return;
-
-  representantsEnCache = await requeteJSON(`/api/races/${raceId}/representants`);
-
-  document.getElementById('compteur-representants').textContent = `(${representantsEnCache.length}/3)`;
-  document.getElementById('form-nouveau-representant').querySelector('button[type=submit]').disabled =
-    representantsEnCache.length >= 3;
-
-  const liste = document.getElementById('liste-representants');
-  liste.innerHTML = '';
-  representantsEnCache.forEach((rep) => liste.appendChild(creerElementRepresentant(rep)));
-}
-
-function creerElementRepresentant(rep) {
+function creerElementRepresentant(rep, rafraichir) {
   const li = document.createElement('li');
   li.className = 'element-carte';
+  li.style.flexDirection = 'column';
+  li.style.alignItems = 'stretch';
   li.innerHTML = `
-    <div class="element-infos">
-      ${rep.image_depart ? `<img src="${rep.image_depart}" alt="depart" />` : ''}
-      ${rep.image_sourire ? `<img src="${rep.image_sourire}" alt="sourire" />` : ''}
-      <div>
-        <strong>Rang ${rep.rang} - ${rep.nom}</strong>
-        <div>${rep.description || ''}</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+      <div class="element-infos" style="flex:1">
+        ${rep.image_depart ? `<img src="${rep.image_depart}" alt="depart" />` : ''}
+        ${rep.image_sourire ? `<img src="${rep.image_sourire}" alt="sourire" />` : ''}
+        <div>
+          <strong>Rang ${rep.rang} - ${rep.nom}</strong>
+          <div>${rep.description || ''}</div>
+        </div>
+      </div>
+      <div class="element-actions" style="flex-shrink:0">
+        <button class="btn-modifier">Modifier</button>
+        <button class="btn-supprimer bouton-danger">Supprimer</button>
       </div>
     </div>
-    <div class="element-actions">
-      <button class="btn-modifier">Modifier</button>
-      <button class="btn-supprimer bouton-danger">Supprimer</button>
+    <div class="section-dialogues" style="margin-top:.75rem;border-top:1px solid rgba(255,255,255,.1);padding-top:.75rem">
+      <p class="astuce" style="margin:0 0 .4rem">Dialogues — utilisez <code>{nom}</code> pour le prenom du joueur</p>
+      <div class="dialogues-liste"></div>
+      <form class="form-ajout-dialogue formulaire" style="margin-top:.5rem">
+        <input name="contexte" type="text" placeholder="Contexte (ex: accueil, victoire)" required />
+        <textarea name="texte" placeholder="Texte (ex: Bienvenue {nom} !)" required></textarea>
+        <button type="submit" class="bouton-secondaire">+ Ajouter un dialogue</button>
+      </form>
     </div>
   `;
 
-  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifRepresentant(li, rep));
+  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifRepresentant(li, rep, rafraichir));
   li.querySelector('.btn-supprimer').addEventListener('click', async () => {
     if (!confirm(`Supprimer le representant "${rep.nom}" ?`)) return;
     const resultat = await requeteJSON(`/api/representants/${rep.id}`, { method: 'DELETE' });
     afficherSync(resultat.synchronisation);
-    await chargerTout();
+    await rafraichir();
   });
 
+  li.querySelector('.form-ajout-dialogue').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const d = new FormData(e.target);
+    const resultat = await requeteJSON(`/api/representants/${rep.id}/dialogues`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contexte: d.get('contexte'), texte: d.get('texte') })
+    });
+    afficherSync(resultat.synchronisation);
+    e.target.reset();
+    await rafraichirDialogues(li, rep.id);
+  });
+
+  rafraichirDialogues(li, rep.id);
   return li;
 }
 
-function afficherFormulaireModifRepresentant(li, rep) {
+async function rafraichirDialogues(li, repId) {
+  const dialogues = await requeteJSON(`/api/representants/${repId}/dialogues`);
+  const conteneur = li.querySelector('.dialogues-liste');
+  conteneur.innerHTML = '';
+
+  if (dialogues.length === 0) {
+    conteneur.innerHTML = '<p style="margin:0;opacity:.6;font-size:.875rem">Aucun dialogue.</p>';
+    return;
+  }
+
+  dialogues.forEach((d) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;padding:.4rem 0;border-bottom:1px solid rgba(255,255,255,.07)';
+    div.innerHTML = `
+      <div style="flex:1">
+        <strong style="font-size:.875rem">${d.contexte}</strong>
+        <div style="font-size:.875rem;opacity:.8">${d.texte}</div>
+      </div>
+      <div class="element-actions" style="flex-shrink:0">
+        <button class="btn-modifier-dialogue bouton-secondaire">Modifier</button>
+        <button class="btn-supprimer-dialogue bouton-danger">Supprimer</button>
+      </div>
+    `;
+
+    div.querySelector('.btn-modifier-dialogue').addEventListener('click', () => {
+      div.innerHTML = `
+        <form class="formulaire" style="width:100%">
+          <input name="contexte" type="text" value="${d.contexte}" required />
+          <textarea name="texte" required>${d.texte}</textarea>
+          <div class="element-actions">
+            <button type="submit">Enregistrer</button>
+            <button type="button" class="btn-annuler bouton-secondaire">Annuler</button>
+          </div>
+        </form>
+      `;
+      div.querySelector('.btn-annuler').addEventListener('click', () => rafraichirDialogues(li, repId));
+      div.querySelector('form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const resultat = await requeteJSON(`/api/dialogues/${d.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contexte: fd.get('contexte'), texte: fd.get('texte') })
+        });
+        afficherSync(resultat.synchronisation);
+        await rafraichirDialogues(li, repId);
+      });
+    });
+
+    div.querySelector('.btn-supprimer-dialogue').addEventListener('click', async () => {
+      if (!confirm('Supprimer ce dialogue ?')) return;
+      const resultat = await requeteJSON(`/api/dialogues/${d.id}`, { method: 'DELETE' });
+      afficherSync(resultat.synchronisation);
+      await rafraichirDialogues(li, repId);
+    });
+
+    conteneur.appendChild(div);
+  });
+}
+
+function afficherFormulaireModifRepresentant(li, rep, rafraichir) {
   li.innerHTML = `
     <form class="formulaire" style="width:100%" enctype="multipart/form-data">
       <input name="nom" type="text" value="${rep.nom}" required />
@@ -262,7 +360,7 @@ function afficherFormulaireModifRepresentant(li, rep) {
       </div>
     </form>
   `;
-  li.querySelector('.btn-annuler').addEventListener('click', () => chargerRepresentants());
+  li.querySelector('.btn-annuler').addEventListener('click', () => rafraichir());
   li.querySelector('form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const resultat = await requeteJSON(`/api/representants/${rep.id}`, {
@@ -270,66 +368,98 @@ function afficherFormulaireModifRepresentant(li, rep) {
       body: new FormData(e.target)
     });
     afficherSync(resultat.synchronisation);
-    await chargerTout();
+    await rafraichir();
   });
 }
 
-document.getElementById('select-race-representants').addEventListener('change', chargerRepresentants);
+// --- Allegeances (avec representants integres inline) ---
 
-document.getElementById('form-nouveau-representant').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const raceId = document.getElementById('select-race-representants').value;
-  const resultat = await requeteJSON(`/api/races/${raceId}/representants`, {
-    method: 'POST',
-    body: new FormData(e.target)
-  });
-  afficherSync(resultat.synchronisation);
-  e.target.reset();
-  await chargerTout();
-});
+async function chargerAllegeances() {
+  allegeancesEnCache = await requeteJSON('/api/allegeances');
 
-// --- Dialogues ---
+  const compteur = document.getElementById('compteur-allegeances');
+  compteur.textContent = `(${allegeancesEnCache.length}/3)`;
 
-async function chargerReprésentantsPourDialogues() {
-  const raceId = document.getElementById('select-race-dialogues').value;
-  if (!raceId) return;
+  const btnSubmit = document.querySelector('#form-nouvelle-allegeance button[type=submit]');
+  if (btnSubmit) btnSubmit.disabled = allegeancesEnCache.length >= 3;
 
-  const representants = await requeteJSON(`/api/races/${raceId}/representants`);
-  const select = document.getElementById('select-representant-dialogues');
-  const valeurPrecedente = select.value;
-  select.innerHTML = representants.map((r) => `<option value="${r.id}">${r.nom}</option>`).join('');
-  if (valeurPrecedente && representants.some((r) => String(r.id) === valeurPrecedente)) {
-    select.value = valeurPrecedente;
-  }
-
-  await chargerDialogues();
-}
-
-function texteAvecVariante(texte) {
-  const prenom = document.getElementById('champ-prenom-test').value.trim() || '{nom}';
-  return texte.replaceAll('{nom}', prenom);
-}
-
-async function chargerDialogues() {
-  const representantId = document.getElementById('select-representant-dialogues').value;
-  const liste = document.getElementById('liste-dialogues');
+  const liste = document.getElementById('liste-allegeances');
   liste.innerHTML = '';
-  if (!representantId) return;
-
-  const dialogues = await requeteJSON(`/api/representants/${representantId}/dialogues`);
-  dialogues.forEach((dialogue) => liste.appendChild(creerElementDialogue(dialogue)));
+  allegeancesEnCache.forEach((a) => liste.appendChild(creerElementAllegeance(a)));
 }
 
-function creerElementDialogue(dialogue) {
+function creerElementAllegeance(allegeance) {
   const li = document.createElement('li');
   li.className = 'element-carte';
-  li.dataset.texteOriginal = dialogue.texte;
+  li.style.flexDirection = 'column';
+  li.style.alignItems = 'stretch';
+  li.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="element-infos">
+        ${allegeance.portrait ? `<img src="${allegeance.portrait}" alt="portrait" style="width:48px;height:48px;object-fit:cover;border-radius:.25rem" />` : ''}
+        <strong>${allegeance.nom}</strong>
+      </div>
+      <div class="element-actions">
+        <button class="btn-modifier">Modifier</button>
+        <button class="btn-supprimer bouton-danger">Supprimer</button>
+      </div>
+    </div>
+    <div class="section-representants" style="margin-top:.75rem;border-top:1px solid rgba(255,255,255,.1);padding-top:.75rem">
+      <ul class="liste-reps-allegeance liste-elements" style="margin:0 0 .5rem"></ul>
+      <form class="form-rep-allegeance formulaire" enctype="multipart/form-data">
+        <h4 style="margin:0 0 .4rem;font-size:.875rem">Ajouter un representant (max. 3)</h4>
+        <input name="nom" type="text" placeholder="Nom du representant" required />
+        <textarea name="dialogue" placeholder="Texte de dialogue (utilisez {nom} pour le prenom du joueur)"></textarea>
+        <label class="champ-fichier">Image de depart (PNG)<input name="image_depart" type="file" accept="image/png" required /></label>
+        <label class="champ-fichier">Image de sourire (PNG)<input name="image_sourire" type="file" accept="image/png" required /></label>
+        <button type="submit" class="btn-creer-rep-allegeance">Creer le representant</button>
+      </form>
+    </div>
+  `;
+
+  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifAllegeance(li, allegeance));
+  li.querySelector('.btn-supprimer').addEventListener('click', async () => {
+    if (!confirm(`Supprimer l'allegeance "${allegeance.nom}" et tous ses representants ?`)) return;
+    const resultat = await requeteJSON(`/api/allegeances/${allegeance.id}`, { method: 'DELETE' });
+    afficherSync(resultat.synchronisation);
+    await chargerTout();
+  });
+
+  li.querySelector('.form-rep-allegeance').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const resultat = await requeteJSON(`/api/allegeances/${allegeance.id}/representants`, {
+      method: 'POST',
+      body: new FormData(e.target)
+    });
+    afficherSync(resultat.synchronisation);
+    e.target.reset();
+    await rafraichirRepresentantsAllegeance(li, allegeance.id);
+  });
+
+  rafraichirRepresentantsAllegeance(li, allegeance.id);
+  return li;
+}
+
+async function rafraichirRepresentantsAllegeance(li, allegeanceId) {
+  const reps = await requeteJSON(`/api/allegeances/${allegeanceId}/representants`);
+  const liste = li.querySelector('.liste-reps-allegeance');
+  liste.innerHTML = '';
+  const btnCreer = li.querySelector('.btn-creer-rep-allegeance');
+  if (btnCreer) btnCreer.disabled = reps.length >= 3;
+  const rafraichir = () => rafraichirRepresentantsAllegeance(li, allegeanceId);
+  reps.forEach((rep) => liste.appendChild(creerElementRepresentantAllegeance(rep, rafraichir)));
+}
+
+function creerElementRepresentantAllegeance(rep, rafraichir) {
+  const li = document.createElement('li');
+  li.className = 'element-carte';
   li.innerHTML = `
     <div class="element-infos">
+      ${rep.image_depart ? `<img src="${rep.image_depart}" alt="depart" />` : ''}
+      ${rep.image_sourire ? `<img src="${rep.image_sourire}" alt="sourire" />` : ''}
       <div>
-        <strong>${dialogue.contexte}</strong>
-        <div>${dialogue.texte}</div>
-        <div class="apercu-dialogue">Apercu : ${texteAvecVariante(dialogue.texte)}</div>
+        <strong>Rang ${rep.rang} — ${rep.nom}</strong>
+        <div>${rep.dialogue || '<em>aucun dialogue</em>'}</div>
       </div>
     </div>
     <div class="element-actions">
@@ -338,65 +468,77 @@ function creerElementDialogue(dialogue) {
     </div>
   `;
 
-  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifDialogue(li, dialogue));
+  li.querySelector('.btn-modifier').addEventListener('click', () => afficherFormulaireModifRepresentantAllegeance(li, rep, rafraichir));
   li.querySelector('.btn-supprimer').addEventListener('click', async () => {
-    if (!confirm('Supprimer ce dialogue ?')) return;
-    const resultat = await requeteJSON(`/api/dialogues/${dialogue.id}`, { method: 'DELETE' });
+    if (!confirm(`Supprimer le representant "${rep.nom}" ?`)) return;
+    const resultat = await requeteJSON(`/api/representants-allegeance/${rep.id}`, { method: 'DELETE' });
     afficherSync(resultat.synchronisation);
-    await chargerDialogues();
+    await rafraichir();
   });
 
   return li;
 }
 
-function afficherFormulaireModifDialogue(li, dialogue) {
+function afficherFormulaireModifAllegeance(li, allegeance) {
   li.innerHTML = `
-    <form class="formulaire" style="width:100%">
-      <input name="contexte" type="text" value="${dialogue.contexte}" required />
-      <textarea name="texte" required>${dialogue.texte}</textarea>
+    <form class="formulaire" style="width:100%" enctype="multipart/form-data">
+      <input name="nom" type="text" value="${allegeance.nom}" required />
+      <label class="champ-fichier">Nouveau portrait (PNG, optionnel)
+        <input name="portrait" type="file" accept="image/png" />
+      </label>
       <div class="element-actions">
         <button type="submit">Enregistrer</button>
         <button type="button" class="bouton-secondaire btn-annuler">Annuler</button>
       </div>
     </form>
   `;
-  li.querySelector('.btn-annuler').addEventListener('click', () => chargerDialogues());
+  li.querySelector('.btn-annuler').addEventListener('click', () => chargerAllegeances());
   li.querySelector('form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const donnees = new FormData(e.target);
-    const resultat = await requeteJSON(`/api/dialogues/${dialogue.id}`, {
+    const resultat = await requeteJSON(`/api/allegeances/${allegeance.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contexte: donnees.get('contexte'), texte: donnees.get('texte') })
+      body: new FormData(e.target)
     });
     afficherSync(resultat.synchronisation);
-    await chargerDialogues();
+    await chargerTout();
   });
 }
 
-document.getElementById('select-race-dialogues').addEventListener('change', chargerReprésentantsPourDialogues);
-document.getElementById('select-representant-dialogues').addEventListener('change', chargerDialogues);
-document.getElementById('champ-prenom-test').addEventListener('input', () => {
-  document.querySelectorAll('#liste-dialogues li').forEach((li) => {
-    const apercu = li.querySelector('.apercu-dialogue');
-    if (apercu) apercu.textContent = `Apercu : ${texteAvecVariante(li.dataset.texteOriginal)}`;
+function afficherFormulaireModifRepresentantAllegeance(li, rep, rafraichir) {
+  li.innerHTML = `
+    <form class="formulaire" style="width:100%" enctype="multipart/form-data">
+      <input name="nom" type="text" value="${rep.nom}" required />
+      <textarea name="dialogue">${rep.dialogue || ''}</textarea>
+      <label class="champ-fichier">Nouvelle image de depart (PNG, optionnel)
+        <input name="image_depart" type="file" accept="image/png" />
+      </label>
+      <label class="champ-fichier">Nouvelle image de sourire (PNG, optionnel)
+        <input name="image_sourire" type="file" accept="image/png" />
+      </label>
+      <div class="element-actions">
+        <button type="submit">Enregistrer</button>
+        <button type="button" class="bouton-secondaire btn-annuler">Annuler</button>
+      </div>
+    </form>
+  `;
+  li.querySelector('.btn-annuler').addEventListener('click', () => rafraichir());
+  li.querySelector('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const resultat = await requeteJSON(`/api/representants-allegeance/${rep.id}`, {
+      method: 'PUT',
+      body: new FormData(e.target)
+    });
+    afficherSync(resultat.synchronisation);
+    await rafraichir();
   });
-});
+}
 
-document.getElementById('form-nouveau-dialogue').addEventListener('submit', async (e) => {
+document.getElementById('form-nouvelle-allegeance').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const representantId = document.getElementById('select-representant-dialogues').value;
-  if (!representantId) return alert('Choisissez un representant');
-
-  const donnees = new FormData(e.target);
-  const resultat = await requeteJSON(`/api/representants/${representantId}/dialogues`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contexte: donnees.get('contexte'), texte: donnees.get('texte') })
-  });
+  const resultat = await requeteJSON('/api/allegeances', { method: 'POST', body: new FormData(e.target) });
   afficherSync(resultat.synchronisation);
   e.target.reset();
-  await chargerDialogues();
+  await chargerTout();
 });
 
 // --- Objectifs ---
@@ -411,9 +553,10 @@ async function chargerObjectifs() {
 function creerElementObjectif(objectif) {
   const li = document.createElement('li');
   li.className = 'element-carte';
+  const niveauBadge = objectif.niveau != null ? ` <span class="compteur">niv.${objectif.niveau}</span>` : '';
   li.innerHTML = `
     <div class="element-infos">
-      <div><strong>${objectif.description}</strong></div>
+      <div><strong>${objectif.description}</strong>${niveauBadge}</div>
     </div>
     <div class="element-actions">
       <button class="btn-modifier">Modifier</button>
@@ -436,6 +579,7 @@ function afficherFormulaireModifObjectif(li, objectif) {
   li.innerHTML = `
     <form class="formulaire" style="width:100%">
       <textarea name="description" required>${objectif.description}</textarea>
+      <input name="niveau" type="number" min="1" placeholder="Niveau (optionnel)" value="${objectif.niveau ?? ''}" />
       <div class="element-actions">
         <button type="submit">Enregistrer</button>
         <button type="button" class="bouton-secondaire btn-annuler">Annuler</button>
@@ -448,7 +592,10 @@ function afficherFormulaireModifObjectif(li, objectif) {
     const resultat = await requeteJSON(`/api/objectifs/${objectif.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ description: new FormData(e.target).get('description') })
+      body: JSON.stringify({
+        description: new FormData(e.target).get('description'),
+        niveau: new FormData(e.target).get('niveau')
+      })
     });
     afficherSync(resultat.synchronisation);
     await chargerObjectifs();
@@ -460,7 +607,10 @@ document.getElementById('form-nouvel-objectif').addEventListener('submit', async
   const resultat = await requeteJSON('/api/objectifs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ description: new FormData(e.target).get('description') })
+    body: JSON.stringify({
+      description: new FormData(e.target).get('description'),
+      niveau: new FormData(e.target).get('niveau')
+    })
   });
   afficherSync(resultat.synchronisation);
   e.target.reset();
@@ -472,20 +622,33 @@ document.getElementById('form-import-objectifs').addEventListener('submit', asyn
   const fichier = document.getElementById('champ-csv-objectifs').files[0];
   if (!fichier) return;
 
+  const mode = document.querySelector('input[name="mode-import"]:checked').value;
+
+  if (mode === 'remplacer') {
+    const total = objectifsEnCache.length;
+    const msg = total > 0
+      ? `Cette action supprimera definitivement les ${total} objectif(s) existants. Confirmer ?`
+      : "Remplacer les objectifs existants ? (la liste est vide)";
+    if (!confirm(msg)) return;
+  }
+
   const donnees = new FormData();
   donnees.append('fichier', fichier);
+  donnees.append('mode', mode);
 
   const messageEl = document.getElementById('message-import-objectifs');
   try {
     const resultat = await requeteJSON('/api/objectifs/import', { method: 'POST', body: donnees });
     afficherSync(resultat.synchronisation);
-    messageEl.textContent = `${resultat.importes} objectif(s) importe(s).`;
+    const partieSupprime = resultat.supprimes > 0 ? ` (${resultat.supprimes} supprime(s))` : '';
+    messageEl.textContent = `${resultat.importes} objectif(s) importe(s)${partieSupprime}.`;
     messageEl.classList.remove('cachee');
     e.target.reset();
     await chargerObjectifs();
   } catch (err) {
     messageEl.textContent = err.message;
     messageEl.classList.remove('cachee');
+    await chargerObjectifs();
   }
 });
 
@@ -690,15 +853,13 @@ async function rafraichirJoueursConfig() {
     const partie = await requeteJSON('/api/admin/partie-active');
     if (!partie.active) return;
     if (partie.statut !== 'en_attente') {
-      // La partie a ete lancee automatiquement pendant l'attente : recharger la vue complete
       await chargerPartieActive();
       return;
     }
     afficherListeJoueursConfig(partie.joueurs);
     afficherProgressionLancement(partie);
   } catch (err) {
-    // Rafraichissement silencieux en arriere-plan : une erreur ponctuelle n'a pas besoin
-    // d'interrompre le MJ.
+    // Rafraichissement silencieux en arriere-plan
   }
 }
 
@@ -712,6 +873,146 @@ async function chargerSuiviPartie() {
     )
     .join('');
 }
+
+// --- Configuration de partie (representants actifs + objectifs par rang) ---
+
+function mettreAJourConfigObjectifs(conteneurId, nb) {
+  const conteneur = document.getElementById(conteneurId);
+  conteneur.innerHTML = '';
+  for (let i = 1; i <= 3; i++) {
+    const label = document.createElement('label');
+    label.style.opacity = i > nb ? '0.4' : '1';
+    label.innerHTML = `Rep ${i} — objectifs : <input type="number" min="1" max="3" value="2" data-rang="${i}" style="width:4rem" ${i > nb ? 'disabled' : ''} />`;
+    conteneur.appendChild(label);
+  }
+}
+
+function lireConfigObjectifs(conteneurId) {
+  return [1, 2, 3].map((i) => {
+    const input = document.querySelector(`#${conteneurId} [data-rang="${i}"]`);
+    return input ? (parseInt(input.value) || 2) : 2;
+  });
+}
+
+// Config race : objectifs par rang + niveau par slot
+function mettreAJourConfigRace(nb) {
+  const conteneur = document.getElementById('config-obj-race');
+  conteneur.innerHTML = '';
+  for (let rang = 1; rang <= 3; rang++) {
+    const actif = rang <= nb;
+    const div = document.createElement('div');
+    div.style.cssText = `opacity:${actif ? 1 : 0.4};margin-bottom:.6rem`;
+    div.innerHTML = `
+      <label>Rep ${rang} — objectifs :
+        <input type="number" min="1" max="3" value="2"
+               id="race-nb-obj-rang-${rang}" style="width:3.5rem" ${actif ? '' : 'disabled'} />
+      </label>
+      <div id="race-niveaux-rang-${rang}" style="margin-left:1rem;margin-top:.2rem;display:flex;gap:.5rem;flex-wrap:wrap"></div>
+    `;
+    conteneur.appendChild(div);
+
+    if (actif) {
+      const inputNb = div.querySelector(`#race-nb-obj-rang-${rang}`);
+      const niveauxDiv = div.querySelector(`#race-niveaux-rang-${rang}`);
+
+      const rafraichirNiveaux = () => {
+        const n = parseInt(inputNb.value) || 0;
+        niveauxDiv.innerHTML = '';
+        for (let pos = 1; pos <= n; pos++) {
+          const lbl = document.createElement('label');
+          lbl.style.fontSize = '.85rem';
+          lbl.innerHTML = `Slot ${pos} niv.: <input type="number" min="1" max="99" value="${rang}"
+            id="race-niv-rang-${rang}-pos-${pos}" style="width:3.2rem" />`;
+          niveauxDiv.appendChild(lbl);
+        }
+      };
+      inputNb.addEventListener('input', rafraichirNiveaux);
+      rafraichirNiveaux();
+    }
+  }
+}
+
+function lireConfigRace() {
+  const objectifs = [];
+  const niveaux = [];
+  for (let rang = 1; rang <= 3; rang++) {
+    const nbInput = document.getElementById(`race-nb-obj-rang-${rang}`);
+    const nb = nbInput && !nbInput.disabled ? (parseInt(nbInput.value) || 2) : 2;
+    objectifs.push(nb);
+    const nvsRang = [];
+    for (let pos = 1; pos <= nb; pos++) {
+      const nvInput = document.getElementById(`race-niv-rang-${rang}-pos-${pos}`);
+      nvsRang.push(nvInput ? (parseInt(nvInput.value) || null) : null);
+    }
+    niveaux.push(nvsRang);
+  }
+  return { objectifs, niveaux };
+}
+
+// Config allegeance : objectifs par rang + niveau par slot
+function mettreAJourConfigAllegeance(nb) {
+  const conteneur = document.getElementById('config-obj-allegeance');
+  conteneur.innerHTML = '';
+  for (let rang = 1; rang <= 3; rang++) {
+    const actif = rang <= nb;
+    const div = document.createElement('div');
+    div.style.cssText = `opacity:${actif ? 1 : 0.4};margin-bottom:.6rem`;
+    div.innerHTML = `
+      <label>Rep ${rang} — objectifs :
+        <input type="number" min="1" max="3" value="2"
+               id="alleg-nb-obj-rang-${rang}" style="width:3.5rem" ${actif ? '' : 'disabled'} />
+      </label>
+      <div id="alleg-niveaux-rang-${rang}" style="margin-left:1rem;margin-top:.2rem;display:flex;gap:.5rem;flex-wrap:wrap"></div>
+    `;
+    conteneur.appendChild(div);
+
+    if (actif) {
+      const inputNb = div.querySelector(`#alleg-nb-obj-rang-${rang}`);
+      const niveauxDiv = div.querySelector(`#alleg-niveaux-rang-${rang}`);
+
+      const rafraichirNiveaux = () => {
+        const n = parseInt(inputNb.value) || 0;
+        niveauxDiv.innerHTML = '';
+        for (let pos = 1; pos <= n; pos++) {
+          const lbl = document.createElement('label');
+          lbl.style.fontSize = '.85rem';
+          lbl.innerHTML = `Slot ${pos} niv.: <input type="number" min="1" max="99" value="${rang}"
+            id="alleg-niv-rang-${rang}-pos-${pos}" style="width:3.2rem" />`;
+          niveauxDiv.appendChild(lbl);
+        }
+      };
+      inputNb.addEventListener('input', rafraichirNiveaux);
+      rafraichirNiveaux();
+    }
+  }
+}
+
+function lireConfigAllegeance() {
+  const objectifs = [];
+  const niveaux = [];
+  for (let rang = 1; rang <= 3; rang++) {
+    const nbInput = document.getElementById(`alleg-nb-obj-rang-${rang}`);
+    const nb = nbInput && !nbInput.disabled ? (parseInt(nbInput.value) || 2) : 2;
+    objectifs.push(nb);
+    const nvsRang = [];
+    for (let pos = 1; pos <= nb; pos++) {
+      const nvInput = document.getElementById(`alleg-niv-rang-${rang}-pos-${pos}`);
+      nvsRang.push(nvInput ? (parseInt(nvInput.value) || null) : null);
+    }
+    niveaux.push(nvsRang);
+  }
+  return { objectifs, niveaux };
+}
+
+document.getElementById('config-nb-rep-race').addEventListener('input', (e) => {
+  mettreAJourConfigRace(parseInt(e.target.value) || 0);
+});
+document.getElementById('config-nb-rep-allegeance').addEventListener('input', (e) => {
+  mettreAJourConfigAllegeance(parseInt(e.target.value) || 0);
+});
+
+mettreAJourConfigRace(parseInt(document.getElementById('config-nb-rep-race').value) || 2);
+mettreAJourConfigAllegeance(parseInt(document.getElementById('config-nb-rep-allegeance').value) || 2);
 
 document.getElementById('btn-forcer-lancement').addEventListener('click', async () => {
   if (!confirm('Forcer le lancement maintenant ? La partie demarrera meme si tous les joueurs n\'ont pas choisi leur race.')) return;
@@ -734,12 +1035,43 @@ document.getElementById('btn-reinitialiser-partie').addEventListener('click', as
 
 document.getElementById('btn-creer-partie-active').addEventListener('click', async () => {
   const nbJoueurs = parseInt(document.getElementById('config-nb-joueurs').value) || 0;
-  await requeteJSON('/api/admin/partie-active/creer', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nb_joueurs_attendus: nbJoueurs })
-  });
-  await chargerPartieActive();
+  const nbRepRace = parseInt(document.getElementById('config-nb-rep-race').value) || 0;
+  const nbRepAllegeance = parseInt(document.getElementById('config-nb-rep-allegeance').value) || 0;
+
+  const erreurEl = document.getElementById('erreur-config-partie');
+  if (nbRepRace === 0 && nbRepAllegeance === 0) {
+    erreurEl.textContent = "Il faut au moins 1 representant actif (race ou allegeance).";
+    erreurEl.classList.remove('cachee');
+    return;
+  }
+  erreurEl.classList.add('cachee');
+
+  const { objectifs: objsRace, niveaux: niveauxRace } = lireConfigRace();
+  const configRace = JSON.stringify(objsRace);
+  const configNiveauxRace = JSON.stringify(niveauxRace);
+  const { objectifs: objsAlleg, niveaux: niveauxAlleg } = lireConfigAllegeance();
+  const configAllegeance = JSON.stringify(objsAlleg);
+  const configNiveauxAllegeance = JSON.stringify(niveauxAlleg);
+
+  try {
+    await requeteJSON('/api/admin/partie-active/creer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nb_joueurs_attendus: nbJoueurs,
+        nb_representants_race: nbRepRace,
+        nb_representants_allegeance: nbRepAllegeance,
+        config_objectifs_race: configRace,
+        config_niveaux_race: configNiveauxRace,
+        config_objectifs_allegeance: configAllegeance,
+        config_niveaux_allegeance: configNiveauxAllegeance
+      })
+    });
+    await chargerPartieActive();
+  } catch (err) {
+    erreurEl.textContent = err.message;
+    erreurEl.classList.remove('cachee');
+  }
 });
 
 document.getElementById('btn-terminer-partie').addEventListener('click', async () => {
@@ -749,14 +1081,10 @@ document.getElementById('btn-terminer-partie').addEventListener('click', async (
 });
 
 // --- Chargement global ---
-// Chaque mutation (races, representants, dialogues...) appelle chargerTout() afin que
-// tous les selects/listes dependants (ex. Dialogues -> representants) restent synchronises,
-// meme lorsqu'ils sont modifies depuis un autre onglet.
 
 async function chargerTout() {
   await chargerRaces();
-  await chargerRepresentants();
-  await chargerReprésentantsPourDialogues();
+  await chargerAllegeances();
   await chargerObjectifs();
   chargerFond();
   await chargerScenario();

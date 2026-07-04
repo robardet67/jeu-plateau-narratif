@@ -60,11 +60,29 @@ function restaurerSiVide(db) {
     });
 
     const insererObjectif = db.prepare(
-      'INSERT INTO objectifs (id, description, created_at) VALUES (?, ?, ?)'
+      'INSERT INTO objectifs (id, description, niveau, created_at) VALUES (?, ?, ?, ?)'
     );
     (contenu.objectifs || []).forEach((o) => {
-      insererObjectif.run(o.id, o.description, o.created_at);
+      insererObjectif.run(o.id, o.description, o.niveau ?? null, o.created_at);
       compteurs.objectifs++;
+    });
+
+    // Support ancien nom de cle (allegeances) et nouveau (allegeances)
+    const insererAllegeance = db.prepare('INSERT INTO allegeances (id, nom, portrait, created_at) VALUES (?, ?, ?, ?)');
+    const listeAllegeances = contenu.allegeances || contenu.allegiances || [];
+    listeAllegeances.forEach((r) => {
+      insererAllegeance.run(r.id, r.nom, r.portrait, r.created_at);
+      compteurs.allegeances = (compteurs.allegeances || 0) + 1;
+    });
+
+    const insererRepAllegeance = db.prepare(
+      'INSERT INTO representants_allegeance (id, allegeance_id, rang, nom, image_depart, image_sourire, dialogue, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    const listeRepAllegeances = contenu.representants_allegeance || contenu.representants_allegiance || [];
+    listeRepAllegeances.forEach((r) => {
+      const allegeanceId = r.allegeance_id ?? r.allegiance_id;
+      insererRepAllegeance.run(r.id, allegeanceId, r.rang, r.nom, r.image_depart, r.image_sourire, r.dialogue ?? null, r.created_at);
+      compteurs.representants_allegeance = (compteurs.representants_allegeance || 0) + 1;
     });
 
     const insererScenario = db.prepare(
@@ -76,9 +94,13 @@ function restaurerSiVide(db) {
     });
   });
 
-  restaurer();
-
-  return { restaure: true, compteurs };
+  try {
+    restaurer();
+    return { restaure: true, compteurs };
+  } catch (erreur) {
+    console.error('Erreur lors de la restauration:', erreur.message);
+    return { restaure: false, raison: 'erreur: ' + erreur.message };
+  }
 }
 
 module.exports = { restaurerSiVide };

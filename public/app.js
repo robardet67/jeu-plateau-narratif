@@ -1,11 +1,12 @@
 const socket = io();
 
-let etatCourant = { code: null, joueurId: null, pseudo: null, estHote: false };
-let racesEnCache = [];
+let etatCourant = { code: null, joueurId: null, pseudo: null, estHote: false, partieStatut: null };
 let joueursPartieEnCache = [];
 let etatJoueur = null;
-let rangAffiche = null; // rang actuellement ouvert sur la page individuelle
-let caseAffichee = null; // case actuellement ouverte sur la page de detail
+let rangAffiche = null;
+let allegeanceAffichee = null;
+let rangAllegeanceAffiche = null;
+let vueAvantChangement = null;
 
 let scenarioImages = [];
 let scenarioIndexActuel = 0;
@@ -18,19 +19,22 @@ async function requeteJSON(url, options = {}) {
   return donnees;
 }
 
-// --- Navigation entre les vues ---
+// --- Navigation ---
 
 function afficherVue(id) {
-  document
-    .querySelectorAll('#app > section')
-    .forEach((section) => section.classList.add('cachee'));
+  document.querySelectorAll('#app > section').forEach((s) => s.classList.add('cachee'));
   document.getElementById(id).classList.remove('cachee');
 }
 
-// --- Modaux (commencer / scenario) ---
+function vueActuelleId() {
+  const s = [...document.querySelectorAll('#app > section')].find((el) => !el.classList.contains('cachee'));
+  return s ? s.id : null;
+}
+
+// --- Modaux ---
 
 function fermerTousLesModaux() {
-  document.querySelectorAll('.modal').forEach((modal) => modal.classList.add('cachee'));
+  document.querySelectorAll('.modal').forEach((m) => m.classList.add('cachee'));
 }
 
 function ouvrirModal(id) {
@@ -38,95 +42,198 @@ function ouvrirModal(id) {
   document.getElementById(id).classList.remove('cachee');
 }
 
-function fermerModal(id) {
-  document.getElementById(id).classList.add('cachee');
-}
+document.querySelectorAll('.btn-fermer-modal').forEach((btn) => {
+  btn.addEventListener('click', () => btn.dataset.cible && document.getElementById(btn.dataset.cible).classList.add('cachee'));
+});
 
-document.getElementById('btn-ouvrir-commencer').addEventListener('click', async () => {
+document.querySelectorAll('.modal').forEach((modal) => {
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('cachee'); });
+});
+
+// --- Ouverture de la modal de creation ---
+
+document.getElementById('btn-ouvrir-commencer').addEventListener('click', ouvrirModalCreation);
+
+async function ouvrirModalCreation() {
   const partie = await requeteJSON('/api/partie-active').catch(() => ({ active: false }));
   if (!partie.active) {
     return alert("Aucune partie n'est configuree par le maitre du jeu pour le moment.");
   }
   if (partie.statut !== 'en_attente') {
-    return alert('La partie a deja demarre, impossible de la commencer.');
+    return alert('La partie a deja demarre, impossible de la rejoindre.');
   }
-  ouvrirModal('modal-commencer');
-});
 
-document.querySelectorAll('.btn-fermer-modal').forEach((bouton) => {
-  bouton.addEventListener('click', () => fermerModal(bouton.dataset.cible));
-});
+  const [races, allegeances] = await Promise.all([
+    requeteJSON('/api/races'),
+    requeteJSON('/api/allegeances')
+  ]);
 
-document.querySelectorAll('.modal').forEach((modal) => {
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.classList.add('cachee');
+  const racesPrises = new Set((partie.joueurs || []).filter((j) => j.race_id).map((j) => j.race_id));
+
+  // Grille des races
+  const grilleRaces = document.getElementById('grille-choix-races');
+  grilleRaces.innerHTML = '';
+  if (races.length === 0) {
+    grilleRaces.innerHTML = '<p style="opacity:.6">Aucune race configuree.</p>';
+  }
+  races.forEach((race) => {
+    const prise = racesPrises.has(race.id);
+    const carte = document.createElement('div');
+    carte.className = 'carte-choix-race' + (prise ? ' indisponible' : '');
+    carte.dataset.id = race.id;
+    const image = race.representant1?.image_depart;
+    carte.innerHTML = `
+      ${image ? `<img src="${image}" alt="${race.nom}" />` : '<div class="placeholder-race">&#127775;</div>'}
+      <div class="nom-choix">${race.nom}</div>
+      ${prise ? '<div class="badge-prise">Prise</div>' : ''}
+    `;
+    if (!prise) {
+      carte.addEventListener('click', () => {
+        document.querySelectorAll('.carte-choix-race.selectionnee').forEach((el) => el.classList.remove('selectionnee'));
+        carte.classList.add('selectionnee');
+      });
+    }
+    grilleRaces.appendChild(carte);
   });
-});
 
-// --- Connexion a la partie active (unique, sans code : creee/configuree par le MJ) ---
+  // Grille des allegeances
+  const grilleAllegeances = document.getElementById('grille-choix-allegeances');
+  grilleAllegeances.innerHTML = '';
+  if (allegeances.length === 0) {
+    grilleAllegeances.innerHTML = '<p style="opacity:.6">Aucune allegeance disponible.</p>';
+  }
+  allegeances.forEach((a) => {
+    const carte = document.createElement('div');
+    carte.className = 'carte-choix-allegeance';
+    carte.dataset.id = a.id;
+    carte.innerHTML = `
+      ${a.portrait ? `<img src="${a.portrait}" alt="${a.nom}" class="img-allegeance" />` : '<div class="placeholder-allegeance">&#10024;</div>'}
+      <div class="nom-choix">${a.nom}</div>
+    `;
+    carte.addEventListener('click', () => {
+      const selectionnee = carte.classList.contains('selectionnee');
+      if (selectionnee) {
+        carte.classList.remove('selectionnee');
+      } else {
+        const nb = document.querySelectorAll('.carte-choix-allegeance.selectionnee').length;
+        if (nb < 2) carte.classList.add('selectionnee');
+      }
+    });
+    grilleAllegeances.appendChild(carte);
+  });
 
-async function commencerPartie() {
+  document.getElementById('erreur-commencer').classList.add('cachee');
+  ouvrirModal('modal-commencer');
+}
+
+// --- Rejoindre la partie ---
+
+document.getElementById('btn-commencer-partie').addEventListener('click', rejoindrePartie);
+
+async function rejoindrePartie() {
   const pseudo = document.getElementById('commencer-pseudo').value.trim();
   const erreurEl = document.getElementById('erreur-commencer');
   erreurEl.classList.add('cachee');
-  if (!pseudo) return alert('Entrez un pseudo');
+
+  if (!pseudo) {
+    erreurEl.textContent = 'Entrez votre pseudo';
+    erreurEl.classList.remove('cachee');
+    return;
+  }
+
+  const raceEl = document.querySelector('.carte-choix-race.selectionnee');
+  if (!raceEl) {
+    erreurEl.textContent = 'Choisissez votre race';
+    erreurEl.classList.remove('cachee');
+    return;
+  }
+
+  const raceId = parseInt(raceEl.dataset.id);
+  const allegeanceIds = [...document.querySelectorAll('.carte-choix-allegeance.selectionnee')].map((el) =>
+    parseInt(el.dataset.id)
+  );
 
   try {
     const data = await requeteJSON('/api/partie-active/rejoindre', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pseudo })
+      body: JSON.stringify({ pseudo, race_id: raceId, allegeance_ids: allegeanceIds })
     });
-    demarrerPartie(data.code, data.joueurId, pseudo);
+
+    etatCourant = { code: data.code, joueurId: data.joueurId, pseudo, estHote: false, partieStatut: null };
+    fermerTousLesModaux();
+
+    parametresGlobaux = await requeteJSON('/api/parametres');
+    scenarioImages = await requeteJSON('/api/scenario');
+
+    socket.emit('rejoindre_partie', { code: data.code, joueurId: data.joueurId });
   } catch (err) {
     erreurEl.textContent = err.message;
     erreurEl.classList.remove('cachee');
   }
 }
 
-document.getElementById('btn-commencer-partie').addEventListener('click', commencerPartie);
+// --- Hub (village) ---
 
-async function demarrerPartie(code, joueurId, pseudo) {
-  etatCourant = { code, joueurId, pseudo, estHote: false };
-  fermerModal('modal-commencer');
+function afficherHub() {
+  if (!etatJoueur) return;
 
-  racesEnCache = await requeteJSON('/api/races');
-  parametresGlobaux = await requeteJSON('/api/parametres');
-  scenarioImages = await requeteJSON('/api/scenario');
+  const hubVillage = document.getElementById('hub-village');
+  hubVillage.style.backgroundImage = etatJoueur.imageFond ? `url(${etatJoueur.imageFond})` : '';
 
-  socket.emit('rejoindre_partie', { code, joueurId });
+  const hubPortraits = document.getElementById('hub-portraits');
+  hubPortraits.innerHTML = '';
+
+  // Portrait de race : rang 1, cliquable si nbRepRace > 0
+  const rang1 = etatJoueur.rangs.find((r) => r.rang === 1);
+  if (rang1 && etatJoueur.config.nbRepRace > 0) {
+    const rep = rang1.representant;
+    const image = rang1.toutesLesCasesValidees
+      ? rep?.image_sourire || rep?.image_depart
+      : rep?.image_depart;
+
+    const div = document.createElement('div');
+    div.className = 'portrait-race';
+    div.innerHTML = `
+      ${image ? `<img src="${image}" alt="${etatJoueur.raceNom}" />` : '<div class="placeholder-portrait">&#127775;</div>'}
+      <div class="nom-portrait">${etatJoueur.raceNom || ''}</div>
+      ${rang1.toutesLesCasesValidees ? '<div class="couronne">&#128081;</div>' : ''}
+    `;
+    div.addEventListener('click', afficherParcoursRace);
+    hubPortraits.appendChild(div);
+  }
+
+  // Portraits d'allegeances (cliquables si nbRepAlleg > 0)
+  if (etatJoueur.allegeances && etatJoueur.allegeances.length > 0) {
+    const divAlleg = document.createElement('div');
+    divAlleg.className = 'portraits-allegeances';
+    etatJoueur.allegeances.forEach((a) => {
+      const div = document.createElement('div');
+      const cliquable = etatJoueur.config.nbRepAlleg > 0;
+      div.className = 'portrait-allegeance' + (cliquable ? ' portrait-cliquable' : '');
+      div.innerHTML = `
+        ${a.portrait ? `<img src="${a.portrait}" alt="${a.nom}" />` : '<div class="placeholder-allegeance-hub">&#10024;</div>'}
+        <div class="nom-portrait">${a.nom}</div>
+        ${a.toutesValidees ? '<div class="couronne">&#128081;</div>' : ''}
+      `;
+      if (cliquable) {
+        div.addEventListener('click', () => afficherParcoursAllegeance(a.id));
+      }
+      divAlleg.appendChild(div);
+    });
+    hubPortraits.appendChild(divAlleg);
+  }
+
+  document.getElementById('btn-tableau-de-bord-hub').classList.toggle('cachee', !parametresGlobaux.tableau_de_bord_actif);
+
+  afficherVue('ecran-hub');
 }
 
-// --- Choix de la race ---
+document.getElementById('btn-retour-hub').addEventListener('click', afficherHub);
 
-function afficherChoixRace() {
-  const listeEl = document.getElementById('liste-choix-races');
-  listeEl.innerHTML = '';
+// --- Parcours race : grille des representants ---
 
-  const racesPrises = new Map();
-  joueursPartieEnCache.forEach((j) => {
-    if (j.race_id && j.id !== etatCourant.joueurId) racesPrises.set(j.race_id, j.pseudo);
-  });
-
-  racesEnCache.forEach((race) => {
-    const prisePar = racesPrises.get(race.id);
-    const bouton = document.createElement('button');
-    bouton.textContent = prisePar ? `${race.nom} (deja jouee par ${prisePar})` : race.nom;
-    bouton.disabled = !!prisePar;
-    if (!prisePar) {
-      bouton.addEventListener('click', () => {
-        socket.emit('choix_race', { joueurId: etatCourant.joueurId, raceId: race.id });
-      });
-    }
-    listeEl.appendChild(bouton);
-  });
-
-  afficherVue('ecran-choix-race');
-}
-
-// --- Etape 1 : page des representants ---
-
-function afficherPageRepresentants() {
+function afficherParcoursRace() {
   if (!etatJoueur) return;
 
   const ecranRepresentants = document.getElementById('ecran-representants');
@@ -160,18 +267,17 @@ function afficherPageRepresentants() {
     grille.appendChild(slot);
   });
 
-  const btnDashboard1 = document.getElementById('btn-tableau-de-bord-representants');
-  btnDashboard1.classList.toggle('cachee', !parametresGlobaux.tableau_de_bord_actif);
+  document.getElementById('btn-tableau-de-bord-representants').classList.toggle('cachee', !parametresGlobaux.tableau_de_bord_actif);
 
   afficherVue('ecran-representants');
 }
 
-document.getElementById('btn-retour-representants').addEventListener('click', afficherPageRepresentants);
+document.getElementById('btn-retour-representants').addEventListener('click', afficherParcoursRace);
 
-// --- Etape 2 : page individuelle du representant ---
+// --- Page individuelle d'un representant : objectifs inline ---
 
 function afficherRepresentantIndividuel(rang) {
-  const rangInfo = etatJoueur.rangs.find((r) => r.rang === rang);
+  const rangInfo = etatJoueur?.rangs.find((r) => r.rang === rang);
   if (!rangInfo || !rangInfo.representant) return;
 
   rangAffiche = rang;
@@ -179,76 +285,252 @@ function afficherRepresentantIndividuel(rang) {
   const image = rangInfo.toutesLesCasesValidees
     ? rangInfo.representant.image_sourire || rangInfo.representant.image_depart
     : rangInfo.representant.image_depart;
-  document.getElementById('image-representant-individuel').src = image || '';
+
+  const imgEl = document.getElementById('image-representant-individuel');
+  imgEl.src = image || '';
+  imgEl.style.display = image ? '' : 'none';
+
   document
     .getElementById('couronne-representant-individuel')
     .classList.toggle('cachee', !rangInfo.toutesLesCasesValidees);
 
   const dialoguesEl = document.getElementById('dialogues-representant-individuel');
-  dialoguesEl.innerHTML = (rangInfo.representant.dialogues || [])
-    .map((d) => `<p>${d.texte}</p>`)
-    .join('');
+  dialoguesEl.innerHTML = (rangInfo.representant.dialogues || []).map((d) => `<p>${d.texte}</p>`).join('');
 
   const enveloppesEl = document.getElementById('enveloppes-objectifs');
   enveloppesEl.innerHTML = '';
+
   rangInfo.cases.forEach((c) => {
     const carte = document.createElement('div');
     carte.className = 'carte-enveloppe';
 
-    if (c.statut === 'masque') {
-      carte.classList.add('masque');
-      carte.innerHTML = '<span>???</span>';
-    } else if (c.statut === 'ferme') {
-      carte.classList.add('cliquable');
-      carte.innerHTML = '<span class="icone-enveloppe">&#9993;</span><span>Objectif scelle</span>';
-      carte.addEventListener('click', () => ouvrirCaseObjectif(c));
-    } else if (c.statut === 'ouvert') {
-      carte.classList.add('cliquable');
-      carte.innerHTML = `<span>${c.objectif.description}</span>`;
-      carte.addEventListener('click', () => afficherDetailObjectif(c));
+    if (c.statut === 'ouvert') {
+      carte.innerHTML = `
+        <span class="texte-obj">${c.objectif.description}</span>
+        <button class="btn-valider-obj">Valider</button>
+      `;
+      carte.querySelector('.btn-valider-obj').addEventListener('click', () => {
+        if (!confirm('Confirmer la validation de cet objectif ?')) return;
+        socket.emit('grille_valider', { joueurId: etatCourant.joueurId, ligneId: c.id });
+      });
     } else if (c.statut === 'valide') {
       carte.classList.add('valide');
-      carte.innerHTML = `<span>${c.objectif.description}</span><span class="coche">&#9989;</span>`;
+      carte.innerHTML = `<span class="texte-obj">${c.objectif.description}</span><span class="coche">&#9989;</span>`;
+    } else {
+      carte.classList.add('masque');
+      carte.innerHTML = '<span>???</span>';
     }
 
     enveloppesEl.appendChild(carte);
   });
 
-  const btnDashboard2 = document.getElementById('btn-tableau-de-bord-individuel');
-  btnDashboard2.classList.toggle('cachee', !parametresGlobaux.tableau_de_bord_actif);
+  document.getElementById('btn-tableau-de-bord-individuel').classList.toggle('cachee', !parametresGlobaux.tableau_de_bord_actif);
 
   afficherVue('ecran-representant-individuel');
 }
 
-function ouvrirCaseObjectif(c) {
-  socket.emit('grille_ouvrir', { joueurId: etatCourant.joueurId, ligneId: c.id });
-  // etat_joueur reviendra du serveur ; on affiche directement le detail en attendant
-  caseAffichee = c;
-  afficherDetailObjectif(c);
+// --- Parcours allegeance : grille des representants ---
+
+function afficherParcoursAllegeance(allegeanceId) {
+  if (!etatJoueur) return;
+  allegeanceAffichee = allegeanceId;
+
+  const alleg = etatJoueur.allegeances.find((a) => a.id === allegeanceId);
+  if (!alleg) return;
+
+  const ecran = document.getElementById('ecran-parcours-allegeance');
+  ecran.style.backgroundImage = etatJoueur.imageFond ? `url(${etatJoueur.imageFond})` : '';
+
+  const grille = document.getElementById('grille-reps-allegeance');
+  grille.innerHTML = '';
+
+  (alleg.rangs || []).forEach((rangInfo) => {
+    const slot = document.createElement('div');
+    slot.className = 'slot-representant';
+
+    if (!rangInfo.deverrouille || !rangInfo.representant) {
+      slot.innerHTML = `
+        <div class="silhouette">&#128274;</div>
+        <div class="nom-slot">Rang ${rangInfo.rang}</div>
+      `;
+    } else {
+      const image = rangInfo.toutesLesCasesValidees
+        ? rangInfo.representant.image_sourire || rangInfo.representant.image_depart
+        : rangInfo.representant.image_depart;
+      slot.innerHTML = `
+        ${image ? `<img src="${image}" alt="${rangInfo.representant.nom}" />` : ''}
+        <div class="nom-slot">${rangInfo.representant.nom}</div>
+        ${rangInfo.toutesLesCasesValidees ? '<div class="couronne">&#128081;</div>' : ''}
+      `;
+      slot.classList.add('slot-cliquable');
+      slot.addEventListener('click', () => afficherRepAllegeanceIndividuel(allegeanceId, rangInfo.rang));
+    }
+
+    grille.appendChild(slot);
+  });
+
+  document.getElementById('btn-tableau-de-bord-allegeance').classList.toggle('cachee', !parametresGlobaux.tableau_de_bord_actif);
+
+  afficherVue('ecran-parcours-allegeance');
 }
 
-// --- Etape 3 : detail d'un objectif ---
+document.getElementById('btn-retour-hub-allegeance').addEventListener('click', afficherHub);
 
-function afficherDetailObjectif(c) {
-  caseAffichee = c;
-  document.getElementById('texte-objectif-detail').textContent = c.objectif.description;
+// --- Page individuelle d'un representant d'allegeance : objectifs inline ---
 
-  const dejaValide = c.statut === 'valide';
-  document.getElementById('objectif-deja-valide').classList.toggle('cachee', !dejaValide);
-  document.getElementById('btn-valider-objectif').classList.toggle('cachee', dejaValide);
+function afficherRepAllegeanceIndividuel(allegeanceId, rang) {
+  if (!etatJoueur) return;
+  const alleg = etatJoueur.allegeances.find((a) => a.id === allegeanceId);
+  if (!alleg) return;
+  const rangInfo = (alleg.rangs || []).find((r) => r.rang === rang);
+  if (!rangInfo || !rangInfo.representant) return;
 
-  afficherVue('ecran-objectif-detail');
+  allegeanceAffichee = allegeanceId;
+  rangAllegeanceAffiche = rang;
+
+  const image = rangInfo.toutesLesCasesValidees
+    ? rangInfo.representant.image_sourire || rangInfo.representant.image_depart
+    : rangInfo.representant.image_depart;
+
+  const imgEl = document.getElementById('image-rep-allegeance');
+  imgEl.src = image || '';
+  imgEl.style.display = image ? '' : 'none';
+
+  document.getElementById('couronne-rep-allegeance').classList.toggle('cachee', !rangInfo.toutesLesCasesValidees);
+
+  const dialoguesEl = document.getElementById('dialogues-rep-allegeance');
+  const dialogue = rangInfo.representant.dialogue;
+  dialoguesEl.innerHTML = dialogue ? `<p>${dialogue}</p>` : '';
+
+  const objectifsEl = document.getElementById('objectifs-rep-allegeance');
+  objectifsEl.innerHTML = '';
+
+  rangInfo.cases.forEach((c) => {
+    const carte = document.createElement('div');
+    carte.className = 'carte-enveloppe';
+
+    if (c.statut === 'ouvert') {
+      carte.innerHTML = `
+        <span class="texte-obj">${c.objectif.description}</span>
+        <button class="btn-valider-obj">Valider</button>
+      `;
+      carte.querySelector('.btn-valider-obj').addEventListener('click', () => {
+        if (!confirm('Confirmer la validation de cet objectif ?')) return;
+        socket.emit('grille_valider_allegeance', {
+          joueurId: etatCourant.joueurId,
+          allegeanceId,
+          partieId: etatJoueur.partieId,
+          ligneId: c.id
+        });
+      });
+    } else if (c.statut === 'valide') {
+      carte.classList.add('valide');
+      carte.innerHTML = `<span class="texte-obj">${c.objectif.description}</span><span class="coche">&#9989;</span>`;
+    } else {
+      carte.classList.add('masque');
+      carte.innerHTML = '<span>???</span>';
+    }
+
+    objectifsEl.appendChild(carte);
+  });
+
+  document.getElementById('btn-tableau-de-bord-rep-allegeance').classList.toggle('cachee', !parametresGlobaux.tableau_de_bord_actif);
+
+  afficherVue('ecran-rep-allegeance-individuel');
 }
 
-document.getElementById('btn-valider-objectif').addEventListener('click', () => {
-  if (!caseAffichee) return;
-  if (!confirm('Confirmer la validation de cet objectif ?')) return;
-  socket.emit('grille_valider', { joueurId: etatCourant.joueurId, ligneId: caseAffichee.id });
+document.getElementById('btn-retour-parcours-allegeance').addEventListener('click', () => {
+  if (allegeanceAffichee) afficherParcoursAllegeance(allegeanceAffichee);
+  else afficherHub();
 });
 
-document.getElementById('btn-retour-objectif').addEventListener('click', () => {
-  if (rangAffiche) afficherRepresentantIndividuel(rangAffiche);
-  else afficherPageRepresentants();
+// --- Changer de joueur ---
+
+function afficherEcranChangerJoueur() {
+  vueAvantChangement = vueActuelleId();
+
+  // "Nouveau joueur" n'est utile qu'en phase d'attente ; en cours de partie, la liste suffit
+  document.getElementById('changer-section-nouveau').classList.toggle(
+    'cachee',
+    etatCourant.partieStatut === 'en_cours'
+  );
+
+  chargerListeJoueursExistants();
+  afficherVue('ecran-changer-joueur');
+}
+
+async function chargerListeJoueursExistants() {
+  const liste = document.getElementById('liste-joueurs-existants');
+  const vide = document.getElementById('changer-joueur-vide');
+  liste.innerHTML = '<li style="opacity:.6;padding:.4rem 0">Chargement…</li>';
+  vide.classList.add('cachee');
+
+  const [partie, races] = await Promise.all([
+    requeteJSON('/api/partie-active').catch(() => ({ active: false, joueurs: [] })),
+    requeteJSON('/api/races').catch(() => [])
+  ]);
+
+  const joueurs = partie.joueurs || [];
+  const raceMap = {};
+  races.forEach((r) => { raceMap[r.id] = r.nom; });
+
+  liste.innerHTML = '';
+
+  if (joueurs.length === 0) {
+    vide.classList.remove('cachee');
+    return;
+  }
+
+  joueurs.forEach((j) => {
+    const estMoi = j.id === etatCourant.joueurId;
+    const raceNom = j.race_id ? (raceMap[j.race_id] || 'Race #' + j.race_id) : 'Sans race';
+
+    const li = document.createElement('li');
+    li.className = 'element-carte element-joueur-session';
+    li.innerHTML = `
+      <div class="element-infos">
+        <div>
+          <strong>${j.pseudo}</strong>
+          <span class="badge-info">${raceNom}</span>
+          ${estMoi ? '<span class="badge-info badge-actuel">session actuelle</span>' : ''}
+        </div>
+      </div>
+      ${!estMoi ? '<button class="btn-reprendre-joueur bouton-secondaire">Reprendre</button>' : ''}
+    `;
+
+    if (!estMoi) {
+      li.querySelector('.btn-reprendre-joueur').addEventListener('click', () => {
+        rejoindreJoueurExistant(j);
+      });
+    }
+
+    liste.appendChild(li);
+  });
+}
+
+function rejoindreJoueurExistant(joueur) {
+  etatCourant = { ...etatCourant, joueurId: joueur.id, pseudo: joueur.pseudo };
+  // Remet a zero l'etat local : le serveur fait foi
+  etatJoueur = null;
+  rangAffiche = null;
+  allegeanceAffichee = null;
+  rangAllegeanceAffiche = null;
+  // Le handler etat_partie declenchera afficherHub() ou ecran-attente-lancement
+  socket.emit('rejoindre_partie', { code: etatCourant.code, joueurId: joueur.id });
+}
+
+document.getElementById('btn-nouveau-joueur-changer').addEventListener('click', ouvrirModalCreation);
+
+document.getElementById('btn-retour-depuis-changer').addEventListener('click', () => {
+  if (vueAvantChangement && vueAvantChangement !== 'ecran-changer-joueur') {
+    afficherVue(vueAvantChangement);
+  } else {
+    afficherHub();
+  }
+});
+
+document.querySelectorAll('.btn-changer-joueur').forEach((btn) => {
+  btn.addEventListener('click', afficherEcranChangerJoueur);
 });
 
 // --- Tableau de bord global ---
@@ -262,12 +544,8 @@ async function afficherTableauDeBord() {
     const bloc = document.createElement('div');
     bloc.className = 'carte bloc-joueur-tableau';
     bloc.innerHTML = `
-      <h3>${joueurInfo.pseudo} (${joueurInfo.objectifsValides.length} valides)</h3>
-      <ul>
-        ${joueurInfo.objectifsValides
-          .map((o) => `<li>${o.description}${o.categorie ? ` <span class="compteur">(${o.categorie})</span>` : ''}</li>`)
-          .join('')}
-      </ul>
+      <h3>${joueurInfo.pseudo} (${joueurInfo.objectifsValides.length} valide(s))</h3>
+      <ul>${joueurInfo.objectifsValides.map((o) => `<li>${o.description}</li>`).join('')}</ul>
     `;
     conteneur.appendChild(bloc);
   });
@@ -275,9 +553,16 @@ async function afficherTableauDeBord() {
   afficherVue('ecran-tableau-de-bord');
 }
 
+document.getElementById('btn-tableau-de-bord-hub').addEventListener('click', afficherTableauDeBord);
 document.getElementById('btn-tableau-de-bord-representants').addEventListener('click', afficherTableauDeBord);
 document.getElementById('btn-tableau-de-bord-individuel').addEventListener('click', afficherTableauDeBord);
-document.getElementById('btn-retour-tableau-de-bord').addEventListener('click', () => afficherPageRepresentants());
+document.getElementById('btn-tableau-de-bord-allegeance').addEventListener('click', afficherTableauDeBord);
+document.getElementById('btn-tableau-de-bord-rep-allegeance').addEventListener('click', afficherTableauDeBord);
+document.getElementById('btn-scenario-allegeance').addEventListener('click', ouvrirScenario);
+document.getElementById('btn-retour-tableau-de-bord').addEventListener('click', () => {
+  const vue = vueActuelleId();
+  if (vue === 'ecran-tableau-de-bord') afficherHub();
+});
 
 // --- Notifications ---
 
@@ -290,12 +575,11 @@ function afficherNotification(message) {
   setTimeout(() => toast.remove(), 5000);
 }
 
-// --- Confettis (fin de partie) ---
+// --- Confettis ---
 
 function lancerConfettis() {
   const zone = document.getElementById('zone-confettis');
   const couleurs = ['#caa54d', '#6c2c91', '#ecd08a', '#cbb8e0', '#4caf50'];
-
   for (let i = 0; i < 120; i++) {
     const piece = document.createElement('div');
     piece.className = 'confetti';
@@ -308,27 +592,38 @@ function lancerConfettis() {
   }
 }
 
-// --- Liste des joueurs ---
+// --- Liste des joueurs (attente + panneau) ---
 
 function afficherJoueurs(joueurs) {
   joueursPartieEnCache = joueurs;
 
+  // Panneau in-game (hub)
   const liste = document.getElementById('liste-joueurs');
-  liste.innerHTML = '';
-  joueurs.forEach((j) => {
-    const li = document.createElement('li');
-    li.textContent = `${j.pseudo}${j.est_hote ? ' (maitre du jeu)' : ''} ${j.connecte ? '(en ligne)' : '(hors ligne)'}`;
-    liste.appendChild(li);
-  });
+  if (liste) {
+    liste.innerHTML = '';
+    joueurs.forEach((j) => {
+      const li = document.createElement('li');
+      li.textContent = `${j.pseudo}${j.est_hote ? ' (MJ)' : ''} ${j.connecte ? '' : '(hors ligne)'}`;
+      liste.appendChild(li);
+    });
+  }
+
+  // Liste d'attente
+  const listeAttente = document.getElementById('liste-joueurs-attente');
+  if (listeAttente) {
+    listeAttente.innerHTML = '';
+    joueurs.forEach((j) => {
+      const li = document.createElement('li');
+      li.textContent = `${j.pseudo}${j.est_hote ? ' (maitre du jeu)' : ''} ${j.connecte ? '(en ligne)' : '(hors ligne)'}`;
+      listeAttente.appendChild(li);
+    });
+  }
 
   const moi = joueurs.find((j) => j.id === etatCourant.joueurId);
-  if (moi) {
-    etatCourant.estHote = moi.est_hote === 1 || moi.est_hote === true;
-  }
+  if (moi) etatCourant.estHote = moi.est_hote === 1 || moi.est_hote === true;
 }
 
-
-// --- Scenario (defilement reserve au maitre du jeu) ---
+// --- Scenario ---
 
 const modalScenario = document.getElementById('modal-scenario');
 const imageScenarioActuelle = document.getElementById('image-scenario-actuelle');
@@ -343,14 +638,10 @@ function afficherImageScenario() {
     controlesScenarioHote.classList.add('cachee');
     return;
   }
-
   imageScenarioActuelle.classList.remove('cachee');
   scenarioVide.classList.add('cachee');
   imageScenarioActuelle.src = scenarioImages[scenarioIndexActuel].image;
   scenarioPosition.textContent = `${scenarioIndexActuel + 1} / ${scenarioImages.length}`;
-
-  // Hors partie (page d'accueil), tout le monde peut naviguer librement. Dans une partie,
-  // le defilement synchronise reste reserve au maitre du jeu.
   const controlesMasques = !!etatCourant.code && !etatCourant.estHote;
   controlesScenarioHote.classList.toggle('cachee', controlesMasques);
 }
@@ -363,31 +654,21 @@ async function ouvrirScenario() {
   modalScenario.classList.remove('cachee');
 }
 
-document.getElementById('btn-scenario').addEventListener('click', ouvrirScenario);
 document.getElementById('btn-scenario-accueil').addEventListener('click', ouvrirScenario);
-
-document.getElementById('btn-fermer-scenario').addEventListener('click', () => {
-  modalScenario.classList.add('cachee');
-});
+document.getElementById('btn-scenario-hub').addEventListener('click', ouvrirScenario);
+document.getElementById('btn-scenario-representants').addEventListener('click', ouvrirScenario);
+document.getElementById('btn-fermer-scenario').addEventListener('click', () => modalScenario.classList.add('cachee'));
 
 document.getElementById('btn-scenario-precedent').addEventListener('click', () => {
   if (scenarioIndexActuel <= 0) return;
-  if (!etatCourant.code) {
-    scenarioIndexActuel--;
-    afficherImageScenario();
-  } else if (etatCourant.estHote) {
-    socket.emit('scenario_naviguer', { index: scenarioIndexActuel - 1 });
-  }
+  if (!etatCourant.code) { scenarioIndexActuel--; afficherImageScenario(); }
+  else if (etatCourant.estHote) socket.emit('scenario_naviguer', { index: scenarioIndexActuel - 1 });
 });
 
 document.getElementById('btn-scenario-suivant').addEventListener('click', () => {
   if (scenarioIndexActuel >= scenarioImages.length - 1) return;
-  if (!etatCourant.code) {
-    scenarioIndexActuel++;
-    afficherImageScenario();
-  } else if (etatCourant.estHote) {
-    socket.emit('scenario_naviguer', { index: scenarioIndexActuel + 1 });
-  }
+  if (!etatCourant.code) { scenarioIndexActuel++; afficherImageScenario(); }
+  else if (etatCourant.estHote) socket.emit('scenario_naviguer', { index: scenarioIndexActuel + 1 });
 });
 
 // --- Fin de partie ---
@@ -398,32 +679,35 @@ document.getElementById('btn-retour-accueil-fin').addEventListener('click', () =
 
 function afficherFinDePartie({ classement }) {
   const liste = document.getElementById('classement-final');
-  liste.innerHTML = classement
-    .map((j) => `<li>${j.pseudo} - ${j.valides} objectif(s) valide(s)</li>`)
-    .join('');
-
+  liste.innerHTML = classement.map((j) => `<li>${j.pseudo} — ${j.valides} objectif(s)</li>`).join('');
   afficherVue('ecran-fin-partie');
-  if (classement.length && classement[0].valides > 0) {
-    lancerConfettis();
-  }
+  if (classement.length && classement[0].valides > 0) lancerConfettis();
 }
 
-// --- Evenements Socket.IO ---
+// --- Socket.IO ---
 
-socket.on('etat_partie', ({ partie, joueurs }) => {
+socket.on('etat_partie', async ({ partie, joueurs }) => {
   scenarioIndexActuel = partie.scenario_index || 0;
   etatCourant.partieStatut = partie.statut;
   afficherJoueurs(joueurs);
 
   const moi = joueurs.find((j) => j.id === etatCourant.joueurId);
-  if (!moi || !moi.race_id) {
-    afficherChoixRace();
-    return;
-  }
+  if (!moi) return;
 
   if (partie.statut === 'en_cours') {
-    socket.emit('choix_race', { joueurId: etatCourant.joueurId, raceId: moi.race_id });
+    // Partie deja en cours (reconnexion) : recupere l'etat via REST
+    const etat = await requeteJSON(`/api/joueurs/${etatCourant.joueurId}/etat`).catch(() => null);
+    if (etat) {
+      etatJoueur = etat;
+      afficherHub();
+    }
   } else {
+    // Attente du lancement
+    const infoEl = document.getElementById('attente-info-joueur');
+    if (infoEl && moi.race_id) {
+      const raceNom = joueurs.find((j) => j.id === etatCourant.joueurId)?.race_id;
+      infoEl.textContent = `Vous avez rejoint la partie. En attente du lancement par le maitre du jeu.`;
+    }
     afficherVue('ecran-attente-lancement');
   }
 });
@@ -439,56 +723,43 @@ socket.on('joueur_deconnecte', ({ joueurId }) => {
   if (joueur) joueur.connecte = 0;
   afficherJoueurs(joueursPartieEnCache);
 });
+
 socket.on('erreur', ({ message }) => alert(message));
 socket.on('notification', ({ message }) => afficherNotification(message));
 
-// Le MJ (admin) a lance la partie : les objectifs viennent d'etre distribues.
 socket.on('partie_lancee', () => {
   etatCourant.partieStatut = 'en_cours';
-  const moi = joueursPartieEnCache.find((j) => j.id === etatCourant.joueurId);
-  if (moi && moi.race_id) {
-    socket.emit('choix_race', { joueurId: etatCourant.joueurId, raceId: moi.race_id });
-  }
+  // etat_joueur sera pousse directement par le serveur apres le lancement
 });
 
 socket.on('etat_joueur', (nouvelEtat) => {
   etatJoueur = nouvelEtat;
 
-  // Reconnexion / premier chargement : sans etat de vue en cours, aller aux representants.
-  const vueActuelle = [...document.querySelectorAll('#app > section')].find(
-    (s) => !s.classList.contains('cachee')
-  );
-
   if (nouvelEtat.partieTerminee) return; // partie_terminee gere l'affichage final
 
-  const enAttenteDeLancement = [
-    'ecran-choix-race',
-    'accueil',
-    'ecran-attente-lancement'
-  ].includes(vueActuelle && vueActuelle.id);
+  const vue = vueActuelleId();
+  const enTransition = !vue || ['accueil', 'ecran-attente-lancement'].includes(vue);
 
-  if (!vueActuelle || enAttenteDeLancement) {
-    if (etatCourant.partieStatut === 'en_cours') {
-      afficherPageRepresentants();
-    } else {
-      afficherVue('ecran-attente-lancement');
-    }
-  } else if (vueActuelle.id === 'ecran-representants') {
-    afficherPageRepresentants();
-  } else if (vueActuelle.id === 'ecran-representant-individuel' && rangAffiche) {
+  if (enTransition) {
+    if (etatCourant.partieStatut === 'en_cours') afficherHub();
+    else afficherVue('ecran-attente-lancement');
+  } else if (vue === 'ecran-hub') {
+    afficherHub();
+  } else if (vue === 'ecran-representants') {
+    afficherParcoursRace();
+  } else if (vue === 'ecran-representant-individuel' && rangAffiche) {
     afficherRepresentantIndividuel(rangAffiche);
-  } else if (vueActuelle.id === 'ecran-objectif-detail' && caseAffichee) {
-    const rangInfo = etatJoueur.rangs.find((r) => r.rang === rangAffiche);
-    const miseAJour = rangInfo && rangInfo.cases.find((c) => c.id === caseAffichee.id);
-    if (miseAJour) afficherDetailObjectif(miseAJour);
+  } else if (vue === 'ecran-parcours-allegeance' && allegeanceAffichee) {
+    afficherParcoursAllegeance(allegeanceAffichee);
+  } else if (vue === 'ecran-rep-allegeance-individuel' && allegeanceAffichee && rangAllegeanceAffiche) {
+    afficherRepAllegeanceIndividuel(allegeanceAffichee, rangAllegeanceAffiche);
   }
 });
 
 socket.on('scenario_maj', ({ index }) => {
   scenarioIndexActuel = index;
-  if (!modalScenario.classList.contains('cachee')) {
-    afficherImageScenario();
-  }
+  if (!modalScenario.classList.contains('cachee')) afficherImageScenario();
 });
 
 socket.on('partie_terminee', afficherFinDePartie);
+socket.on('partie_annulee', ({ message }) => { alert(message); window.location.href = '/'; });

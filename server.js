@@ -14,12 +14,16 @@ const { commiterEtPousser } = require('./utils/gitSync');
 const { restaurerSiVide } = require('./utils/restaurerContenu');
 const {
   obtenirParametre,
+  estJoueurTermine,
   deverrouillerRang,
   verifierDeverrouillages,
   validerObjectif,
+  deverrouillerRangAllegeance,
+  verifierDeverrouillagesAllegeance,
+  validerObjectifAllegeance,
   obtenirEtatJoueur
 } = require('./utils/grille');
-const { distribuer } = require('./utils/distribution');
+const { distribuer, distribuerAllegeances } = require('./utils/distribution');
 
 // Sur un serveur fraichement deploye (base SQLite vide, non versionnee), recharge le
 // contenu admin depuis la sauvegarde JSON versionnee sur GitHub (voir utils/exportContenu.js).
@@ -144,7 +148,14 @@ app.post('/api/admin/mot-de-passe', exigerAdmin, (req, res) => {
 // --- API : races ---
 
 app.get('/api/races', (req, res) => {
-  res.json(db.prepare('SELECT * FROM races ORDER BY nom').all());
+  const races = db.prepare('SELECT * FROM races ORDER BY nom').all();
+  const result = races.map((race) => {
+    const rep1 = db
+      .prepare('SELECT id, nom, rang, image_depart, image_sourire FROM representants WHERE race_id = ? AND rang = 1')
+      .get(race.id);
+    return { ...race, representant1: rep1 || null };
+  });
+  res.json(result);
 });
 
 app.post('/api/races', exigerAdmin, gerer(async (req, res) => {
@@ -362,17 +373,158 @@ app.delete('/api/dialogues/:id', exigerAdmin, gerer(async (req, res) => {
   res.json({ ok: true, synchronisation });
 }));
 
-// --- API : objectifs (description, niveau, type, categorie) ---
+// --- API : allegeances (3 max, chacune avec 0-3 representants) ---
+
+app.get('/api/allegeances', (req, res) => {
+  res.json(db.prepare('SELECT * FROM allegeances ORDER BY id').all());
+});
+
+app.post('/api/allegeances', exigerAdmin, uploadImagesRepresentant.single('portrait'), gerer(async (req, res) => {
+  const { nom } = req.body;
+  if (!nom) return res.status(400).json({ error: 'Le nom est requis' });
+
+  const nb = db.prepare('SELECT COUNT(*) AS n FROM allegeances').get().n;
+  if (nb >= 3) return res.status(400).json({ error: 'Maximum 3 allegeances autorisees' });
+
+  const portrait = req.file ? `/uploads/${req.file.filename}` : null;
+  const result = db.prepare('INSERT INTO allegeances (nom, portrait) VALUES (?, ?)').run(nom, portrait);
+
+  const synchronisation = await commiterEtPousser(`Admin : ajout de l'allegeance "${nom}"`);
+  res.status(201).json({ id: result.lastInsertRowid, synchronisation });
+}));
+
+app.put('/api/allegeances/:id', exigerAdmin, uploadImagesRepresentant.single('portrait'), gerer(async (req, res) => {
+  const allegeance = db.prepare('SELECT * FROM allegeances WHERE id = ?').get(req.params.id);
+  if (!allegeance) return res.status(404).json({ error: 'Allegeance introuvable' });
+
+  const nom = req.body.nom || allegeance.nom;
+  let portrait = allegeance.portrait;
+  if (req.file) {
+    supprimerFichierUpload(allegeance.portrait);
+    portrait = `/uploads/${req.file.filename}`;
+  }
+
+  db.prepare('UPDATE allegeances SET nom = ?, portrait = ? WHERE id = ?').run(nom, portrait, allegeance.id);
+
+  const synchronisation = await commiterEtPousser(`Admin : modification de l'allegeance "${nom}"`);
+  res.json({ ok: true, synchronisation });
+}));
+
+app.delete('/api/allegeances/:id', exigerAdmin, gerer(async (req, res) => {
+  const allegeance = db.prepare('SELECT * FROM allegeances WHERE id = ?').get(req.params.id);
+  if (!allegeance) return res.status(404).json({ error: 'Allegeance introuvable' });
+
+  const reps = db.prepare('SELECT * FROM representants_allegeance WHERE allegeance_id = ?').all(allegeance.id);
+  db.prepare('DELETE FROM allegeances WHERE id = ?').run(allegeance.id);
+
+  supprimerFichierUpload(allegeance.portrait);
+  reps.forEach((r) => {
+    supprimerFichierUpload(r.image_depart);
+    supprimerFichierUpload(r.image_sourire);
+  });
+
+  const synchronisation = await commiterEtPousser(`Admin : suppression de l'allegeance "${allegeance.nom}"`);
+  res.json({ ok: true, synchronisation });
+}));
+
+// --- API : representants d'allegeance ---
+
+app.get('/api/allegeances/:allegeanceId/representants', (req, res) => {
+  res.json(
+    db.prepare('SELECT * FROM representants_allegeance WHERE allegeance_id = ? ORDER BY rang').all(req.params.allegeanceId)
+  );
+});
+
+app.post(
+  '/api/allegeances/:allegeanceId/representants',
+  exigerAdmin,
+  uploadImagesRepresentant.fields([
+    { name: 'image_depart', maxCount: 1 },
+    { name: 'image_sourire', maxCount: 1 }
+  ]),
+  gerer(async (req, res) => {
+    const allegeance = db.prepare('SELECT * FROM allegeances WHERE id = ?').get(req.params.allegeanceId);
+    if (!allegeance) return res.status(404).json({ error: 'Allegeance introuvable' });
+
+    const rangsExistants = db
+      .prepare('SELECT rang FROM representants_allegeance WHERE allegeance_id = ?')
+      .all(allegeance.id)
+      .map((r) => r.rang);
+    const rang = [1, 2, 3].find((r) => !rangsExistants.includes(r));
+    if (!rang) return res.status(400).json({ error: 'Cette allegeance possede deja 3 representants (maximum)' });
+
+    const { nom, dialogue } = req.body;
+    if (!nom) return res.status(400).json({ error: 'Le nom est requis' });
+
+    const imageDepart = req.files?.image_depart?.[0] ? `/uploads/${req.files.image_depart[0].filename}` : null;
+    const imageSourire = req.files?.image_sourire?.[0] ? `/uploads/${req.files.image_sourire[0].filename}` : null;
+
+    const result = db
+      .prepare('INSERT INTO representants_allegeance (allegeance_id, rang, nom, image_depart, image_sourire, dialogue) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(allegeance.id, rang, nom, imageDepart, imageSourire, dialogue || null);
+
+    const synchronisation = await commiterEtPousser(`Admin : ajout du representant d'allegeance "${nom}"`);
+    res.status(201).json({ id: result.lastInsertRowid, synchronisation });
+  })
+);
+
+app.put(
+  '/api/representants-allegeance/:id',
+  exigerAdmin,
+  uploadImagesRepresentant.fields([
+    { name: 'image_depart', maxCount: 1 },
+    { name: 'image_sourire', maxCount: 1 }
+  ]),
+  gerer(async (req, res) => {
+    const rep = db.prepare('SELECT * FROM representants_allegeance WHERE id = ?').get(req.params.id);
+    if (!rep) return res.status(404).json({ error: "Representant d'allegeance introuvable" });
+
+    let imageDepart = rep.image_depart;
+    let imageSourire = rep.image_sourire;
+    if (req.files?.image_depart?.[0]) {
+      supprimerFichierUpload(rep.image_depart);
+      imageDepart = `/uploads/${req.files.image_depart[0].filename}`;
+    }
+    if (req.files?.image_sourire?.[0]) {
+      supprimerFichierUpload(rep.image_sourire);
+      imageSourire = `/uploads/${req.files.image_sourire[0].filename}`;
+    }
+
+    const nom = req.body.nom || rep.nom;
+    const dialogue = req.body.dialogue !== undefined ? req.body.dialogue : rep.dialogue;
+
+    db.prepare('UPDATE representants_allegeance SET nom = ?, image_depart = ?, image_sourire = ?, dialogue = ? WHERE id = ?')
+      .run(nom, imageDepart, imageSourire, dialogue, rep.id);
+
+    const synchronisation = await commiterEtPousser(`Admin : modification du representant d'allegeance "${nom}"`);
+    res.json({ ok: true, synchronisation });
+  })
+);
+
+app.delete('/api/representants-allegeance/:id', exigerAdmin, gerer(async (req, res) => {
+  const rep = db.prepare('SELECT * FROM representants_allegeance WHERE id = ?').get(req.params.id);
+  if (!rep) return res.status(404).json({ error: "Representant d'allegeance introuvable" });
+
+  db.prepare('DELETE FROM representants_allegeance WHERE id = ?').run(rep.id);
+  supprimerFichierUpload(rep.image_depart);
+  supprimerFichierUpload(rep.image_sourire);
+
+  const synchronisation = await commiterEtPousser(`Admin : suppression du representant d'allegeance "${rep.nom}"`);
+  res.json({ ok: true, synchronisation });
+}));
+
+// --- API : objectifs (description + niveau entier) ---
 
 app.get('/api/objectifs', (req, res) => {
   res.json(db.prepare('SELECT * FROM objectifs ORDER BY id DESC').all());
 });
 
 app.post('/api/objectifs', exigerAdmin, gerer(async (req, res) => {
-  const { description } = req.body;
+  const { description, niveau } = req.body;
   if (!description) return res.status(400).json({ error: 'La description est requise' });
 
-  const result = db.prepare('INSERT INTO objectifs (description) VALUES (?)').run(description);
+  const niveauVal = niveau !== undefined && niveau !== '' ? parseInt(niveau) : null;
+  const result = db.prepare('INSERT INTO objectifs (description, niveau) VALUES (?, ?)').run(description, niveauVal);
 
   const synchronisation = await commiterEtPousser("Admin : ajout d'un objectif");
   res.status(201).json({ id: result.lastInsertRowid, synchronisation });
@@ -382,9 +534,11 @@ app.put('/api/objectifs/:id', exigerAdmin, gerer(async (req, res) => {
   const objectif = db.prepare('SELECT * FROM objectifs WHERE id = ?').get(req.params.id);
   if (!objectif) return res.status(404).json({ error: 'Objectif introuvable' });
 
-  const { description } = req.body;
-  db.prepare('UPDATE objectifs SET description = ? WHERE id = ?').run(
+  const { description, niveau } = req.body;
+  const niveauVal = niveau !== undefined && niveau !== '' ? parseInt(niveau) : objectif.niveau;
+  db.prepare('UPDATE objectifs SET description = ?, niveau = ? WHERE id = ?').run(
     description || objectif.description,
+    niveauVal,
     objectif.id
   );
 
@@ -405,9 +559,11 @@ app.delete('/api/objectifs/:id', exigerAdmin, gerer(async (req, res) => {
 app.post('/api/objectifs/import', exigerAdmin, uploadCsv.single('fichier'), gerer(async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Un fichier CSV est requis' });
 
+  const mode = req.body.mode === 'remplacer' ? 'remplacer' : 'ajouter';
+
   let lignes;
   try {
-    lignes = parse(req.file.buffer, { columns: true, skip_empty_lines: true, trim: true, bom: true });
+    lignes = parse(req.file.buffer, { columns: true, skip_empty_lines: true, trim: true, bom: true, delimiter: [',', ';'] });
   } catch (erreur) {
     return res.status(400).json({ error: `Fichier CSV invalide : ${erreur.message}` });
   }
@@ -420,23 +576,29 @@ app.post('/api/objectifs/import', exigerAdmin, uploadCsv.single('fichier'), gere
     return normalisee;
   });
 
-  // Seule la colonne "description" est utilisee ; niveau/type/categorie sont ignores
-  // pour rester compatible avec les CSV existants.
-  const insertion = db.prepare('INSERT INTO objectifs (description) VALUES (?)');
+  // Colonnes utilisees : description (obligatoire) et niveau (entier, optionnel).
+  // Les autres colonnes (type, categorie…) sont ignorees — compatibles avec anciens CSV.
+  const supprimerTout = db.prepare('DELETE FROM objectifs');
+  const insertion = db.prepare('INSERT INTO objectifs (description, niveau) VALUES (?, ?)');
   const importerTout = db.transaction((rows) => {
+    let supprimes = 0;
+    if (mode === 'remplacer') {
+      supprimes = supprimerTout.run().changes;
+    }
     let compteur = 0;
     for (const ligne of rows) {
       if (!ligne.description) continue;
-      insertion.run(ligne.description);
+      const niveauVal = ligne.niveau !== undefined && ligne.niveau !== '' ? parseInt(ligne.niveau) : null;
+      insertion.run(ligne.description, isNaN(niveauVal) ? null : niveauVal);
       compteur++;
     }
-    return compteur;
+    return { importes: compteur, supprimes };
   });
 
-  const importes = importerTout(lignesNormalisees);
+  const { importes, supprimes } = importerTout(lignesNormalisees);
 
-  const synchronisation = await commiterEtPousser(`Admin : import CSV de ${importes} objectifs`);
-  res.json({ ok: true, importes, synchronisation });
+  const synchronisation = await commiterEtPousser(`Admin : import CSV de ${importes} objectifs (mode ${mode})`);
+  res.json({ ok: true, importes, supprimes, mode, synchronisation });
 }));
 
 // --- API : scenario (images ordonnees, defilees par le maitre du jeu) ---
@@ -582,17 +744,33 @@ function tenterLancementPartie(partieId) {
     return { lance: false, raison: 'Deux joueurs ont choisi la meme race' };
   }
 
-  const nbObjectifsNecessaires = joueurs.length * 6;
+  let configObj;
+  try { configObj = JSON.parse(partie.config_objectifs_race || '[2,2,2]'); } catch { configObj = [2, 2, 2]; }
+  const nbRepRace = partie.nb_representants_race ?? 3;
+  const nbObjectifsParJoueur = configObj.slice(0, nbRepRace).reduce((s, n) => s + n, 0);
+
+  let configObjAlleg;
+  try { configObjAlleg = JSON.parse(partie.config_objectifs_allegeance || '[2,2,2]'); } catch { configObjAlleg = [2, 2, 2]; }
+  const nbRepAlleg = partie.nb_representants_allegeance ?? 2;
+  const nbObjectifsParAllegeance = configObjAlleg.slice(0, nbRepAlleg).reduce((s, n) => s + n, 0);
+  const allegeancesUniques = db
+    .prepare('SELECT DISTINCT allegeance_id FROM joueur_allegeances WHERE joueur_id IN (' + joueurs.map(() => '?').join(',') + ')')
+    .all(...joueurs.map((j) => j.id));
+  const nbAllegeancesUniques = allegeancesUniques.length;
+
+  const nbObjectifsNecessaires = joueurs.length * nbObjectifsParJoueur + nbAllegeancesUniques * nbObjectifsParAllegeance;
+
   const { n: nbObjectifsDisponibles } = db.prepare('SELECT COUNT(*) AS n FROM objectifs').get();
   if (nbObjectifsDisponibles < nbObjectifsNecessaires) {
     return {
       lance: false,
-      raison: `Pool insuffisant : ${nbObjectifsDisponibles} objectif(s) disponible(s), ${nbObjectifsNecessaires} requis (${joueurs.length} joueur(s) x 6)`
+      raison: `Pool insuffisant : ${nbObjectifsDisponibles} objectif(s) disponible(s), ${nbObjectifsNecessaires} requis (${joueurs.length} joueur(s) x ${nbObjectifsParJoueur} + ${nbAllegeancesUniques} allegeance(s) x ${nbObjectifsParAllegeance})`
     };
   }
 
   try {
     distribuer(db, { partieId, joueurIds: joueurs.map((j) => j.id) });
+    distribuerAllegeances(db, { partieId, joueurIds: joueurs.map((j) => j.id) });
   } catch (erreur) {
     return { lance: false, raison: erreur.message };
   }
@@ -655,8 +833,9 @@ app.get('/api/partie-active', (req, res) => {
 });
 
 app.post('/api/partie-active/rejoindre', (req, res) => {
-  const { pseudo, password } = req.body;
+  const { pseudo, password, race_id, allegeance_ids } = req.body;
   if (!pseudo) return res.status(400).json({ error: 'Le pseudo est requis' });
+  if (!race_id) return res.status(400).json({ error: 'La race est requise' });
 
   const partie = obtenirPartieActive(db);
   if (!partie) return res.status(404).json({ error: 'Aucune partie configuree par le maitre du jeu pour le moment' });
@@ -664,13 +843,39 @@ app.post('/api/partie-active/rejoindre', (req, res) => {
     return res.status(400).json({ error: 'La partie a deja demarre, impossible de la rejoindre' });
   }
 
+  const race = db.prepare('SELECT * FROM races WHERE id = ?').get(race_id);
+  if (!race) return res.status(404).json({ error: 'Race introuvable' });
+
+  const dejaPrise = db.prepare('SELECT id FROM joueurs WHERE partie_id = ? AND race_id = ?').get(partie.id, race_id);
+  if (dejaPrise) return res.status(409).json({ error: 'Cette race est deja jouee par un autre joueur' });
+
+  const idsAllegeances = Array.isArray(allegeance_ids)
+    ? [...new Set(allegeance_ids.map(Number).filter(Boolean))].slice(0, 2)
+    : [];
+
   const premierJoueur = !db.prepare('SELECT id FROM joueurs WHERE partie_id = ? LIMIT 1').get(partie.id);
   const passwordHash = password ? bcrypt.hashSync(password, 10) : null;
-  const joueur = db
-    .prepare('INSERT INTO joueurs (partie_id, pseudo, password_hash, est_hote) VALUES (?, ?, ?, ?)')
-    .run(partie.id, pseudo, passwordHash, premierJoueur ? 1 : 0);
 
-  res.status(201).json({ partieId: partie.id, code: partie.code, joueurId: joueur.lastInsertRowid });
+  const rangUn = db.prepare('SELECT id FROM representants WHERE race_id = ? AND rang = 1').get(race_id);
+
+  const joueur = db
+    .prepare(
+      'INSERT INTO joueurs (partie_id, pseudo, password_hash, race_id, representant_id, est_hote) VALUES (?, ?, ?, ?, ?, ?)'
+    )
+    .run(partie.id, pseudo, passwordHash, race_id, rangUn ? rangUn.id : null, premierJoueur ? 1 : 0);
+
+  const joueurId = joueur.lastInsertRowid;
+
+  const insAllegeance = db.prepare(
+    'INSERT OR IGNORE INTO joueur_allegeances (joueur_id, allegeance_id) VALUES (?, ?)'
+  );
+  for (const aid of idsAllegeances) {
+    if (db.prepare('SELECT id FROM allegeances WHERE id = ?').get(aid)) {
+      insAllegeance.run(joueurId, aid);
+    }
+  }
+
+  res.status(201).json({ partieId: partie.id, code: partie.code, joueurId });
 });
 
 // --- Cote MJ (admin) ---
@@ -689,6 +894,35 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
   }
 
   const nbJoueursAttendu = parseInt(req.body.nb_joueurs_attendus) || 0;
+  const nbRepRace = Math.min(3, Math.max(0, parseInt(req.body.nb_representants_race) ?? 2));
+  const nbRepAllegeance = Math.min(3, Math.max(0, parseInt(req.body.nb_representants_allegeance) ?? 2));
+
+  if (nbRepRace === 0 && nbRepAllegeance === 0) {
+    return res.status(400).json({ error: "Il faut au moins 1 representant actif (race ou allegeance)" });
+  }
+
+  const parseConfig = (val, defaut) => {
+    try {
+      const arr = JSON.parse(val);
+      if (Array.isArray(arr) && arr.length === 3) return JSON.stringify(arr.map((v) => Math.min(3, Math.max(1, parseInt(v) || 2))));
+    } catch {}
+    return defaut;
+  };
+
+  const configRace = parseConfig(req.body.config_objectifs_race, '[2,2,2]');
+  const configAllegeance = parseConfig(req.body.config_objectifs_allegeance, '[2,2,2]');
+
+  let configNiveauxRace = '[[null,null],[null,null],[null,null]]';
+  try {
+    const parsed = JSON.parse(req.body.config_niveaux_race);
+    if (Array.isArray(parsed)) configNiveauxRace = JSON.stringify(parsed);
+  } catch {}
+
+  let configNiveauxAllegeance = '[[null,null],[null,null],[null,null]]';
+  try {
+    const parsed = JSON.parse(req.body.config_niveaux_allegeance);
+    if (Array.isArray(parsed)) configNiveauxAllegeance = JSON.stringify(parsed);
+  } catch {}
 
   let code;
   do {
@@ -696,8 +930,10 @@ app.post('/api/admin/partie-active/creer', exigerAdmin, (req, res) => {
   } while (db.prepare('SELECT id FROM parties WHERE code = ?').get(code));
 
   const partie = db
-    .prepare('INSERT INTO parties (code, nom, nb_joueurs_attendus) VALUES (?, ?, ?)')
-    .run(code, `Partie ${code}`, nbJoueursAttendu);
+    .prepare(
+      'INSERT INTO parties (code, nom, nb_joueurs_attendus, nb_representants_race, nb_representants_allegeance, config_objectifs_race, config_objectifs_allegeance, config_niveaux_race, config_niveaux_allegeance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    )
+    .run(code, `Partie ${code}`, nbJoueursAttendu, nbRepRace, nbRepAllegeance, configRace, configAllegeance, configNiveauxRace, configNiveauxAllegeance);
   const nouvelle = db.prepare('SELECT * FROM parties WHERE id = ?').get(partie.lastInsertRowid);
   res.status(201).json({ active: true, ...nouvelle, joueurs: [] });
 });
@@ -880,6 +1116,70 @@ io.on('connection', (socket) => {
         )
         .all(resultat.partieId);
       io.to(socket.data.code).emit('partie_terminee', { classement });
+    }
+  });
+
+  socket.on('grille_valider_allegeance', ({ joueurId, allegeanceId, partieId, ligneId }) => {
+    // Verifie que le joueur possede cette allegeance
+    const lienJoueur = db
+      .prepare('SELECT * FROM joueur_allegeances WHERE joueur_id = ? AND allegeance_id = ?')
+      .get(joueurId, allegeanceId);
+    if (!lienJoueur) {
+      return socket.emit('erreur', { message: "Vous ne portez pas cette allegeance" });
+    }
+
+    try {
+      validerObjectifAllegeance(db, { allegeanceId, partieId, ligneId, joueurId });
+    } catch (erreur) {
+      return socket.emit('erreur', { message: erreur.message });
+    }
+
+    // Le deblocage est partage : un rang N+1 debloque pour tous les porteurs simultanement.
+    verifierDeverrouillagesAllegeance(db, allegeanceId, partieId);
+
+    // Tous les porteurs de cette allegeance dans la partie recoivent l'etat mis a jour.
+    const allegeance = db.prepare('SELECT nom FROM allegeances WHERE id = ?').get(allegeanceId);
+    const validateur = db.prepare('SELECT pseudo FROM joueurs WHERE id = ?').get(joueurId);
+    const porteurs = db
+      .prepare(
+        'SELECT j.id, j.socket_id FROM joueurs j ' +
+        'JOIN joueur_allegeances ja ON ja.joueur_id = j.id ' +
+        'WHERE ja.allegeance_id = ? AND j.partie_id = ?'
+      )
+      .all(allegeanceId, partieId);
+
+    for (const porteur of porteurs) {
+      if (!porteur.socket_id) continue;
+      io.to(porteur.socket_id).emit('etat_joueur', obtenirEtatJoueur(db, porteur.id));
+      // Notifie les co-porteurs (pas le validateur lui-meme)
+      if (porteur.id !== joueurId) {
+        io.to(porteur.socket_id).emit('notification', {
+          message: `${validateur.pseudo} a valide un objectif de l'allegeance ${allegeance ? allegeance.nom : ''} !`
+        });
+      }
+    }
+
+    if (socket.data.code && obtenirParametre(db, 'tableau_de_bord_actif') === 'true') {
+      io.to(socket.data.code).emit('tableau_de_bord_maj');
+    }
+
+    // Verifie la victoire pour TOUS les porteurs : la completion de l'allegeance peut
+    // declencher la victoire d'un co-porteur dont la race etait deja terminee.
+    if (socket.data.code) {
+      const vainqueur = porteurs.find((p) => estJoueurTermine(db, p.id));
+      if (vainqueur) {
+        db.prepare("UPDATE parties SET statut = 'terminee' WHERE id = ?").run(partieId);
+        const classement = db
+          .prepare(
+            `SELECT j.id, j.pseudo, COUNT(g.id) AS valides
+             FROM joueurs j LEFT JOIN grille_objectifs g ON g.joueur_id = j.id AND g.statut = 'valide'
+             WHERE j.partie_id = ?
+             GROUP BY j.id
+             ORDER BY valides DESC`
+          )
+          .all(partieId);
+        io.to(socket.data.code).emit('partie_terminee', { classement });
+      }
     }
   });
 

@@ -13,6 +13,10 @@ function colonneExiste(db, table, colonne) {
   return db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === colonne);
 }
 
+function tableExiste(db, table) {
+  return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(table);
+}
+
 function assurerColonne(db, table, colonne, definitionSql) {
   if (!colonneExiste(db, table, colonne)) {
     db.exec(`ALTER TABLE ${table} ADD COLUMN ${colonne} ${definitionSql}`);
@@ -190,6 +194,130 @@ function initDatabase() {
     }
   }
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_representants_race_rang ON representants(race_id, rang)');
+
+  // --- v2 : migration depuis "runes" (ancienne version) ---
+  if (tableExiste(db, 'runes') && !tableExiste(db, 'allegiances') && !tableExiste(db, 'allegeances')) {
+    db.exec('ALTER TABLE runes RENAME TO allegiances');
+  }
+  if (tableExiste(db, 'representants_rune') && !tableExiste(db, 'representants_allegiance') && !tableExiste(db, 'representants_allegeance')) {
+    db.exec('ALTER TABLE representants_rune RENAME TO representants_allegiance');
+  }
+  if (tableExiste(db, 'representants_allegiance') && colonneExiste(db, 'representants_allegiance', 'rune_id')) {
+    db.exec('ALTER TABLE representants_allegiance RENAME COLUMN rune_id TO allegiance_id');
+  }
+  if (tableExiste(db, 'joueur_runes') && !tableExiste(db, 'joueur_allegiances') && !tableExiste(db, 'joueur_allegeances')) {
+    db.exec('ALTER TABLE joueur_runes RENAME TO joueur_allegiances');
+  }
+  if (tableExiste(db, 'joueur_allegiances') && colonneExiste(db, 'joueur_allegiances', 'rune_id')) {
+    db.exec('ALTER TABLE joueur_allegiances RENAME COLUMN rune_id TO allegiance_id');
+  }
+  db.exec('DROP INDEX IF EXISTS idx_repr_rune');
+  db.exec('DROP INDEX IF EXISTS idx_joueur_runes');
+
+  // --- Correction orthographe : allegiances → allegeances ---
+  if (tableExiste(db, 'allegiances') && !tableExiste(db, 'allegeances')) {
+    db.exec('ALTER TABLE allegiances RENAME TO allegeances');
+  }
+  if (tableExiste(db, 'representants_allegiance') && !tableExiste(db, 'representants_allegeance')) {
+    db.exec('ALTER TABLE representants_allegiance RENAME TO representants_allegeance');
+  }
+  if (tableExiste(db, 'representants_allegeance') && colonneExiste(db, 'representants_allegeance', 'allegiance_id')) {
+    db.exec('ALTER TABLE representants_allegeance RENAME COLUMN allegiance_id TO allegeance_id');
+  }
+  if (tableExiste(db, 'joueur_allegiances') && !tableExiste(db, 'joueur_allegeances')) {
+    db.exec('ALTER TABLE joueur_allegiances RENAME TO joueur_allegeances');
+  }
+  if (tableExiste(db, 'joueur_allegeances') && colonneExiste(db, 'joueur_allegeances', 'allegiance_id')) {
+    db.exec('ALTER TABLE joueur_allegeances RENAME COLUMN allegiance_id TO allegeance_id');
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS allegeances (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nom TEXT NOT NULL UNIQUE,
+      portrait TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS representants_allegeance (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      allegeance_id INTEGER NOT NULL,
+      rang INTEGER NOT NULL CHECK (rang IN (1, 2, 3)),
+      nom TEXT NOT NULL,
+      image_depart TEXT,
+      image_sourire TEXT,
+      dialogue TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (allegeance_id) REFERENCES allegeances(id) ON DELETE CASCADE,
+      UNIQUE (allegeance_id, rang)
+    );
+
+    CREATE TABLE IF NOT EXISTS joueur_allegeances (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      joueur_id INTEGER NOT NULL,
+      allegeance_id INTEGER NOT NULL,
+      progression INTEGER NOT NULL DEFAULT 0,
+      FOREIGN KEY (joueur_id) REFERENCES joueurs(id) ON DELETE CASCADE,
+      FOREIGN KEY (allegeance_id) REFERENCES allegeances(id) ON DELETE CASCADE,
+      UNIQUE (joueur_id, allegeance_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_repr_allegeance ON representants_allegeance(allegeance_id);
+    CREATE INDEX IF NOT EXISTS idx_joueur_allegeances ON joueur_allegeances(joueur_id);
+
+    -- Grille d'allegeance : une seule grille par allegeance × partie, partagee entre tous
+    -- les porteurs de cette allegeance (preparation a la synchronisation cooperative).
+    CREATE TABLE IF NOT EXISTS grille_allegeance (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      allegeance_id INTEGER NOT NULL,
+      partie_id INTEGER NOT NULL,
+      rang INTEGER NOT NULL CHECK (rang IN (1, 2, 3)),
+      position INTEGER NOT NULL CHECK (position IN (1, 2, 3)),
+      objectif_id INTEGER NOT NULL,
+      statut TEXT NOT NULL DEFAULT 'masque' CHECK (statut IN ('masque', 'ouvert', 'valide')),
+      completed_at TEXT,
+      completed_by_joueur_id INTEGER,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (allegeance_id) REFERENCES allegeances(id) ON DELETE CASCADE,
+      FOREIGN KEY (partie_id) REFERENCES parties(id) ON DELETE CASCADE,
+      FOREIGN KEY (objectif_id) REFERENCES objectifs(id) ON DELETE CASCADE,
+      UNIQUE (allegeance_id, partie_id, rang, position)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_grille_allegeance ON grille_allegeance(allegeance_id, partie_id);
+  `);
+
+  // v2 : niveau (entier) revient dans les objectifs — pool unique race+allegeance
+  assurerColonne(db, 'objectifs', 'niveau', 'INTEGER');
+
+  // v2 : configuration de partie (representants actifs et nb d'objectifs par rang)
+  assurerColonne(db, 'parties', 'nb_representants_race', 'INTEGER NOT NULL DEFAULT 2');
+  assurerColonne(db, 'parties', 'config_objectifs_race', "TEXT NOT NULL DEFAULT '[2,2,2]'");
+
+  // Migration colonnes _rune → _allegeance (saute l'intermediaire _allegiance)
+  if (colonneExiste(db, 'parties', 'nb_representants_rune') && !colonneExiste(db, 'parties', 'nb_representants_allegeance')) {
+    db.exec('ALTER TABLE parties RENAME COLUMN nb_representants_rune TO nb_representants_allegeance');
+  }
+  if (colonneExiste(db, 'parties', 'config_objectifs_rune') && !colonneExiste(db, 'parties', 'config_objectifs_allegeance')) {
+    db.exec('ALTER TABLE parties RENAME COLUMN config_objectifs_rune TO config_objectifs_allegeance');
+  }
+  retirerColonne(db, 'parties', 'nb_representants_rune');
+  retirerColonne(db, 'parties', 'config_objectifs_rune');
+
+  // Migration colonnes _allegiance → _allegeance (correction orthographe)
+  if (colonneExiste(db, 'parties', 'nb_representants_allegiance') && !colonneExiste(db, 'parties', 'nb_representants_allegeance')) {
+    db.exec('ALTER TABLE parties RENAME COLUMN nb_representants_allegiance TO nb_representants_allegeance');
+  }
+  if (colonneExiste(db, 'parties', 'config_objectifs_allegiance') && !colonneExiste(db, 'parties', 'config_objectifs_allegeance')) {
+    db.exec('ALTER TABLE parties RENAME COLUMN config_objectifs_allegiance TO config_objectifs_allegeance');
+  }
+  retirerColonne(db, 'parties', 'nb_representants_allegiance');
+  retirerColonne(db, 'parties', 'config_objectifs_allegiance');
+
+  assurerColonne(db, 'parties', 'nb_representants_allegeance', 'INTEGER NOT NULL DEFAULT 2');
+  assurerColonne(db, 'parties', 'config_objectifs_allegeance', "TEXT NOT NULL DEFAULT '[2,2,2]'");
+  assurerColonne(db, 'parties', 'config_niveaux_race', "TEXT NOT NULL DEFAULT '[[null,null],[null,null],[null,null]]'");
+  assurerColonne(db, 'parties', 'config_niveaux_allegeance', "TEXT NOT NULL DEFAULT '[[null,null],[null,null],[null,null]]'");
 
   const parametresParDefaut = { tableau_de_bord_actif: 'false' };
   const insererParametre = db.prepare('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)');

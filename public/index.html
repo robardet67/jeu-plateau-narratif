@@ -23,34 +23,33 @@
       </div>
     </section>
 
-    <!-- Choix de la race (une seule fois, apres connexion) -->
-    <section id="ecran-choix-race" class="ecran cachee">
-      <div class="carte">
-        <h2>Choisissez votre race</h2>
-        <p class="astuce">Chaque race ne peut etre jouee que par un seul joueur dans la partie.</p>
-        <div id="liste-choix-races" class="liste-choix-races"></div>
-      </div>
-    </section>
-
     <!-- Attente du lancement par le maitre du jeu -->
     <section id="ecran-attente-lancement" class="ecran cachee">
       <div class="carte">
         <h2>En attente du lancement</h2>
         <p>Le maitre du jeu prepare la partie. Restez sur cette page, elle demarrera automatiquement.</p>
+        <div id="attente-info-joueur" class="attente-info"></div>
+        <button class="btn-changer-joueur bouton-secondaire" style="margin-top:1rem">Changer de joueur</button>
+      </div>
+      <div class="carte">
+        <h3>Joueurs presents</h3>
+        <ul id="liste-joueurs-attente" class="liste-elements"></ul>
       </div>
     </section>
 
-    <!-- Etape 1 : les 3 representants -->
-    <section id="ecran-representants" class="ecran-plein cachee">
+    <!-- Hub : portrait de race (cliquable) + portraits d'allegeances -->
+    <section id="ecran-hub" class="ecran-plein cachee">
       <div class="entete-jeu">
+        <div></div>
         <div class="entete-jeu-actions">
-          <button id="btn-tableau-de-bord-representants" class="bouton-secondaire cachee">Tableau de bord</button>
-          <button id="btn-scenario">Scenario</button>
+          <button class="btn-changer-joueur bouton-secondaire">Changer de joueur</button>
+          <button id="btn-tableau-de-bord-hub" class="bouton-secondaire cachee">Tableau de bord</button>
+          <button id="btn-scenario-hub">Scenario</button>
         </div>
       </div>
 
-      <div id="village" class="village">
-        <div class="grille-representants" id="grille-representants"></div>
+      <div id="hub-village" class="hub-village">
+        <div id="hub-portraits" class="hub-portraits"></div>
       </div>
 
       <aside id="panneau-joueurs">
@@ -59,11 +58,28 @@
       </aside>
     </section>
 
-    <!-- Etape 2 : page individuelle d'un representant -->
+    <!-- Parcours race : grille des representants -->
+    <section id="ecran-representants" class="ecran-plein cachee">
+      <div class="entete-jeu">
+        <button id="btn-retour-hub" class="bouton-secondaire">&larr; Village</button>
+        <div class="entete-jeu-actions">
+          <button class="btn-changer-joueur bouton-secondaire">Changer de joueur</button>
+          <button id="btn-tableau-de-bord-representants" class="bouton-secondaire cachee">Tableau de bord</button>
+          <button id="btn-scenario-representants">Scenario</button>
+        </div>
+      </div>
+
+      <div id="village" class="village">
+        <div class="grille-representants" id="grille-representants"></div>
+      </div>
+    </section>
+
+    <!-- Page individuelle d'un representant : dialogues + objectifs inline -->
     <section id="ecran-representant-individuel" class="ecran-plein cachee">
       <div class="entete-jeu">
         <button id="btn-retour-representants" class="bouton-secondaire">&larr; Retour</button>
         <div class="entete-jeu-actions">
+          <button class="btn-changer-joueur bouton-secondaire">Changer de joueur</button>
           <button id="btn-tableau-de-bord-individuel" class="bouton-secondaire cachee">Tableau de bord</button>
         </div>
       </div>
@@ -72,20 +88,61 @@
         <img id="image-representant-individuel" src="" alt="representant" />
         <div id="couronne-representant-individuel" class="couronne cachee">&#128081;</div>
         <div id="dialogues-representant-individuel" class="dialogues"></div>
-
         <div id="enveloppes-objectifs" class="enveloppes-objectifs"></div>
       </div>
     </section>
 
-    <!-- Etape 3 : detail d'un objectif -->
-    <section id="ecran-objectif-detail" class="ecran-plein cachee">
-      <div class="carte carte-objectif-detail">
-        <h2>Objectif</h2>
-        <p id="texte-objectif-detail" class="texte-objectif"></p>
-        <p id="objectif-deja-valide" class="message-info cachee">&#9989; Objectif deja valide.</p>
-        <div class="element-actions">
-          <button id="btn-valider-objectif">Valider</button>
-          <button id="btn-retour-objectif" class="bouton-secondaire">&larr; Retour</button>
+    <!-- Parcours allegeance : grille des representants -->
+    <section id="ecran-parcours-allegeance" class="ecran-plein cachee">
+      <div class="entete-jeu">
+        <button id="btn-retour-hub-allegeance" class="bouton-secondaire">&larr; Village</button>
+        <div class="entete-jeu-actions">
+          <button class="btn-changer-joueur bouton-secondaire">Changer de joueur</button>
+          <button id="btn-tableau-de-bord-allegeance" class="bouton-secondaire cachee">Tableau de bord</button>
+          <button id="btn-scenario-allegeance">Scenario</button>
+        </div>
+      </div>
+      <div id="village-allegeance" class="village">
+        <div class="grille-representants" id="grille-reps-allegeance"></div>
+      </div>
+    </section>
+
+    <!-- Page individuelle d'un representant d'allegeance : dialogues + objectifs inline -->
+    <section id="ecran-rep-allegeance-individuel" class="ecran-plein cachee">
+      <div class="entete-jeu">
+        <button id="btn-retour-parcours-allegeance" class="bouton-secondaire">&larr; Retour</button>
+        <div class="entete-jeu-actions">
+          <button class="btn-changer-joueur bouton-secondaire">Changer de joueur</button>
+          <button id="btn-tableau-de-bord-rep-allegeance" class="bouton-secondaire cachee">Tableau de bord</button>
+        </div>
+      </div>
+      <div class="carte carte-representant-individuel">
+        <img id="image-rep-allegeance" src="" alt="representant allegeance" />
+        <div id="couronne-rep-allegeance" class="couronne cachee">&#128081;</div>
+        <div id="dialogues-rep-allegeance" class="dialogues"></div>
+        <div id="objectifs-rep-allegeance" class="enveloppes-objectifs"></div>
+      </div>
+    </section>
+
+    <!-- Changer de joueur : choix nouveau joueur ou reprise d'une session existante -->
+    <section id="ecran-changer-joueur" class="ecran cachee">
+      <div class="contenu-changer-joueur">
+        <div class="entete-changer">
+          <button id="btn-retour-depuis-changer" class="bouton-secondaire">&larr; Retour</button>
+          <h2>Changer de joueur</h2>
+        </div>
+
+        <div id="changer-section-nouveau" class="carte">
+          <h3>Nouveau joueur</h3>
+          <p>Rejoindre la partie avec un nouveau compte</p>
+          <button id="btn-nouveau-joueur-changer">Nouveau joueur</button>
+        </div>
+
+        <div class="carte">
+          <h3>Reprendre une session</h3>
+          <p>Retrouvez votre progression exactement ou vous l'avez laissee</p>
+          <ul id="liste-joueurs-existants" class="liste-elements"></ul>
+          <p id="changer-joueur-vide" class="cachee" style="opacity:.6;margin-top:.5rem">Aucun joueur inscrit dans cette partie.</p>
         </div>
       </div>
     </section>
@@ -109,12 +166,23 @@
     </section>
   </div>
 
+  <!-- Modal creation du joueur : pseudo + race + allegeances -->
   <div id="modal-commencer" class="modal cachee">
-    <div class="modal-contenu modal-contenu-etroit">
+    <div class="modal-contenu modal-creation">
       <button class="bouton-secondaire btn-fermer-modal" data-cible="modal-commencer">Fermer</button>
-      <h2>Commencer la partie</h2>
-      <input id="commencer-pseudo" type="text" placeholder="Votre pseudo" />
-      <button id="btn-commencer-partie">Commencer</button>
+      <h2>Rejoindre la partie</h2>
+
+      <label class="label-champ">Votre pseudo
+        <input id="commencer-pseudo" type="text" placeholder="Entrez votre pseudo" autocomplete="off" />
+      </label>
+
+      <h3 class="titre-section-modal">Choisissez votre race <span class="requis">*</span></h3>
+      <div id="grille-choix-races" class="grille-choix"></div>
+
+      <h3 class="titre-section-modal">Allegeances <span class="sous-titre-section">(0 a 2, optionnel)</span></h3>
+      <div id="grille-choix-allegeances" class="grille-choix"></div>
+
+      <button id="btn-commencer-partie">Rejoindre</button>
       <p id="erreur-commencer" class="message-erreur cachee"></p>
     </div>
   </div>

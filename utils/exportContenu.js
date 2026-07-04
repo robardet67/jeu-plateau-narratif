@@ -22,7 +22,11 @@ function regenererExportContenu() {
       .prepare('SELECT id, representant_id, contexte, texte, created_at FROM dialogues ORDER BY id')
       .all(),
     objectifs: db
-      .prepare('SELECT id, description, created_at FROM objectifs ORDER BY id')
+      .prepare('SELECT id, description, niveau, created_at FROM objectifs ORDER BY id')
+      .all(),
+    allegeances: db.prepare('SELECT id, nom, portrait, created_at FROM allegeances ORDER BY id').all(),
+    representants_allegeance: db
+      .prepare('SELECT id, allegeance_id, rang, nom, image_depart, image_sourire, dialogue, created_at FROM representants_allegeance ORDER BY allegeance_id, rang')
       .all(),
     scenario_images: db.prepare('SELECT id, ordre, image, created_at FROM scenario_images ORDER BY ordre').all()
   };
