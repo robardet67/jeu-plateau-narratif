@@ -1,9 +1,9 @@
 {
-  "genere_le": "2026-07-04T10:36:43.390Z",
+  "genere_le": "2026-07-04T10:36:57.736Z",
   "races": [
     {
       "id": 1,
-      "nom": "gobelin",
+      "nom": "Gobelin",
       "image_fond": "/uploads/1782912265324-b54c560af3b939ab.png",
       "created_at": "2026-07-01 13:18:59"
     },
