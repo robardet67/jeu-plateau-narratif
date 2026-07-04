@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-04T12:19:22.129Z",
+  "genere_le": "2026-07-04T12:19:55.307Z",
   "races": [
     {
       "id": 1,
@@ -801,9 +801,9 @@
       "id": 2,
       "allegeance_id": 1,
       "rang": 2,
-      "nom": "magicien",
-      "image_depart": "/uploads/1783084365146-f09d0b4189f855f6.png",
-      "image_sourire": "/uploads/1783084365155-de5b92df5e11cad6.png",
+      "nom": "druide",
+      "image_depart": "/uploads/1783167595302-bb4445da429b35c5.png",
+      "image_sourire": "/uploads/1783167595305-1c038641565c46b0.png",
       "dialogue": "",
       "created_at": "2026-07-03 13:12:45"
     },
