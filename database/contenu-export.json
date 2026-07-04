@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-04T10:38:13.188Z",
+  "genere_le": "2026-07-04T10:38:49.669Z",
   "races": [
     {
       "id": 1,
@@ -80,8 +80,8 @@
     {
       "id": 1,
       "representant_id": 1,
-      "contexte": "comunauté de gobelin",
-      "texte": "bienvenue chez les gobelin",
+      "contexte": "Comunauté de gobelin",
+      "texte": "Bienvenue {nom} chez les gobelin",
       "created_at": "2026-07-01 13:21:31"
     },
     {
