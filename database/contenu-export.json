@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-04T08:32:16.561Z",
+  "genere_le": "2026-07-04T10:31:53.233Z",
   "races": [
     {
       "id": 1,
@@ -51,8 +51,8 @@
       "rang": 1,
       "nom": "standard",
       "description": "",
-      "image_depart": "/uploads/1783102274439-456d002d1c007ad3.png",
-      "image_sourire": "/uploads/1783102274440-dd15752810578bb4.png",
+      "image_depart": "/uploads/1783161113228-d67ae9a1a0036e1b.png",
+      "image_sourire": "/uploads/1783161113229-07d10d73af106607.png",
       "created_at": "2026-07-01 13:20:17"
     },
     {
