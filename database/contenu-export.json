@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-04T10:39:24.750Z",
+  "genere_le": "2026-07-04T10:39:43.532Z",
   "races": [
     {
       "id": 1,
@@ -40,9 +40,9 @@
       "race_id": 1,
       "rang": 3,
       "nom": "gobelin chef",
-      "description": null,
-      "image_depart": "/uploads/1782912000071-e4859813bfd6f88b.png",
-      "image_sourire": "/uploads/1782912000098-0e0387d4384d10d8.png",
+      "description": "",
+      "image_depart": "/uploads/1783161583518-c551802e796569ea.png",
+      "image_sourire": "/uploads/1783161583530-bf2ebec944acbb74.png",
       "created_at": "2026-07-01 13:20:00"
     },
     {
