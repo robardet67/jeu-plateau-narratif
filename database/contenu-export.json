@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-03T23:07:14.176Z",
+  "genere_le": "2026-07-04T08:31:30.492Z",
   "races": [
     {
       "id": 1,
@@ -766,6 +766,26 @@
       "image_sourire": "/uploads/1783102330003-2a060eaf5e15306c.png",
       "dialogue": "vous etes dans le royaume de la rune d'or",
       "created_at": "2026-07-03 18:12:10"
+    },
+    {
+      "id": 4,
+      "allegeance_id": 2,
+      "rang": 1,
+      "nom": "gobelin magicien",
+      "image_depart": "/uploads/1783153884652-9f7dea4f5b368a73.png",
+      "image_sourire": "/uploads/1783153889019-a28418b5ada43da3.png",
+      "dialogue": "rune d'argent",
+      "created_at": "2026-07-04 08:31:29"
+    },
+    {
+      "id": 5,
+      "allegeance_id": 2,
+      "rang": 2,
+      "nom": "gobelin magicien",
+      "image_depart": "/uploads/1783153890466-d52c1ad902f53378.png",
+      "image_sourire": "/uploads/1783153890486-43546c146c06d38a.png",
+      "dialogue": "rune d'argent",
+      "created_at": "2026-07-04 08:31:30"
     }
   ],
   "scenario_images": [
