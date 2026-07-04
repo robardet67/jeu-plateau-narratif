@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-04T12:11:07.935Z",
+  "genere_le": "2026-07-04T12:13:13.470Z",
   "races": [
     {
       "id": 1,
@@ -12,6 +12,12 @@
       "nom": "Elfe noir",
       "image_fond": "/uploads/1782912281584-1d204ba93e9df42e.png",
       "created_at": "2026-07-01 13:19:04"
+    },
+    {
+      "id": 3,
+      "nom": "Orc",
+      "image_fond": null,
+      "created_at": "2026-07-04 12:13:13"
     }
   ],
   "representants": [
