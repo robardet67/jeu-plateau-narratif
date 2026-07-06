@@ -572,11 +572,37 @@ async function afficherTableauDeBord() {
   conteneur.innerHTML = '';
 
   donnees.forEach((joueurInfo) => {
+    const nbQuetes = joueurInfo.quetes.length;
+    const nbValides = joueurInfo.objectifsValides.length;
+
+    const listeQuetes = nbQuetes > 0
+      ? `<ul class="tdb-quetes">${joueurInfo.quetes.map((q) => {
+          const suffixe = q.type === 'allegeance' ? ` <span class="tdb-alleg-tag">${q.nomAllegeance}</span>` : '';
+          return `<li>Quête de ${q.nomRepresentant}${suffixe} : <strong>Validée</strong></li>`;
+        }).join('')}</ul>`
+      : '<p class="tdb-vide">Aucune quête achevée</p>';
+
+    const listeObjectifs = nbValides > 0
+      ? `<ul class="tdb-objectifs">${joueurInfo.objectifsValides.map((o) => {
+          const src = o.type === 'allegeance'
+            ? ` <span class="tdb-alleg-tag">${o.nomAllegeance}</span>`
+            : '';
+          return `<li>${o.description}${src}</li>`;
+        }).join('')}</ul>`
+      : '<p class="tdb-vide">Aucun objectif validé</p>';
+
+    const raceLabel = joueurInfo.raceNom ? ` — ${joueurInfo.raceNom}` : '';
+    const quetesLabel = nbQuetes === 1 ? '1 quête achevée' : `${nbQuetes} quêtes achevées`;
+
     const bloc = document.createElement('div');
     bloc.className = 'carte bloc-joueur-tableau';
     bloc.innerHTML = `
-      <h3>${joueurInfo.pseudo} (${joueurInfo.objectifsValides.length} valide(s))</h3>
-      <ul>${joueurInfo.objectifsValides.map((o) => `<li>${o.description}</li>`).join('')}</ul>
+      <h3 class="tdb-joueur-nom">${joueurInfo.pseudo}<span class="tdb-race">${raceLabel}</span></h3>
+      <p class="tdb-nb-quetes">${quetesLabel}</p>
+      <h4 class="tdb-section-titre">Quêtes</h4>
+      ${listeQuetes}
+      <h4 class="tdb-section-titre">Objectifs validés</h4>
+      ${listeObjectifs}
     `;
     conteneur.appendChild(bloc);
   });

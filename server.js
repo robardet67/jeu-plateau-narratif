@@ -704,19 +704,62 @@ app.get('/api/parties/:code/tableau-de-bord', (req, res) => {
   const partie = db.prepare('SELECT * FROM parties WHERE code = ?').get(req.params.code.toUpperCase());
   if (!partie) return res.status(404).json({ error: 'Partie introuvable' });
 
-  const joueurs = db.prepare('SELECT id, pseudo FROM joueurs WHERE partie_id = ?').all(partie.id);
-  const resultat = joueurs.map((j) => ({
-    joueurId: j.id,
-    pseudo: j.pseudo,
-    objectifsValides: db
-      .prepare(
-        `SELECT g.rang, g.position, g.completed_at, o.description
-         FROM grille_objectifs g JOIN objectifs o ON o.id = g.objectif_id
-         WHERE g.joueur_id = ? AND g.statut = 'valide'
-         ORDER BY g.completed_at`
+  const joueurs = db.prepare('SELECT id FROM joueurs WHERE partie_id = ?').all(partie.id);
+
+  const resultat = joueurs.map((j) => {
+    const etat = obtenirEtatJoueur(db, j.id);
+    if (!etat) return null;
+
+    // Quêtes achevées : représentants de race dont tous les objectifs sont validés
+    const quetesRace = (etat.rangs || [])
+      .filter((r) => r.deverrouille && r.toutesLesCasesValidees && r.representant)
+      .map((r) => ({ nomRepresentant: r.representant.nom, type: 'race' }));
+
+    // Quêtes achevées : représentants d'allégeance dont tous les objectifs sont validés
+    // (une quête d'allégeance achevée compte pour tous les porteurs)
+    const quetesAllegeance = (etat.allegeances || []).flatMap((alleg) =>
+      (alleg.rangs || [])
+        .filter((r) => r.deverrouille && r.toutesLesCasesValidees && r.representant)
+        .map((r) => ({
+          nomRepresentant: r.representant.nom,
+          nomAllegeance: alleg.nom,
+          type: 'allegeance'
+        }))
+    );
+
+    // Objectifs validés : race
+    const objRace = (etat.rangs || []).flatMap((r) =>
+      (r.cases || [])
+        .filter((c) => c.statut === 'valide' && c.objectif)
+        .map((c) => ({
+          description: c.objectif.description,
+          nomRepresentant: r.representant ? r.representant.nom : null,
+          type: 'race'
+        }))
+    );
+
+    // Objectifs validés : allégeance (ceux que le joueur a contribué ou bénéficiés)
+    const objAllegeance = (etat.allegeances || []).flatMap((alleg) =>
+      (alleg.rangs || []).flatMap((r) =>
+        (r.cases || [])
+          .filter((c) => c.statut === 'valide' && c.objectif)
+          .map((c) => ({
+            description: c.objectif.description,
+            nomRepresentant: r.representant ? r.representant.nom : null,
+            nomAllegeance: alleg.nom,
+            type: 'allegeance'
+          }))
       )
-      .all(j.id)
-  }));
+    );
+
+    return {
+      joueurId: etat.joueurId,
+      pseudo: etat.pseudo,
+      raceNom: etat.raceNom,
+      quetes: [...quetesRace, ...quetesAllegeance],
+      objectifsValides: [...objRace, ...objAllegeance]
+    };
+  }).filter(Boolean);
 
   res.json(resultat);
 });
