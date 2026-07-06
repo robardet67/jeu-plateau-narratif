@@ -2,7 +2,7 @@ services:
   - type: web
     name: jeu-plateau-narratif
     runtime: node
-    plan: free
+    plan: starter
     region: frankfurt
     buildCommand: npm install && npm run init-db
     startCommand: npm start

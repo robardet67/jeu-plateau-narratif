@@ -10,6 +10,7 @@ const session = require('express-session');
 const { parse } = require('csv-parse/sync');
 
 const db = require('./database/db');
+const { DB_PATH } = require('./database/init');
 const { commiterEtPousser } = require('./utils/gitSync');
 const { restaurerSiVide } = require('./utils/restaurerContenu');
 const {
@@ -25,11 +26,17 @@ const {
 } = require('./utils/grille');
 const { distribuer, distribuerAllegeances } = require('./utils/distribution');
 
+console.log('[DB] Chemin :', DB_PATH);
+
 // Sur un serveur fraichement deploye (base SQLite vide, non versionnee), recharge le
 // contenu admin depuis la sauvegarde JSON versionnee sur GitHub (voir utils/exportContenu.js).
+// Sur Render avec disque persistant, la base survit aux redeploiements et la restauration
+// est ignoree (la guard "races > 0" empeche tout ecrasement).
 const resultatRestauration = restaurerSiVide(db);
 if (resultatRestauration.restaure) {
-  console.log('Contenu restaure depuis la sauvegarde JSON :', resultatRestauration.compteurs);
+  console.log('[DB] Contenu restaure depuis la sauvegarde JSON :', resultatRestauration.compteurs);
+} else {
+  console.log('[DB] Donnees existantes conservees (' + resultatRestauration.raison + ')');
 }
 
 const PORT = process.env.PORT || 3000;
