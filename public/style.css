@@ -360,6 +360,75 @@ button:hover {
   opacity: 0.75;
 }
 
+/* --- Confirmation validation objectif --- */
+
+.confirmation-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at center, #3a1a5c 0%, #1a0e2e 55%, #0a0612 100%);
+}
+
+.confirmation-overlay.cachee {
+  display: none;
+}
+
+.confirmation-contenu {
+  max-width: 480px;
+  width: 90%;
+  background: #2a2840;
+  border: 1px solid rgba(202, 165, 77, 0.35);
+  border-radius: 1rem;
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+}
+
+.confirmation-titre {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #caa54d;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.confirmation-question {
+  font-size: 0.95rem;
+  opacity: 0.75;
+  margin: 0;
+}
+
+.confirmation-description {
+  font-size: 1.05rem;
+  font-style: italic;
+  color: #f5e6c8;
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 3px solid #caa54d;
+  border-radius: 0 0.5rem 0.5rem 0;
+  padding: 0.75rem 1rem;
+  margin: 0;
+  width: 100%;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.confirmation-boutons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 /* --- Notifications --- */
 
 .zone-notifications {

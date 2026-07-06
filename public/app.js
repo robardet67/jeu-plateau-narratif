@@ -341,8 +341,9 @@ function afficherRepresentantIndividuel(rang) {
         <button class="btn-valider-obj">Valider</button>
       `;
       carte.querySelector('.btn-valider-obj').addEventListener('click', () => {
-        if (!confirm('Confirmer la validation de cet objectif ?')) return;
-        socket.emit('grille_valider', { joueurId: etatCourant.joueurId, ligneId: c.id });
+        demanderConfirmationValidation(c.objectif.description, () => {
+          socket.emit('grille_valider', { joueurId: etatCourant.joueurId, ligneId: c.id });
+        });
       });
     } else if (c.statut === 'valide') {
       carte.classList.add('valide');
@@ -446,12 +447,13 @@ function afficherRepAllegeanceIndividuel(allegeanceId, rang) {
         <button class="btn-valider-obj">Valider</button>
       `;
       carte.querySelector('.btn-valider-obj').addEventListener('click', () => {
-        if (!confirm('Confirmer la validation de cet objectif ?')) return;
-        socket.emit('grille_valider_allegeance', {
-          joueurId: etatCourant.joueurId,
-          allegeanceId,
-          partieId: etatJoueur.partieId,
-          ligneId: c.id
+        demanderConfirmationValidation(c.objectif.description, () => {
+          socket.emit('grille_valider_allegeance', {
+            joueurId: etatCourant.joueurId,
+            allegeanceId,
+            partieId: etatJoueur.partieId,
+            ligneId: c.id
+          });
         });
       });
     } else if (c.statut === 'valide') {
@@ -726,6 +728,30 @@ document.getElementById('btn-scenario-suivant').addEventListener('click', () => 
   if (scenarioIndexActuel >= scenarioImages.length - 1) return;
   if (!etatCourant.code) { scenarioIndexActuel++; afficherImageScenario(); }
   else if (etatCourant.estHote) socket.emit('scenario_naviguer', { index: scenarioIndexActuel + 1 });
+});
+
+// --- Confirmation de validation d'objectif ---
+
+let _callbackConfirmation = null;
+
+function demanderConfirmationValidation(description, onConfirmer) {
+  document.getElementById('confirmation-description').textContent = description;
+  _callbackConfirmation = onConfirmer;
+  document.getElementById('ecran-confirmation-validation').classList.remove('cachee');
+}
+
+document.getElementById('btn-confirmer-validation').addEventListener('click', () => {
+  document.getElementById('ecran-confirmation-validation').classList.add('cachee');
+  if (_callbackConfirmation) {
+    const cb = _callbackConfirmation;
+    _callbackConfirmation = null;
+    cb();
+  }
+});
+
+document.getElementById('btn-annuler-validation').addEventListener('click', () => {
+  document.getElementById('ecran-confirmation-validation').classList.add('cachee');
+  _callbackConfirmation = null;
 });
 
 // --- Fin de partie ---
