@@ -194,7 +194,11 @@ function obtenirEtatAllegeance(db, allegeanceId, partieId) {
     const deverrouille = rangsDebloquesSet.has(rang);
 
     if (!deverrouille) {
-      return { rang, deverrouille: false, representant: null, cases: [], toutesLesCasesValidees: false };
+      // Inclut le representant pour permettre l'affichage grise cote client
+      const representantBloque = db
+        .prepare('SELECT id, nom, image_depart, image_sourire FROM representants_allegeance WHERE allegeance_id = ? AND rang = ?')
+        .get(allegeanceId, rang);
+      return { rang, deverrouille: false, representant: representantBloque || null, cases: [], toutesLesCasesValidees: false };
     }
 
     const representant = db
@@ -271,7 +275,11 @@ function obtenirEtatJoueur(db, joueurId) {
     const deverrouille = rangsDebloquesSet.has(rang) && !!race;
 
     if (!deverrouille) {
-      return { rang, deverrouille: false, representant: null, cases: [], toutesLesCasesValidees: false };
+      // Inclut le representant (sans dialogues) pour permettre l'affichage grise cote client
+      const representantBloque = race
+        ? db.prepare('SELECT id, nom, image_depart, image_sourire FROM representants WHERE race_id = ? AND rang = ?').get(race.id, rang)
+        : null;
+      return { rang, deverrouille: false, representant: representantBloque || null, cases: [], toutesLesCasesValidees: false };
     }
 
     const representant = race

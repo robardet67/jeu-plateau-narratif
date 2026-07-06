@@ -283,11 +283,12 @@ function afficherParcoursRace() {
     const slot = document.createElement('div');
     slot.className = 'slot-representant';
 
-    if (!rangInfo.deverrouille || !rangInfo.representant) {
-      slot.innerHTML = `
-        <div class="silhouette">&#128274;</div>
-        <div class="nom-slot">Rang ${rangInfo.rang}</div>
-      `;
+    if (!rangInfo.deverrouille) {
+      slot.classList.add('slot-bloque');
+      const rep = rangInfo.representant;
+      slot.innerHTML = rep?.image_depart
+        ? `<img src="${rep.image_depart}" alt="${rep.nom}" /><div class="nom-slot">${rep.nom}</div>`
+        : `<div class="silhouette-vide"></div><div class="nom-slot">Rang ${rangInfo.rang}</div>`;
     } else {
       const image = rangInfo.toutesLesCasesValidees
         ? rangInfo.representant.image_sourire || rangInfo.representant.image_depart
@@ -386,11 +387,12 @@ function afficherParcoursAllegeance(allegeanceId) {
     const slot = document.createElement('div');
     slot.className = 'slot-representant';
 
-    if (!rangInfo.deverrouille || !rangInfo.representant) {
-      slot.innerHTML = `
-        <div class="silhouette">&#128274;</div>
-        <div class="nom-slot">Rang ${rangInfo.rang}</div>
-      `;
+    if (!rangInfo.deverrouille) {
+      slot.classList.add('slot-bloque');
+      const rep = rangInfo.representant;
+      slot.innerHTML = rep?.image_depart
+        ? `<img src="${rep.image_depart}" alt="${rep.nom}" /><div class="nom-slot">${rep.nom}</div>`
+        : `<div class="silhouette-vide"></div><div class="nom-slot">Rang ${rangInfo.rang}</div>`;
     } else {
       const image = rangInfo.toutesLesCasesValidees
         ? rangInfo.representant.image_sourire || rangInfo.representant.image_depart
