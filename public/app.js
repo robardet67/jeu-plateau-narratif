@@ -219,6 +219,9 @@ function afficherHub() {
   const rang1 = etatJoueur.rangs.find((r) => r.rang === 1);
   if (rang1 && etatJoueur.config.nbRepRace > 0) {
     const rep = rang1.representant;
+    // Validé seulement quand TOUS les représentants de race sont complétés
+    const toutesRaceValidees = etatJoueur.rangs.length > 0 &&
+      etatJoueur.rangs.every((r) => r.toutesLesCasesValidees);
     const image = rang1.toutesLesCasesValidees
       ? rep?.image_sourire || rep?.image_depart
       : rep?.image_depart;
@@ -228,7 +231,7 @@ function afficherHub() {
     div.innerHTML = `
       ${image ? `<img src="${image}" alt="${etatJoueur.raceNom}" />` : '<div class="placeholder-portrait">&#127775;</div>'}
       <div class="nom-portrait">${etatJoueur.raceNom || ''}</div>
-      ${rang1.toutesLesCasesValidees ? '<div class="couronne">✅</div>' : ''}
+      ${toutesRaceValidees ? '<div class="couronne">✅</div>' : ''}
     `;
     div.addEventListener('click', afficherParcoursRace);
     hubPortraits.appendChild(div);
@@ -241,11 +244,14 @@ function afficherHub() {
     etatJoueur.allegeances.forEach((a) => {
       const div = document.createElement('div');
       const cliquable = etatJoueur.config.nbRepAlleg > 0;
+      // Validé seulement quand TOUS les représentants de l'allégeance sont complétés
+      const toutesAllegValidees = (a.rangs || []).length > 0 &&
+        (a.rangs || []).every((r) => r.toutesLesCasesValidees);
       div.className = 'portrait-allegeance' + (cliquable ? ' portrait-cliquable' : '');
       div.innerHTML = `
         ${a.portrait ? `<img src="${a.portrait}" alt="${a.nom}" />` : '<div class="placeholder-allegeance-hub">&#10024;</div>'}
         <div class="nom-portrait">${a.nom}</div>
-        ${a.toutesValidees ? '<div class="couronne">✅</div>' : ''}
+        ${toutesAllegValidees ? '<div class="couronne">✅</div>' : ''}
       `;
       if (cliquable) {
         div.addEventListener('click', () => afficherParcoursAllegeance(a.id));
