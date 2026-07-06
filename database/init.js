@@ -152,6 +152,7 @@ function initDatabase() {
   retirerColonne(db, 'races', 'description');
   retirerColonne(db, 'races', 'image');
   assurerColonne(db, 'races', 'image_fond', 'TEXT');
+  assurerColonne(db, 'races', 'image_portrait', 'TEXT');
 
   if (colonneExiste(db, 'objectifs', 'titre') || colonneExiste(db, 'objectifs', 'points')) {
     assurerColonne(db, 'objectifs', 'niveau', 'TEXT');

@@ -222,14 +222,14 @@ function afficherHub() {
     // Validé seulement quand TOUS les représentants de race sont complétés
     const toutesRaceValidees = etatJoueur.rangs.length > 0 &&
       etatJoueur.rangs.every((r) => r.toutesLesCasesValidees);
-    const image = rang1.toutesLesCasesValidees
-      ? rep?.image_sourire || rep?.image_depart
-      : rep?.image_depart;
+    // Portrait dédié de la race si disponible, sinon image du 1er représentant
+    const imagePortrait = etatJoueur.imagePortraitRace
+      || (rang1.toutesLesCasesValidees ? rep?.image_sourire || rep?.image_depart : rep?.image_depart);
 
     const div = document.createElement('div');
     div.className = 'portrait-race';
     div.innerHTML = `
-      ${image ? `<img src="${image}" alt="${etatJoueur.raceNom}" />` : '<div class="placeholder-portrait">&#127775;</div>'}
+      ${imagePortrait ? `<img src="${imagePortrait}" alt="${etatJoueur.raceNom}" />` : '<div class="placeholder-portrait">&#127775;</div>'}
       <div class="nom-portrait">${etatJoueur.raceNom || ''}</div>
       ${toutesRaceValidees ? '<div class="couronne">✅</div>' : ''}
     `;

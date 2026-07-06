@@ -197,12 +197,39 @@ app.delete('/api/races/:id', exigerAdmin, gerer(async (req, res) => {
   db.prepare('DELETE FROM races WHERE id = ?').run(race.id);
 
   supprimerFichierUpload(race.image_fond);
+  supprimerFichierUpload(race.image_portrait);
   representants.forEach((r) => {
     supprimerFichierUpload(r.image_depart);
     supprimerFichierUpload(r.image_sourire);
   });
 
   const synchronisation = await commiterEtPousser(`Admin : suppression de la race "${race.nom}"`);
+  res.json({ ok: true, synchronisation });
+}));
+
+// --- API : portrait de race (image hub) ---
+
+app.put('/api/races/:id/portrait', exigerAdmin, uploadImageGenerique.single('image'), gerer(async (req, res) => {
+  const race = db.prepare('SELECT * FROM races WHERE id = ?').get(req.params.id);
+  if (!race) return res.status(404).json({ error: 'Race introuvable' });
+  if (!req.file) return res.status(400).json({ error: 'Une image est requise' });
+
+  supprimerFichierUpload(race.image_portrait);
+  const imagePortrait = `/uploads/${req.file.filename}`;
+  db.prepare('UPDATE races SET image_portrait = ? WHERE id = ?').run(imagePortrait, race.id);
+
+  const synchronisation = await commiterEtPousser(`Admin : portrait de la race "${race.nom}"`);
+  res.json({ ok: true, image_portrait: imagePortrait, synchronisation });
+}));
+
+app.delete('/api/races/:id/portrait', exigerAdmin, gerer(async (req, res) => {
+  const race = db.prepare('SELECT * FROM races WHERE id = ?').get(req.params.id);
+  if (!race) return res.status(404).json({ error: 'Race introuvable' });
+
+  supprimerFichierUpload(race.image_portrait);
+  db.prepare('UPDATE races SET image_portrait = NULL WHERE id = ?').run(race.id);
+
+  const synchronisation = await commiterEtPousser(`Admin : suppression du portrait de "${race.nom}"`);
   res.json({ ok: true, synchronisation });
 }));
 
@@ -387,7 +414,7 @@ app.get('/api/allegeances', (req, res) => {
   res.json(db.prepare('SELECT * FROM allegeances ORDER BY id').all());
 });
 
-app.post('/api/allegeances', exigerAdmin, uploadImagesRepresentant.single('portrait'), gerer(async (req, res) => {
+app.post('/api/allegeances', exigerAdmin, uploadImageGenerique.single('portrait'), gerer(async (req, res) => {
   const { nom } = req.body;
   if (!nom) return res.status(400).json({ error: 'Le nom est requis' });
 
@@ -401,7 +428,7 @@ app.post('/api/allegeances', exigerAdmin, uploadImagesRepresentant.single('portr
   res.status(201).json({ id: result.lastInsertRowid, synchronisation });
 }));
 
-app.put('/api/allegeances/:id', exigerAdmin, uploadImagesRepresentant.single('portrait'), gerer(async (req, res) => {
+app.put('/api/allegeances/:id', exigerAdmin, uploadImageGenerique.single('portrait'), gerer(async (req, res) => {
   const allegeance = db.prepare('SELECT * FROM allegeances WHERE id = ?').get(req.params.id);
   if (!allegeance) return res.status(404).json({ error: 'Allegeance introuvable' });
 

@@ -338,6 +338,7 @@ function obtenirEtatJoueur(db, joueurId) {
     raceId: race ? race.id : null,
     raceNom: race ? race.nom : null,
     imageFond: race ? race.image_fond : null,
+    imagePortraitRace: race ? (race.image_portrait || null) : null,
     totalValide: total,
     partieTerminee: estJoueurTermine(db, joueurId),
     config: { nbRepRace, configObjectifs: configObj, nbRepAlleg, configObjectifsAlleg: configObjAlleg },

@@ -134,13 +134,24 @@ function creerElementRace(race) {
   li.className = 'element-carte';
   li.style.flexDirection = 'column';
   li.style.alignItems = 'stretch';
+  const apercuPortrait = race.image_portrait
+    ? `<img src="${race.image_portrait}" alt="portrait" style="width:48px;height:48px;object-fit:cover;border-radius:.25rem;margin-right:.5rem" />`
+    : '';
   li.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center">
-      <div class="element-infos"><strong>${race.nom}</strong></div>
+      <div class="element-infos">${apercuPortrait}<strong>${race.nom}</strong></div>
       <div class="element-actions">
         <button class="btn-modifier">Modifier</button>
         <button class="btn-supprimer bouton-danger">Supprimer</button>
       </div>
+    </div>
+    <div style="margin-top:.75rem;border-top:1px solid rgba(255,255,255,.1);padding-top:.75rem">
+      <h4 style="margin:0 0 .4rem;font-size:.875rem">Portrait de la race (affiché sur le hub)</h4>
+      <form class="form-portrait-race formulaire-ligne" enctype="multipart/form-data">
+        <input name="image" type="file" accept="image/png,image/jpeg" />
+        <button type="submit">Enregistrer le portrait</button>
+        ${race.image_portrait ? '<button type="button" class="btn-supprimer-portrait bouton-danger">Supprimer</button>' : ''}
+      </form>
     </div>
     <div class="section-representants" style="margin-top:.75rem;border-top:1px solid rgba(255,255,255,.1);padding-top:.75rem">
       <ul class="liste-reps-race liste-elements" style="margin:0 0 .5rem"></ul>
@@ -162,6 +173,28 @@ function creerElementRace(race) {
     afficherSync(resultat.synchronisation);
     await chargerTout();
   });
+
+  li.querySelector('.form-portrait-race').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fichier = e.target.querySelector('input[type="file"]').files[0];
+    if (!fichier) return;
+    const resultat = await requeteJSON(`/api/races/${race.id}/portrait`, {
+      method: 'PUT',
+      body: new FormData(e.target)
+    });
+    afficherSync(resultat.synchronisation);
+    await chargerTout();
+  });
+
+  const btnSupprimerPortrait = li.querySelector('.btn-supprimer-portrait');
+  if (btnSupprimerPortrait) {
+    btnSupprimerPortrait.addEventListener('click', async () => {
+      if (!confirm('Supprimer le portrait de cette race ?')) return;
+      const resultat = await requeteJSON(`/api/races/${race.id}/portrait`, { method: 'DELETE' });
+      afficherSync(resultat.synchronisation);
+      await chargerTout();
+    });
+  }
 
   li.querySelector('.form-rep-race').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -483,8 +516,8 @@ function afficherFormulaireModifAllegeance(li, allegeance) {
   li.innerHTML = `
     <form class="formulaire" style="width:100%" enctype="multipart/form-data">
       <input name="nom" type="text" value="${allegeance.nom}" required />
-      <label class="champ-fichier">Nouveau portrait (PNG, optionnel)
-        <input name="portrait" type="file" accept="image/png" />
+      <label class="champ-fichier">Nouveau portrait (PNG ou JPG, optionnel)
+        <input name="portrait" type="file" accept="image/png,image/jpeg" />
       </label>
       <div class="element-actions">
         <button type="submit">Enregistrer</button>
