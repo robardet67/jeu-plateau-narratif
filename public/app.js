@@ -228,7 +228,7 @@ function afficherHub() {
     div.innerHTML = `
       ${image ? `<img src="${image}" alt="${etatJoueur.raceNom}" />` : '<div class="placeholder-portrait">&#127775;</div>'}
       <div class="nom-portrait">${etatJoueur.raceNom || ''}</div>
-      ${rang1.toutesLesCasesValidees ? '<div class="couronne">&#128081;</div>' : ''}
+      ${rang1.toutesLesCasesValidees ? '<div class="couronne">✅</div>' : ''}
     `;
     div.addEventListener('click', afficherParcoursRace);
     hubPortraits.appendChild(div);
@@ -245,7 +245,7 @@ function afficherHub() {
       div.innerHTML = `
         ${a.portrait ? `<img src="${a.portrait}" alt="${a.nom}" />` : '<div class="placeholder-allegeance-hub">&#10024;</div>'}
         <div class="nom-portrait">${a.nom}</div>
-        ${a.toutesValidees ? '<div class="couronne">&#128081;</div>' : ''}
+        ${a.toutesValidees ? '<div class="couronne">✅</div>' : ''}
       `;
       if (cliquable) {
         div.addEventListener('click', () => afficherParcoursAllegeance(a.id));
@@ -289,7 +289,7 @@ function afficherParcoursRace() {
       slot.innerHTML = `
         ${image ? `<img src="${image}" alt="${rangInfo.representant.nom}" />` : ''}
         <div class="nom-slot">${rangInfo.representant.nom}</div>
-        ${rangInfo.toutesLesCasesValidees ? '<div class="couronne">&#128081;</div>' : ''}
+        ${rangInfo.toutesLesCasesValidees ? '<div class="couronne">✅</div>' : ''}
       `;
       slot.classList.add('slot-cliquable');
       slot.addEventListener('click', () => afficherRepresentantIndividuel(rangInfo.rang));
@@ -392,7 +392,7 @@ function afficherParcoursAllegeance(allegeanceId) {
       slot.innerHTML = `
         ${image ? `<img src="${image}" alt="${rangInfo.representant.nom}" />` : ''}
         <div class="nom-slot">${rangInfo.representant.nom}</div>
-        ${rangInfo.toutesLesCasesValidees ? '<div class="couronne">&#128081;</div>' : ''}
+        ${rangInfo.toutesLesCasesValidees ? '<div class="couronne">✅</div>' : ''}
       `;
       slot.classList.add('slot-cliquable');
       slot.addEventListener('click', () => afficherRepAllegeanceIndividuel(allegeanceId, rangInfo.rang));
