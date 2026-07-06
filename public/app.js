@@ -710,9 +710,17 @@ document.getElementById('btn-retour-accueil-fin').addEventListener('click', () =
 
 function afficherFinDePartie({ classement }) {
   const liste = document.getElementById('classement-final');
-  liste.innerHTML = classement.map((j) => `<li>${j.pseudo} — ${j.valides} objectif(s)</li>`).join('');
+  liste.innerHTML = classement.map((j) => {
+    const quetesLabel = j.quetes === 1 ? 'quête achevée' : 'quêtes achevées';
+    const validesLabel = j.valides === 1 ? 'objectif validé' : 'objectifs validés';
+    return `<li class="ligne-classement">
+      <span class="rang-final">${j.rang}.</span>
+      <span class="pseudo-final">${j.pseudo}</span>
+      <span class="score-final">${j.quetes} ${quetesLabel} · ${j.valides} ${validesLabel}</span>
+    </li>`;
+  }).join('');
   afficherVue('ecran-fin-partie');
-  if (classement.length && classement[0].valides > 0) lancerConfettis();
+  if (classement.length && classement[0].quetes > 0) lancerConfettis();
 }
 
 // --- Socket.IO ---

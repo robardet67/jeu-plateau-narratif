@@ -22,7 +22,8 @@ const {
   deverrouillerRangAllegeance,
   verifierDeverrouillagesAllegeance,
   validerObjectifAllegeance,
-  obtenirEtatJoueur
+  obtenirEtatJoueur,
+  calculerClassement
 } = require('./utils/grille');
 const { distribuer, distribuerAllegeances } = require('./utils/distribution');
 
@@ -978,16 +979,7 @@ app.post('/api/admin/partie-active/terminer', exigerAdmin, (req, res) => {
 
   db.prepare("UPDATE parties SET statut = 'terminee' WHERE id = ?").run(partie.id);
 
-  const classement = db
-    .prepare(
-      `SELECT j.id, j.pseudo, COUNT(g.id) AS valides
-       FROM joueurs j LEFT JOIN grille_objectifs g ON g.joueur_id = j.id AND g.statut = 'valide'
-       WHERE j.partie_id = ?
-       GROUP BY j.id
-       ORDER BY valides DESC`
-    )
-    .all(partie.id);
-
+  const classement = calculerClassement(db, partie.id);
   io.to(partie.code).emit('partie_terminee', { classement });
   res.json({ ok: true, classement });
 });
@@ -1113,15 +1105,7 @@ io.on('connection', (socket) => {
 
     if (resultat.partieTerminee && socket.data.code) {
       db.prepare("UPDATE parties SET statut = 'terminee' WHERE id = ?").run(resultat.partieId);
-      const classement = db
-        .prepare(
-          `SELECT j.id, j.pseudo, COUNT(g.id) AS valides
-           FROM joueurs j LEFT JOIN grille_objectifs g ON g.joueur_id = j.id AND g.statut = 'valide'
-           WHERE j.partie_id = ?
-           GROUP BY j.id
-           ORDER BY valides DESC`
-        )
-        .all(resultat.partieId);
+      const classement = calculerClassement(db, resultat.partieId);
       io.to(socket.data.code).emit('partie_terminee', { classement });
     }
   });
@@ -1176,15 +1160,7 @@ io.on('connection', (socket) => {
       const vainqueur = porteurs.find((p) => estJoueurTermine(db, p.id));
       if (vainqueur) {
         db.prepare("UPDATE parties SET statut = 'terminee' WHERE id = ?").run(partieId);
-        const classement = db
-          .prepare(
-            `SELECT j.id, j.pseudo, COUNT(g.id) AS valides
-             FROM joueurs j LEFT JOIN grille_objectifs g ON g.joueur_id = j.id AND g.statut = 'valide'
-             WHERE j.partie_id = ?
-             GROUP BY j.id
-             ORDER BY valides DESC`
-          )
-          .all(partieId);
+        const classement = calculerClassement(db, partieId);
         io.to(socket.data.code).emit('partie_terminee', { classement });
       }
     }

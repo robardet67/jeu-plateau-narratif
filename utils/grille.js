@@ -338,6 +338,99 @@ function obtenirEtatJoueur(db, joueurId) {
   };
 }
 
+// Calcule le classement final d'une partie.
+// Critère 1 : quêtes achevées (race + allégeance) — un rang est "achevé" quand
+//   toutes ses cases sont validées. Les quêtes d'allégeance comptent pour chaque porteur.
+// Critère 2 (départage) : total d'objectifs validés (race + allégeance).
+// Critère 3 (égalité parfaite) : rang partagé (2 joueurs ex-aequo 2e → suivant = 4e).
+function calculerClassement(db, partieId) {
+  const joueurs = db.prepare('SELECT id, pseudo FROM joueurs WHERE partie_id = ?').all(partieId);
+  if (!joueurs.length) return [];
+
+  // Rangs de race entièrement validés par joueur
+  const quetesRaceRows = db
+    .prepare(
+      `SELECT joueur_id, rang FROM grille_objectifs WHERE partie_id = ?
+       GROUP BY joueur_id, rang
+       HAVING COUNT(*) > 0 AND COUNT(*) = SUM(CASE WHEN statut = 'valide' THEN 1 ELSE 0 END)`
+    )
+    .all(partieId);
+  const quetesRaceParJoueur = {};
+  for (const r of quetesRaceRows) {
+    quetesRaceParJoueur[r.joueur_id] = (quetesRaceParJoueur[r.joueur_id] || 0) + 1;
+  }
+
+  // Rangs d'allégeance entièrement validés (partagés entre porteurs)
+  const quetesAllegRows = db
+    .prepare(
+      `SELECT allegeance_id, rang FROM grille_allegeance WHERE partie_id = ?
+       GROUP BY allegeance_id, rang
+       HAVING COUNT(*) > 0 AND COUNT(*) = SUM(CASE WHEN statut = 'valide' THEN 1 ELSE 0 END)`
+    )
+    .all(partieId);
+  const quetesAllegParAllegeance = {};
+  for (const r of quetesAllegRows) {
+    quetesAllegParAllegeance[r.allegeance_id] = (quetesAllegParAllegeance[r.allegeance_id] || 0) + 1;
+  }
+
+  // Allégeances détenues par chaque joueur de la partie
+  const joueurIds = joueurs.map((j) => j.id);
+  const allegeancesRows = joueurIds.length
+    ? db
+        .prepare(
+          `SELECT joueur_id, allegeance_id FROM joueur_allegeances WHERE joueur_id IN (${joueurIds.map(() => '?').join(',')})`
+        )
+        .all(...joueurIds)
+    : [];
+  const allegeancesParJoueur = {};
+  for (const r of allegeancesRows) {
+    if (!allegeancesParJoueur[r.joueur_id]) allegeancesParJoueur[r.joueur_id] = [];
+    allegeancesParJoueur[r.joueur_id].push(r.allegeance_id);
+  }
+
+  // Objectifs race validés par joueur
+  const raceValidesRows = db
+    .prepare(
+      `SELECT joueur_id, COUNT(*) AS n FROM grille_objectifs WHERE partie_id = ? AND statut = 'valide' GROUP BY joueur_id`
+    )
+    .all(partieId);
+  const raceValidesParJoueur = {};
+  for (const r of raceValidesRows) raceValidesParJoueur[r.joueur_id] = r.n;
+
+  // Objectifs allégeance validés (par allegeance_id, partagés entre porteurs)
+  const allegValidesRows = db
+    .prepare(
+      `SELECT allegeance_id, COUNT(*) AS n FROM grille_allegeance WHERE partie_id = ? AND statut = 'valide' GROUP BY allegeance_id`
+    )
+    .all(partieId);
+  const allegValidesParAllegeance = {};
+  for (const r of allegValidesRows) allegValidesParAllegeance[r.allegeance_id] = r.n;
+
+  // Score par joueur
+  const scores = joueurs.map((j) => {
+    const allegeances = allegeancesParJoueur[j.id] || [];
+    const quetes =
+      (quetesRaceParJoueur[j.id] || 0) +
+      allegeances.reduce((s, aId) => s + (quetesAllegParAllegeance[aId] || 0), 0);
+    const valides =
+      (raceValidesParJoueur[j.id] || 0) +
+      allegeances.reduce((s, aId) => s + (allegValidesParAllegeance[aId] || 0), 0);
+    return { id: j.id, pseudo: j.pseudo, quetes, valides };
+  });
+
+  scores.sort((a, b) => b.quetes - a.quetes || b.valides - a.valides);
+
+  let rang = 1;
+  for (let i = 0; i < scores.length; i++) {
+    if (i > 0 && (scores[i].quetes !== scores[i - 1].quetes || scores[i].valides !== scores[i - 1].valides)) {
+      rang = i + 1;
+    }
+    scores[i].rang = rang;
+  }
+
+  return scores;
+}
+
 module.exports = {
   obtenirParametre,
   compterValide,
@@ -350,5 +443,6 @@ module.exports = {
   verifierDeverrouillagesAllegeance,
   validerObjectifAllegeance,
   obtenirEtatAllegeance,
-  obtenirEtatJoueur
+  obtenirEtatJoueur,
+  calculerClassement
 };
