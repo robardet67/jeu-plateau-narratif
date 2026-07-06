@@ -230,7 +230,7 @@ function afficherHub() {
     div.className = 'portrait-race';
     div.innerHTML = `
       ${imagePortrait ? `<img src="${imagePortrait}" alt="${etatJoueur.raceNom}" />` : '<div class="placeholder-portrait">&#127775;</div>'}
-      <div class="nom-portrait">${etatJoueur.raceNom || ''}</div>
+      <div class="nom-portrait">${etatJoueur.texteHubRace || etatJoueur.raceNom || ''}</div>
       ${toutesRaceValidees ? '<div class="couronne">✅</div>' : ''}
     `;
     div.addEventListener('click', afficherParcoursRace);
@@ -250,7 +250,7 @@ function afficherHub() {
       div.className = 'portrait-allegeance' + (cliquable ? ' portrait-cliquable' : '');
       div.innerHTML = `
         ${a.portrait ? `<img src="${a.portrait}" alt="${a.nom}" />` : '<div class="placeholder-allegeance-hub">&#10024;</div>'}
-        <div class="nom-portrait">${a.nom}</div>
+        <div class="nom-portrait">${a.texte_hub || a.nom}</div>
         ${toutesAllegValidees ? '<div class="couronne">✅</div>' : ''}
       `;
       if (cliquable) {

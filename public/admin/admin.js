@@ -223,8 +223,9 @@ async function rafraichirRepresentantsRace(li, raceId) {
 
 function afficherFormulaireModifRace(li, race) {
   li.innerHTML = `
-    <form class="formulaire-ligne" style="width:100%">
+    <form class="formulaire" style="width:100%">
       <input name="nom" type="text" value="${race.nom}" required />
+      <input name="texte_hub" type="text" placeholder="Texte affiché sur le hub (laissez vide pour utiliser le nom)" value="${race.texte_hub || ''}" />
       <div class="element-actions">
         <button type="submit">Enregistrer</button>
         <button type="button" class="bouton-secondaire btn-annuler">Annuler</button>
@@ -234,11 +235,11 @@ function afficherFormulaireModifRace(li, race) {
   li.querySelector('.btn-annuler').addEventListener('click', () => chargerRaces());
   li.querySelector('form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const nom = new FormData(e.target).get('nom');
+    const fd = new FormData(e.target);
     const resultat = await requeteJSON(`/api/races/${race.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nom })
+      body: JSON.stringify({ nom: fd.get('nom'), texte_hub: fd.get('texte_hub') })
     });
     afficherSync(resultat.synchronisation);
     await chargerTout();
@@ -516,6 +517,7 @@ function afficherFormulaireModifAllegeance(li, allegeance) {
   li.innerHTML = `
     <form class="formulaire" style="width:100%" enctype="multipart/form-data">
       <input name="nom" type="text" value="${allegeance.nom}" required />
+      <input name="texte_hub" type="text" placeholder="Texte affiché sur le hub (laissez vide pour utiliser le nom)" value="${allegeance.texte_hub || ''}" />
       <label class="champ-fichier">Nouveau portrait (PNG ou JPG, optionnel)
         <input name="portrait" type="file" accept="image/png,image/jpeg" />
       </label>

@@ -320,14 +320,14 @@ function obtenirEtatJoueur(db, joueurId) {
   // Allegeances du joueur avec leur etat de grille
   const allegeancesBase = db
     .prepare(
-      'SELECT a.id, a.nom, a.portrait FROM joueur_allegeances ja JOIN allegeances a ON a.id = ja.allegeance_id WHERE ja.joueur_id = ?'
+      'SELECT a.id, a.nom, a.portrait, a.texte_hub FROM joueur_allegeances ja JOIN allegeances a ON a.id = ja.allegeance_id WHERE ja.joueur_id = ?'
     )
     .all(joueurId);
 
   const allegeances = joueur.partie_id
     ? allegeancesBase.map((a) => {
         const etat = obtenirEtatAllegeance(db, a.id, joueur.partie_id);
-        return { id: a.id, nom: a.nom, portrait: a.portrait, ...(etat || {}) };
+        return { id: a.id, nom: a.nom, portrait: a.portrait, texte_hub: a.texte_hub || null, ...(etat || {}) };
       })
     : allegeancesBase;
 
@@ -339,6 +339,7 @@ function obtenirEtatJoueur(db, joueurId) {
     raceNom: race ? race.nom : null,
     imageFond: race ? race.image_fond : null,
     imagePortraitRace: race ? (race.image_portrait || null) : null,
+    texteHubRace: race ? (race.texte_hub || null) : null,
     totalValide: total,
     partieTerminee: estJoueurTermine(db, joueurId),
     config: { nbRepRace, configObjectifs: configObj, nbRepAlleg, configObjectifsAlleg: configObjAlleg },

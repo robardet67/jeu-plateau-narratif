@@ -180,10 +180,11 @@ app.put('/api/races/:id', exigerAdmin, gerer(async (req, res) => {
   const race = db.prepare('SELECT * FROM races WHERE id = ?').get(req.params.id);
   if (!race) return res.status(404).json({ error: 'Race introuvable' });
 
-  const { nom } = req.body;
+  const { nom, texte_hub } = req.body;
   if (!nom) return res.status(400).json({ error: 'Le nom est requis' });
 
-  db.prepare('UPDATE races SET nom = ? WHERE id = ?').run(nom, race.id);
+  const texteHub = texte_hub !== undefined ? (texte_hub || null) : race.texte_hub;
+  db.prepare('UPDATE races SET nom = ?, texte_hub = ? WHERE id = ?').run(nom, texteHub, race.id);
 
   const synchronisation = await commiterEtPousser(`Admin : modification de la race "${nom}"`);
   res.json({ ok: true, synchronisation });
@@ -433,13 +434,14 @@ app.put('/api/allegeances/:id', exigerAdmin, uploadImageGenerique.single('portra
   if (!allegeance) return res.status(404).json({ error: 'Allegeance introuvable' });
 
   const nom = req.body.nom || allegeance.nom;
+  const texteHub = req.body.texte_hub !== undefined ? (req.body.texte_hub || null) : allegeance.texte_hub;
   let portrait = allegeance.portrait;
   if (req.file) {
     supprimerFichierUpload(allegeance.portrait);
     portrait = `/uploads/${req.file.filename}`;
   }
 
-  db.prepare('UPDATE allegeances SET nom = ?, portrait = ? WHERE id = ?').run(nom, portrait, allegeance.id);
+  db.prepare('UPDATE allegeances SET nom = ?, portrait = ?, texte_hub = ? WHERE id = ?').run(nom, portrait, texteHub, allegeance.id);
 
   const synchronisation = await commiterEtPousser(`Admin : modification de l'allegeance "${nom}"`);
   res.json({ ok: true, synchronisation });

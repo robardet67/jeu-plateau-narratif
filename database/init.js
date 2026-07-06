@@ -153,6 +153,7 @@ function initDatabase() {
   retirerColonne(db, 'races', 'image');
   assurerColonne(db, 'races', 'image_fond', 'TEXT');
   assurerColonne(db, 'races', 'image_portrait', 'TEXT');
+  assurerColonne(db, 'races', 'texte_hub', 'TEXT');
 
   if (colonneExiste(db, 'objectifs', 'titre') || colonneExiste(db, 'objectifs', 'points')) {
     assurerColonne(db, 'objectifs', 'niveau', 'TEXT');
@@ -319,6 +320,7 @@ function initDatabase() {
   assurerColonne(db, 'parties', 'config_objectifs_allegeance', "TEXT NOT NULL DEFAULT '[2,2,2]'");
   assurerColonne(db, 'parties', 'config_niveaux_race', "TEXT NOT NULL DEFAULT '[[null,null],[null,null],[null,null]]'");
   assurerColonne(db, 'parties', 'config_niveaux_allegeance', "TEXT NOT NULL DEFAULT '[[null,null],[null,null],[null,null]]'");
+  assurerColonne(db, 'allegeances', 'texte_hub', 'TEXT');
 
   const parametresParDefaut = { tableau_de_bord_actif: 'false' };
   const insererParametre = db.prepare('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)');
