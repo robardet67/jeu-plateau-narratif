@@ -367,6 +367,38 @@ button:hover {
   opacity: 0.75;
 }
 
+/* --- Notification condition allegeance --- */
+
+.notif-condition {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(42, 40, 64, 0.97);
+  border: 1px solid rgba(202, 165, 77, 0.6);
+  border-radius: 0.5rem;
+  padding: 1rem 1.5rem;
+  z-index: 600;
+  max-width: min(90vw, 480px);
+  width: max-content;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.notif-condition.cachee {
+  display: none;
+}
+
+.notif-condition p {
+  margin: 0;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+}
+
 /* --- Confirmation validation objectif --- */
 
 .confirmation-overlay {

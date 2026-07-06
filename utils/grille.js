@@ -269,17 +269,39 @@ function obtenirEtatJoueur(db, joueurId) {
       .map((r) => r.rang)
   );
 
+  const conditionActive = obtenirParametre(db, 'condition_dernier_rep_allegeance') === 'true';
+  const messageCondition = obtenirParametre(db, 'message_condition_allegeance') ||
+    "Terminez l'ensemble de vos quetes d'allegeance pour debloquer l'acces a ce personnage.";
+
   const rangs = Array.from({ length: nbRepRace }, (_, idx) => {
     const rang = idx + 1;
     const nbPositions = configObj[idx] ?? 2;
-    const deverrouille = rangsDebloquesSet.has(rang) && !!race;
+    let deverrouille = rangsDebloquesSet.has(rang) && !!race;
+    let bloqueParConditionAllegeance = false;
+
+    if (deverrouille && conditionActive && rang === nbRepRace && joueur.partie_id) {
+      const allegeancesJoueur = db
+        .prepare('SELECT allegeance_id FROM joueur_allegeances WHERE joueur_id = ?')
+        .all(joueurId);
+      if (allegeancesJoueur.length > 0) {
+        const toutesValides = allegeancesJoueur.every((ja) => {
+          const etatAlleg = obtenirEtatAllegeance(db, ja.allegeance_id, joueur.partie_id);
+          if (!etatAlleg || etatAlleg.rangs.length === 0) return true;
+          return etatAlleg.rangs.every((r) => r.toutesLesCasesValidees);
+        });
+        if (!toutesValides) {
+          deverrouille = false;
+          bloqueParConditionAllegeance = true;
+        }
+      }
+    }
 
     if (!deverrouille) {
       // Inclut le representant (sans dialogues) pour permettre l'affichage grise cote client
       const representantBloque = race
         ? db.prepare('SELECT id, nom, image_depart, image_sourire FROM representants WHERE race_id = ? AND rang = ?').get(race.id, rang)
         : null;
-      return { rang, deverrouille: false, representant: representantBloque || null, cases: [], toutesLesCasesValidees: false };
+      return { rang, deverrouille: false, bloqueParConditionAllegeance, representant: representantBloque || null, cases: [], toutesLesCasesValidees: false };
     }
 
     const representant = race
@@ -343,6 +365,7 @@ function obtenirEtatJoueur(db, joueurId) {
     totalValide: total,
     partieTerminee: estJoueurTermine(db, joueurId),
     config: { nbRepRace, configObjectifs: configObj, nbRepAlleg, configObjectifsAlleg: configObjAlleg },
+    messageConditionAllegeance: messageCondition,
     allegeances,
     rangs
   };

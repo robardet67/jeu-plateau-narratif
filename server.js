@@ -714,16 +714,31 @@ app.delete('/api/scenario/:id', exigerAdmin, gerer(async (req, res) => {
 // --- API : parametres globaux ---
 
 app.get('/api/parametres', (req, res) => {
-  res.json({ tableau_de_bord_actif: obtenirParametre(db, 'tableau_de_bord_actif') === 'true' });
+  res.json({
+    tableau_de_bord_actif: obtenirParametre(db, 'tableau_de_bord_actif') === 'true',
+    condition_dernier_rep_allegeance: obtenirParametre(db, 'condition_dernier_rep_allegeance') === 'true',
+    message_condition_allegeance: obtenirParametre(db, 'message_condition_allegeance') || ''
+  });
 });
 
 app.post('/api/admin/parametres', exigerAdmin, gerer(async (req, res) => {
-  const { tableau_de_bord_actif: actif } = req.body;
-  db.prepare('INSERT INTO parametres (cle, valeur) VALUES (?, ?) ON CONFLICT(cle) DO UPDATE SET valeur = ?').run(
-    'tableau_de_bord_actif',
-    actif ? 'true' : 'false',
-    actif ? 'true' : 'false'
-  );
+  const upsert = db.prepare('INSERT INTO parametres (cle, valeur) VALUES (?, ?) ON CONFLICT(cle) DO UPDATE SET valeur = ?');
+  const booleen = (v) => (v ? 'true' : 'false');
+  const boolKeys = ['tableau_de_bord_actif', 'condition_dernier_rep_allegeance'];
+  const texteKeys = ['message_condition_allegeance'];
+
+  for (const cle of boolKeys) {
+    if (cle in req.body) {
+      const v = booleen(req.body[cle]);
+      upsert.run(cle, v, v);
+    }
+  }
+  for (const cle of texteKeys) {
+    if (cle in req.body) {
+      const v = req.body[cle] || '';
+      upsert.run(cle, v, v);
+    }
+  }
 
   const synchronisation = await commiterEtPousser('Admin : mise a jour des parametres');
   res.json({ ok: true, synchronisation });

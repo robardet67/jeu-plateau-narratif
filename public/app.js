@@ -289,6 +289,10 @@ function afficherParcoursRace() {
       slot.innerHTML = rep?.image_depart
         ? `<img src="${rep.image_depart}" alt="${rep.nom}" /><div class="nom-slot">${rep.nom}</div>`
         : `<div class="silhouette-vide"></div><div class="nom-slot">Rang ${rangInfo.rang}</div>`;
+      if (rangInfo.bloqueParConditionAllegeance) {
+        slot.style.cursor = 'pointer';
+        slot.addEventListener('click', () => afficherNotifCondition(etatJoueur.messageConditionAllegeance));
+      }
     } else {
       const image = rangInfo.toutesLesCasesValidees
         ? rangInfo.representant.image_sourire || rangInfo.representant.image_depart
@@ -744,6 +748,17 @@ document.getElementById('btn-scenario-suivant').addEventListener('click', () => 
   if (scenarioIndexActuel >= scenarioImages.length - 1) return;
   scenarioIndexActuel++;
   afficherImageScenario();
+});
+
+// --- Notification condition allegeance ---
+
+function afficherNotifCondition(message) {
+  document.getElementById('texte-notif-condition').textContent = message;
+  document.getElementById('notif-condition-allegeance').classList.remove('cachee');
+}
+
+document.getElementById('btn-fermer-notif-condition').addEventListener('click', () => {
+  document.getElementById('notif-condition-allegeance').classList.add('cachee');
 });
 
 // --- Confirmation de validation d'objectif ---

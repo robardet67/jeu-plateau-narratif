@@ -819,15 +819,31 @@ document.getElementById('form-scenario').addEventListener('submit', async (e) =>
 async function chargerParametres() {
   const parametres = await requeteJSON('/api/parametres');
   document.getElementById('case-tableau-de-bord').checked = parametres.tableau_de_bord_actif;
+  document.getElementById('case-condition-allegeance').checked = parametres.condition_dernier_rep_allegeance;
+  document.getElementById('texte-message-condition').value = parametres.message_condition_allegeance || '';
+  document.getElementById('section-message-condition').classList.toggle('cachee', !parametres.condition_dernier_rep_allegeance);
 }
 
-document.getElementById('case-tableau-de-bord').addEventListener('change', async (e) => {
+async function envoyerParametre(cle, valeur) {
   const resultat = await requeteJSON('/api/admin/parametres', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tableau_de_bord_actif: e.target.checked })
+    body: JSON.stringify({ [cle]: valeur })
   });
   afficherSync(resultat.synchronisation);
+}
+
+document.getElementById('case-tableau-de-bord').addEventListener('change', (e) => {
+  envoyerParametre('tableau_de_bord_actif', e.target.checked);
+});
+
+document.getElementById('case-condition-allegeance').addEventListener('change', (e) => {
+  document.getElementById('section-message-condition').classList.toggle('cachee', !e.target.checked);
+  envoyerParametre('condition_dernier_rep_allegeance', e.target.checked);
+});
+
+document.getElementById('texte-message-condition').addEventListener('change', (e) => {
+  envoyerParametre('message_condition_allegeance', e.target.value);
 });
 
 // --- Salle d'attente / lancement de partie ---

@@ -161,6 +161,26 @@
           Activer le tableau de bord pour toutes les parties
         </label>
       </div>
+      <div class="carte">
+        <h2>Condition d'acces au dernier representant de race</h2>
+        <p class="astuce">
+          Si activee, le dernier representant de race est bloque tant que le joueur
+          n'a pas valide tous les objectifs de toutes ses allegeances. Si le joueur
+          n'a aucune allegeance, la condition est consideree comme remplie.
+        </p>
+        <label class="champ-fichier">
+          <input type="checkbox" id="case-condition-allegeance" />
+          Conditionner le dernier representant de race a l'accomplissement des allegeances
+        </label>
+        <div id="section-message-condition" class="cachee" style="margin-top:.75rem">
+          <label style="display:block;margin-bottom:.25rem;font-size:.875rem">
+            Message affiche quand le joueur tente d'y acceder :
+          </label>
+          <input type="text" id="texte-message-condition"
+            placeholder="Terminez l'ensemble de vos quetes d'allegeance pour debloquer l'acces a ce personnage."
+            style="width:100%" />
+        </div>
+      </div>
     </section>
 
     <section id="onglet-partie" class="contenu-onglet cachee">
