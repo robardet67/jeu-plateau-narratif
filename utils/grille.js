@@ -342,14 +342,14 @@ function obtenirEtatJoueur(db, joueurId) {
   // Allegeances du joueur avec leur etat de grille
   const allegeancesBase = db
     .prepare(
-      'SELECT a.id, a.nom, a.portrait, a.texte_hub FROM joueur_allegeances ja JOIN allegeances a ON a.id = ja.allegeance_id WHERE ja.joueur_id = ?'
+      'SELECT a.id, a.nom, a.portrait, a.texte_hub, a.image_fond FROM joueur_allegeances ja JOIN allegeances a ON a.id = ja.allegeance_id WHERE ja.joueur_id = ?'
     )
     .all(joueurId);
 
   const allegeances = joueur.partie_id
     ? allegeancesBase.map((a) => {
         const etat = obtenirEtatAllegeance(db, a.id, joueur.partie_id);
-        return { id: a.id, nom: a.nom, portrait: a.portrait, texte_hub: a.texte_hub || null, ...(etat || {}) };
+        return { id: a.id, nom: a.nom, portrait: a.portrait, texte_hub: a.texte_hub || null, image_fond: a.image_fond || null, ...(etat || {}) };
       })
     : allegeancesBase;
 

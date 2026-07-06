@@ -322,6 +322,7 @@ function initDatabase() {
   assurerColonne(db, 'parties', 'config_niveaux_race', "TEXT NOT NULL DEFAULT '[[null,null],[null,null],[null,null]]'");
   assurerColonne(db, 'parties', 'config_niveaux_allegeance', "TEXT NOT NULL DEFAULT '[[null,null],[null,null],[null,null]]'");
   assurerColonne(db, 'allegeances', 'texte_hub', 'TEXT');
+  assurerColonne(db, 'allegeances', 'image_fond', 'TEXT');
 
   const parametresParDefaut = {
     tableau_de_bord_actif: 'false',

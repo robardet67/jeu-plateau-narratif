@@ -438,6 +438,14 @@ function creerElementAllegeance(allegeance) {
         <button class="btn-supprimer bouton-danger">Supprimer</button>
       </div>
     </div>
+    <div style="margin-top:.75rem;border-top:1px solid rgba(255,255,255,.1);padding-top:.75rem">
+      <h4 style="margin:0 0 .4rem;font-size:.875rem">Fond de l'ecran des representants d'allegeance</h4>
+      <form class="form-fond-allegeance formulaire-ligne" enctype="multipart/form-data">
+        <input name="image" type="file" accept="image/png,image/jpeg" />
+        <button type="submit">Enregistrer le fond</button>
+        ${allegeance.image_fond ? '<button type="button" class="btn-supprimer-fond-allegeance bouton-danger">Supprimer</button>' : ''}
+      </form>
+    </div>
     <div class="section-representants" style="margin-top:.75rem;border-top:1px solid rgba(255,255,255,.1);padding-top:.75rem">
       <ul class="liste-reps-allegeance liste-elements" style="margin:0 0 .5rem"></ul>
       <form class="form-rep-allegeance formulaire" enctype="multipart/form-data">
@@ -458,6 +466,28 @@ function creerElementAllegeance(allegeance) {
     afficherSync(resultat.synchronisation);
     await chargerTout();
   });
+
+  li.querySelector('.form-fond-allegeance').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fichier = e.target.querySelector('input[type="file"]').files[0];
+    if (!fichier) return;
+    const resultat = await requeteJSON(`/api/allegeances/${allegeance.id}/fond`, {
+      method: 'PUT',
+      body: new FormData(e.target)
+    });
+    afficherSync(resultat.synchronisation);
+    await chargerTout();
+  });
+
+  const btnSupprimerFond = li.querySelector('.btn-supprimer-fond-allegeance');
+  if (btnSupprimerFond) {
+    btnSupprimerFond.addEventListener('click', async () => {
+      if (!confirm("Supprimer le fond de cette allegeance ?")) return;
+      const resultat = await requeteJSON(`/api/allegeances/${allegeance.id}/fond`, { method: 'DELETE' });
+      afficherSync(resultat.synchronisation);
+      await chargerTout();
+    });
+  }
 
   li.querySelector('.form-rep-allegeance').addEventListener('submit', async (e) => {
     e.preventDefault();

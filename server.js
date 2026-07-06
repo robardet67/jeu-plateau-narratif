@@ -210,6 +210,22 @@ app.delete('/api/races/:id', exigerAdmin, gerer(async (req, res) => {
 
 // --- API : portrait de race (image hub) ---
 
+function pousserEtatJoueursRace(raceId) {
+  const joueurs = db.prepare("SELECT id, socket_id FROM joueurs WHERE race_id = ? AND socket_id IS NOT NULL AND connecte = 1").all(raceId);
+  for (const j of joueurs) {
+    const sock = io.sockets.sockets.get(j.socket_id);
+    if (sock) sock.emit('etat_joueur', obtenirEtatJoueur(db, j.id));
+  }
+}
+
+function pousserEtatJoueursAllegeance(allegeanceId) {
+  const joueurs = db.prepare("SELECT j.id, j.socket_id FROM joueurs j JOIN joueur_allegeances ja ON ja.joueur_id = j.id WHERE ja.allegeance_id = ? AND j.socket_id IS NOT NULL AND j.connecte = 1").all(allegeanceId);
+  for (const j of joueurs) {
+    const sock = io.sockets.sockets.get(j.socket_id);
+    if (sock) sock.emit('etat_joueur', obtenirEtatJoueur(db, j.id));
+  }
+}
+
 app.put('/api/races/:id/portrait', exigerAdmin, uploadImageGenerique.single('image'), gerer(async (req, res) => {
   const race = db.prepare('SELECT * FROM races WHERE id = ?').get(req.params.id);
   if (!race) return res.status(404).json({ error: 'Race introuvable' });
@@ -218,6 +234,7 @@ app.put('/api/races/:id/portrait', exigerAdmin, uploadImageGenerique.single('ima
   supprimerFichierUpload(race.image_portrait);
   const imagePortrait = `/uploads/${req.file.filename}`;
   db.prepare('UPDATE races SET image_portrait = ? WHERE id = ?').run(imagePortrait, race.id);
+  pousserEtatJoueursRace(race.id);
 
   const synchronisation = await commiterEtPousser(`Admin : portrait de la race "${race.nom}"`);
   res.json({ ok: true, image_portrait: imagePortrait, synchronisation });
@@ -229,6 +246,7 @@ app.delete('/api/races/:id/portrait', exigerAdmin, gerer(async (req, res) => {
 
   supprimerFichierUpload(race.image_portrait);
   db.prepare('UPDATE races SET image_portrait = NULL WHERE id = ?').run(race.id);
+  pousserEtatJoueursRace(race.id);
 
   const synchronisation = await commiterEtPousser(`Admin : suppression du portrait de "${race.nom}"`);
   res.json({ ok: true, synchronisation });
@@ -442,8 +460,35 @@ app.put('/api/allegeances/:id', exigerAdmin, uploadImageGenerique.single('portra
   }
 
   db.prepare('UPDATE allegeances SET nom = ?, portrait = ?, texte_hub = ? WHERE id = ?').run(nom, portrait, texteHub, allegeance.id);
+  pousserEtatJoueursAllegeance(allegeance.id);
 
   const synchronisation = await commiterEtPousser(`Admin : modification de l'allegeance "${nom}"`);
+  res.json({ ok: true, synchronisation });
+}));
+
+app.put('/api/allegeances/:id/fond', exigerAdmin, uploadImageGenerique.single('image'), gerer(async (req, res) => {
+  const allegeance = db.prepare('SELECT * FROM allegeances WHERE id = ?').get(req.params.id);
+  if (!allegeance) return res.status(404).json({ error: 'Allegeance introuvable' });
+  if (!req.file) return res.status(400).json({ error: 'Une image est requise' });
+
+  supprimerFichierUpload(allegeance.image_fond);
+  const imageFond = `/uploads/${req.file.filename}`;
+  db.prepare('UPDATE allegeances SET image_fond = ? WHERE id = ?').run(imageFond, allegeance.id);
+  pousserEtatJoueursAllegeance(allegeance.id);
+
+  const synchronisation = await commiterEtPousser(`Admin : fond de l'allegeance "${allegeance.nom}"`);
+  res.json({ ok: true, image_fond: imageFond, synchronisation });
+}));
+
+app.delete('/api/allegeances/:id/fond', exigerAdmin, gerer(async (req, res) => {
+  const allegeance = db.prepare('SELECT * FROM allegeances WHERE id = ?').get(req.params.id);
+  if (!allegeance) return res.status(404).json({ error: 'Allegeance introuvable' });
+
+  supprimerFichierUpload(allegeance.image_fond);
+  db.prepare('UPDATE allegeances SET image_fond = NULL WHERE id = ?').run(allegeance.id);
+  pousserEtatJoueursAllegeance(allegeance.id);
+
+  const synchronisation = await commiterEtPousser(`Admin : suppression du fond de l'allegeance "${allegeance.nom}"`);
   res.json({ ok: true, synchronisation });
 }));
 
@@ -455,6 +500,7 @@ app.delete('/api/allegeances/:id', exigerAdmin, gerer(async (req, res) => {
   db.prepare('DELETE FROM allegeances WHERE id = ?').run(allegeance.id);
 
   supprimerFichierUpload(allegeance.portrait);
+  supprimerFichierUpload(allegeance.image_fond);
   reps.forEach((r) => {
     supprimerFichierUpload(r.image_depart);
     supprimerFichierUpload(r.image_sourire);

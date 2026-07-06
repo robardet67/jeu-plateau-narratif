@@ -382,7 +382,7 @@ function afficherParcoursAllegeance(allegeanceId) {
   if (!alleg) return;
 
   const ecran = document.getElementById('ecran-parcours-allegeance');
-  ecran.style.backgroundImage = etatJoueur.imageFond ? `url(${etatJoueur.imageFond})` : '';
+  ecran.style.backgroundImage = alleg.image_fond ? `url(${alleg.image_fond})` : '';
 
   const grille = document.getElementById('grille-reps-allegeance');
   grille.innerHTML = '';
