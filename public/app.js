@@ -54,6 +54,37 @@ document.querySelectorAll('.modal').forEach((modal) => {
 
 document.getElementById('btn-ouvrir-commencer').addEventListener('click', ouvrirModalCreation);
 
+document.getElementById('btn-reprendre-partie').addEventListener('click', ouvrirReprendrePartie);
+
+async function ouvrirReprendrePartie() {
+  const partie = await requeteJSON('/api/partie-active').catch(() => ({ active: false }));
+
+  if (!partie.active || !['en_attente', 'en_cours'].includes(partie.statut)) {
+    return alert('Aucune partie en cours pour le moment.');
+  }
+
+  const joueurs = partie.joueurs || [];
+  if (joueurs.length === 0) {
+    return alert('Aucun joueur inscrit dans cette partie.');
+  }
+
+  // Initialise le contexte (code + statut) avant d'entrer dans le flux joueur
+  etatCourant = { code: partie.code, joueurId: null, pseudo: null, estHote: false, partieStatut: partie.statut };
+
+  // Charge les ressources necessaires au jeu apres reconnexion
+  [parametresGlobaux, scenarioImages] = await Promise.all([
+    requeteJSON('/api/parametres').catch(() => ({})),
+    requeteJSON('/api/scenario').catch(() => [])
+  ]);
+
+  // "Nouveau joueur" masque si la partie est deja en cours
+  document.getElementById('changer-section-nouveau').classList.toggle('cachee', partie.statut === 'en_cours');
+
+  vueAvantChangement = 'accueil';
+  chargerListeJoueursExistants();
+  afficherVue('ecran-changer-joueur');
+}
+
 async function ouvrirModalCreation() {
   const partie = await requeteJSON('/api/partie-active').catch(() => ({ active: false }));
   if (!partie.active) {
