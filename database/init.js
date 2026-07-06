@@ -154,6 +154,7 @@ function initDatabase() {
   assurerColonne(db, 'races', 'image_fond', 'TEXT');
   assurerColonne(db, 'races', 'image_portrait', 'TEXT');
   assurerColonne(db, 'races', 'texte_hub', 'TEXT');
+  assurerColonne(db, 'scenario_images', 'texte', 'TEXT');
 
   if (colonneExiste(db, 'objectifs', 'titre') || colonneExiste(db, 'objectifs', 'points')) {
     assurerColonne(db, 'objectifs', 'niveau', 'TEXT');

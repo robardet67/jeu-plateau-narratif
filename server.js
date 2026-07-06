@@ -649,10 +649,22 @@ app.post('/api/scenario', exigerAdmin, uploadImageGenerique.single('image'), ger
 
   const { max } = db.prepare('SELECT COALESCE(MAX(ordre), 0) AS max FROM scenario_images').get();
   const image = `/uploads/${req.file.filename}`;
-  const result = db.prepare('INSERT INTO scenario_images (ordre, image) VALUES (?, ?)').run(max + 1, image);
+  const texte = req.body.texte || null;
+  const result = db.prepare('INSERT INTO scenario_images (ordre, image, texte) VALUES (?, ?, ?)').run(max + 1, image, texte);
 
   const synchronisation = await commiterEtPousser("Admin : ajout d'une image de scenario");
   res.status(201).json({ id: result.lastInsertRowid, synchronisation });
+}));
+
+app.put('/api/scenario/:id', exigerAdmin, gerer(async (req, res) => {
+  const image = db.prepare('SELECT * FROM scenario_images WHERE id = ?').get(req.params.id);
+  if (!image) return res.status(404).json({ error: 'Image introuvable' });
+
+  const texte = req.body.texte !== undefined ? (req.body.texte || null) : image.texte;
+  db.prepare('UPDATE scenario_images SET texte = ? WHERE id = ?').run(texte, image.id);
+
+  const synchronisation = await commiterEtPousser("Admin : texte de la diapositive modifie");
+  res.json({ ok: true, synchronisation });
 }));
 
 app.post('/api/scenario/:id/deplacer', exigerAdmin, gerer(async (req, res) => {

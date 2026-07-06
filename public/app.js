@@ -694,28 +694,36 @@ function afficherJoueurs(joueurs) {
 
 const modalScenario = document.getElementById('modal-scenario');
 const imageScenarioActuelle = document.getElementById('image-scenario-actuelle');
+const texteScenarioActuel = document.getElementById('texte-scenario-actuel');
 const scenarioVide = document.getElementById('scenario-vide');
-const controlesScenarioHote = document.getElementById('controles-scenario-hote');
+const controlesScenario = document.getElementById('controles-scenario');
 const scenarioPosition = document.getElementById('scenario-position');
 
 function afficherImageScenario() {
   if (!scenarioImages.length) {
     imageScenarioActuelle.classList.add('cachee');
+    texteScenarioActuel.classList.add('cachee');
     scenarioVide.classList.remove('cachee');
-    controlesScenarioHote.classList.add('cachee');
+    controlesScenario.classList.add('cachee');
     return;
   }
+  const diapo = scenarioImages[scenarioIndexActuel];
   imageScenarioActuelle.classList.remove('cachee');
   scenarioVide.classList.add('cachee');
-  imageScenarioActuelle.src = scenarioImages[scenarioIndexActuel].image;
+  imageScenarioActuelle.src = diapo.image;
   scenarioPosition.textContent = `${scenarioIndexActuel + 1} / ${scenarioImages.length}`;
-  const controlesMasques = !!etatCourant.code && !etatCourant.estHote;
-  controlesScenarioHote.classList.toggle('cachee', controlesMasques);
+  controlesScenario.classList.remove('cachee');
+  if (diapo.texte) {
+    texteScenarioActuel.textContent = diapo.texte;
+    texteScenarioActuel.classList.remove('cachee');
+  } else {
+    texteScenarioActuel.classList.add('cachee');
+  }
 }
 
 async function ouvrirScenario() {
   scenarioImages = await requeteJSON('/api/scenario');
-  if (!etatCourant.code) scenarioIndexActuel = 0;
+  scenarioIndexActuel = 0;
   afficherImageScenario();
   fermerTousLesModaux();
   modalScenario.classList.remove('cachee');
@@ -728,14 +736,14 @@ document.getElementById('btn-fermer-scenario').addEventListener('click', () => m
 
 document.getElementById('btn-scenario-precedent').addEventListener('click', () => {
   if (scenarioIndexActuel <= 0) return;
-  if (!etatCourant.code) { scenarioIndexActuel--; afficherImageScenario(); }
-  else if (etatCourant.estHote) socket.emit('scenario_naviguer', { index: scenarioIndexActuel - 1 });
+  scenarioIndexActuel--;
+  afficherImageScenario();
 });
 
 document.getElementById('btn-scenario-suivant').addEventListener('click', () => {
   if (scenarioIndexActuel >= scenarioImages.length - 1) return;
-  if (!etatCourant.code) { scenarioIndexActuel++; afficherImageScenario(); }
-  else if (etatCourant.estHote) socket.emit('scenario_naviguer', { index: scenarioIndexActuel + 1 });
+  scenarioIndexActuel++;
+  afficherImageScenario();
 });
 
 // --- Confirmation de validation d'objectif ---
@@ -855,9 +863,8 @@ socket.on('etat_joueur', (nouvelEtat) => {
   }
 });
 
-socket.on('scenario_maj', ({ index }) => {
-  scenarioIndexActuel = index;
-  if (!modalScenario.classList.contains('cachee')) afficherImageScenario();
+socket.on('scenario_maj', () => {
+  // Navigation locale independante : chaque joueur gere son propre index
 });
 
 socket.on('partie_terminee', afficherFinDePartie);

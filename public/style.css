@@ -516,6 +516,18 @@ button:hover {
   gap: 1rem;
 }
 
+.texte-scenario {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.85);
+  border-left: 3px solid rgba(202, 165, 77, 0.6);
+  max-width: 100%;
+  text-align: left;
+}
+
 /* --- Page d'accueil heroique fantasy (placeholder en attendant les vrais visuels) --- */
 
 .ecran-hero {

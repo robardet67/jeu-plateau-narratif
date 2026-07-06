@@ -746,15 +746,25 @@ async function chargerScenario() {
 function creerElementScenario(image, index, total) {
   const li = document.createElement('li');
   li.className = 'element-carte';
+  li.style.flexDirection = 'column';
+  li.style.alignItems = 'stretch';
   li.innerHTML = `
-    <div class="element-infos">
-      <img class="miniature-scenario" src="${image.image}" alt="scenario" />
-      <div>Position ${image.ordre}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="element-infos">
+        <img class="miniature-scenario" src="${image.image}" alt="scenario" />
+        <div>Position ${image.ordre}</div>
+      </div>
+      <div class="element-actions">
+        <button class="btn-monter"${index === 0 ? ' disabled' : ''}>Monter</button>
+        <button class="btn-descendre"${index === total - 1 ? ' disabled' : ''}>Descendre</button>
+        <button class="btn-supprimer bouton-danger">Supprimer</button>
+      </div>
     </div>
-    <div class="element-actions">
-      <button class="btn-monter"${index === 0 ? ' disabled' : ''}>Monter</button>
-      <button class="btn-descendre"${index === total - 1 ? ' disabled' : ''}>Descendre</button>
-      <button class="btn-supprimer bouton-danger">Supprimer</button>
+    <div style="margin-top:.5rem;border-top:1px solid rgba(255,255,255,.1);padding-top:.5rem">
+      <form class="form-texte-scenario formulaire-ligne">
+        <input name="texte" type="text" placeholder="Texte sous l'image (optionnel)" value="${image.texte ? image.texte.replace(/"/g, '&quot;') : ''}" style="flex:1" />
+        <button type="submit">Enregistrer</button>
+      </form>
     </div>
   `;
 
@@ -781,6 +791,16 @@ function creerElementScenario(image, index, total) {
     const resultat = await requeteJSON(`/api/scenario/${image.id}`, { method: 'DELETE' });
     afficherSync(resultat.synchronisation);
     await chargerScenario();
+  });
+  li.querySelector('.form-texte-scenario').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const texte = new FormData(e.target).get('texte');
+    const resultat = await requeteJSON(`/api/scenario/${image.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texte })
+    });
+    afficherSync(resultat.synchronisation);
   });
 
   return li;
