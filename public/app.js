@@ -935,12 +935,11 @@ const adminJeuErreur = document.getElementById('admin-jeu-erreur');
 const btnAdminTerminer = document.getElementById('btn-admin-terminer');
 const btnAdminRouvrir = document.getElementById('btn-admin-rouvrir');
 
-async function ouvrirPanneauAdmin() {
+async function rafraichirPanneauAdmin() {
   adminJeuErreur.classList.add('cachee');
   adminJeuErreur.textContent = '';
 
-  // Recharge le statut actuel de la partie
-  const partie = await requeteJSON('/api/partie-active').catch(() => null);
+  const partie = await requeteJSON('/api/admin/partie-recente').catch(() => null);
   const statut = partie?.statut ?? null;
 
   adminJeuStatut.textContent = statut === 'en_cours'
@@ -951,8 +950,11 @@ async function ouvrirPanneauAdmin() {
 
   btnAdminTerminer.classList.toggle('cachee', statut !== 'en_cours');
   btnAdminRouvrir.classList.toggle('cachee', statut !== 'terminee');
+}
 
+async function ouvrirPanneauAdmin() {
   modalAdminJeu.classList.remove('cachee');
+  await rafraichirPanneauAdmin();
 }
 
 document.getElementById('btn-admin-flottant').addEventListener('click', ouvrirPanneauAdmin);
@@ -964,7 +966,7 @@ btnAdminTerminer.addEventListener('click', async () => {
   adminJeuErreur.classList.add('cachee');
   try {
     await requeteJSON('/api/admin/partie-active/terminer', { method: 'POST' });
-    modalAdminJeu.classList.add('cachee');
+    await rafraichirPanneauAdmin();
   } catch (err) {
     adminJeuErreur.textContent = err.message;
     adminJeuErreur.classList.remove('cachee');
@@ -976,7 +978,7 @@ btnAdminRouvrir.addEventListener('click', async () => {
   adminJeuErreur.classList.add('cachee');
   try {
     await requeteJSON('/api/admin/partie-active/rouvrir', { method: 'POST' });
-    modalAdminJeu.classList.add('cachee');
+    await rafraichirPanneauAdmin();
     afficherNotification('Partie rouverte.');
   } catch (err) {
     adminJeuErreur.textContent = err.message;

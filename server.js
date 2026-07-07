@@ -1064,6 +1064,12 @@ app.post('/api/admin/partie-active/rouvrir', exigerAdmin, gerer(async (req, res)
   res.json({ ok: true });
 }));
 
+app.get('/api/admin/partie-recente', exigerAdmin, gerer(async (req, res) => {
+  const partie = await db.get('SELECT * FROM parties ORDER BY id DESC LIMIT 1');
+  if (!partie) return res.json({ active: false });
+  res.json({ active: true, statut: partie.statut, id: partie.id, code: partie.code });
+}));
+
 app.get('/api/admin/partie-active/suivi', exigerAdmin, gerer(async (req, res) => {
   const partie = await obtenirPartieActive();
   if (!partie) return res.status(404).json({ error: 'Aucune partie active' });
