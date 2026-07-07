@@ -1,40 +1,32 @@
 const path = require('path');
-const fs = require('fs');
-const Database = require('better-sqlite3');
+const { creerDb, DB_PATH } = require('./db');
 
-const DB_DIR = __dirname;
-const DB_PATH = path.join(DB_DIR, 'jeu.sqlite');
+// --- Helpers de migration (async) ---
 
-if (!fs.existsSync(DB_DIR)) {
-  fs.mkdirSync(DB_DIR, { recursive: true });
+async function colonneExiste(db, table, colonne) {
+  const lignes = await db.all(`PRAGMA table_info(${table})`);
+  return lignes.some((c) => c.name === colonne);
 }
 
-function colonneExiste(db, table, colonne) {
-  return db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === colonne);
+async function tableExiste(db, table) {
+  const row = await db.get("SELECT name FROM sqlite_master WHERE type='table' AND name=?", [table]);
+  return !!row;
 }
 
-function tableExiste(db, table) {
-  return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(table);
-}
-
-function assurerColonne(db, table, colonne, definitionSql) {
-  if (!colonneExiste(db, table, colonne)) {
-    db.exec(`ALTER TABLE ${table} ADD COLUMN ${colonne} ${definitionSql}`);
+async function assurerColonne(db, table, colonne, definitionSql) {
+  if (!(await colonneExiste(db, table, colonne))) {
+    await db.exec(`ALTER TABLE ${table} ADD COLUMN ${colonne} ${definitionSql}`);
   }
 }
 
-function retirerColonne(db, table, colonne) {
-  if (colonneExiste(db, table, colonne)) {
-    db.exec(`ALTER TABLE ${table} DROP COLUMN ${colonne}`);
+async function retirerColonne(db, table, colonne) {
+  if (await colonneExiste(db, table, colonne)) {
+    await db.exec(`ALTER TABLE ${table} DROP COLUMN ${colonne}`);
   }
 }
 
-function initDatabase() {
-  const db = new Database(DB_PATH);
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
-
-  db.exec(`
+async function initDatabase(db) {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS races (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nom TEXT NOT NULL UNIQUE,
@@ -118,10 +110,6 @@ function initDatabase() {
       valeur TEXT
     );
 
-    -- Grille de progression : pour chaque joueur, 3 rangs de representant (celui de sa
-    -- race) x 3 positions d'objectif = 9 cases. Le rang+position (pas le representant,
-    -- puisque deux joueurs n'ont jamais la meme race) est la cle de partage entre joueurs
-    -- pour les objectifs cooperatifs/belliqueux.
     CREATE TABLE IF NOT EXISTS grille_objectifs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       joueur_id INTEGER NOT NULL,
@@ -143,98 +131,93 @@ function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_joueurs_partie ON joueurs(partie_id);
     CREATE INDEX IF NOT EXISTS idx_grille_joueur ON grille_objectifs(joueur_id);
     CREATE INDEX IF NOT EXISTS idx_grille_partie_coord ON grille_objectifs(partie_id, rang, position);
-    CREATE INDEX IF NOT EXISTS idx_parties_code ON parties(code);
+    CREATE INDEX IF NOT EXISTS idx_parties_code ON parties(code)
   `);
 
-  db.exec('DROP TABLE IF EXISTS joueurs_objectifs');
+  await db.exec('DROP TABLE IF EXISTS joueurs_objectifs');
 
-  // Migrations pour les bases deja existantes (schema races/objectifs modifie, colonnes ajoutees)
-  retirerColonne(db, 'races', 'description');
-  retirerColonne(db, 'races', 'image');
-  assurerColonne(db, 'races', 'image_fond', 'TEXT');
-  assurerColonne(db, 'races', 'image_portrait', 'TEXT');
-  assurerColonne(db, 'races', 'texte_hub', 'TEXT');
-  assurerColonne(db, 'scenario_images', 'texte', 'TEXT');
+  // Migrations pour les bases deja existantes
+  await retirerColonne(db, 'races', 'description');
+  await retirerColonne(db, 'races', 'image');
+  await assurerColonne(db, 'races', 'image_fond', 'TEXT');
+  await assurerColonne(db, 'races', 'image_portrait', 'TEXT');
+  await assurerColonne(db, 'races', 'texte_hub', 'TEXT');
+  await assurerColonne(db, 'scenario_images', 'texte', 'TEXT');
 
-  if (colonneExiste(db, 'objectifs', 'titre') || colonneExiste(db, 'objectifs', 'points')) {
-    assurerColonne(db, 'objectifs', 'niveau', 'TEXT');
-    assurerColonne(db, 'objectifs', 'type', 'TEXT');
-    assurerColonne(db, 'objectifs', 'categorie', 'TEXT');
-    if (colonneExiste(db, 'objectifs', 'titre')) {
-      db.exec("UPDATE objectifs SET description = COALESCE(NULLIF(description, ''), titre) WHERE description IS NULL OR description = ''");
-      retirerColonne(db, 'objectifs', 'titre');
+  if ((await colonneExiste(db, 'objectifs', 'titre')) || (await colonneExiste(db, 'objectifs', 'points'))) {
+    await assurerColonne(db, 'objectifs', 'niveau', 'TEXT');
+    await assurerColonne(db, 'objectifs', 'type', 'TEXT');
+    await assurerColonne(db, 'objectifs', 'categorie', 'TEXT');
+    if (await colonneExiste(db, 'objectifs', 'titre')) {
+      await db.exec("UPDATE objectifs SET description = COALESCE(NULLIF(description, ''), titre) WHERE description IS NULL OR description = ''");
+      await retirerColonne(db, 'objectifs', 'titre');
     }
-    retirerColonne(db, 'objectifs', 'points');
+    await retirerColonne(db, 'objectifs', 'points');
   }
 
-  assurerColonne(db, 'parties', 'scenario_index', "INTEGER NOT NULL DEFAULT 0");
-  assurerColonne(db, 'parties', 'nb_joueurs_attendus', 'INTEGER NOT NULL DEFAULT 0');
+  await assurerColonne(db, 'parties', 'scenario_index', 'INTEGER NOT NULL DEFAULT 0');
+  await assurerColonne(db, 'parties', 'nb_joueurs_attendus', 'INTEGER NOT NULL DEFAULT 0');
 
-  retirerColonne(db, 'parties', 'nombre_joueurs_prevu');
-  retirerColonne(db, 'parties', 'nombre_coop_par_joueur');
-  retirerColonne(db, 'parties', 'nb_objectifs_cooperatifs');
-  db.exec('DROP TABLE IF EXISTS configuration_emplacements');
+  await retirerColonne(db, 'parties', 'nombre_joueurs_prevu');
+  await retirerColonne(db, 'parties', 'nombre_coop_par_joueur');
+  await retirerColonne(db, 'parties', 'nb_objectifs_cooperatifs');
+  await db.exec('DROP TABLE IF EXISTS configuration_emplacements');
 
-  // Les objectifs sont desormais tous identiques (plus de type/niveau/categorie)
-  retirerColonne(db, 'objectifs', 'niveau');
-  retirerColonne(db, 'objectifs', 'type');
-  retirerColonne(db, 'objectifs', 'categorie');
+  await retirerColonne(db, 'objectifs', 'niveau');
+  await retirerColonne(db, 'objectifs', 'type');
+  await retirerColonne(db, 'objectifs', 'categorie');
 
-  // La grille passe de 3x3 a 3x2 : supprime les cases de position 3 existantes
-  db.exec("DELETE FROM grille_objectifs WHERE position = 3");
+  await db.exec('DELETE FROM grille_objectifs WHERE position = 3');
 
-  const rangExistaitDeja = colonneExiste(db, 'representants', 'rang');
-  assurerColonne(db, 'representants', 'rang', 'INTEGER NOT NULL DEFAULT 1');
+  const rangExistaitDeja = await colonneExiste(db, 'representants', 'rang');
+  await assurerColonne(db, 'representants', 'rang', 'INTEGER NOT NULL DEFAULT 1');
   if (!rangExistaitDeja) {
-    const representantsParRace = db
-      .prepare('SELECT id, race_id FROM representants ORDER BY race_id, id')
-      .all();
+    const representantsParRace = await db.all('SELECT id, race_id FROM representants ORDER BY race_id, id');
     const compteurs = {};
-    const majRang = db.prepare('UPDATE representants SET rang = ? WHERE id = ?');
     for (const r of representantsParRace) {
       compteurs[r.race_id] = (compteurs[r.race_id] || 0) + 1;
-      majRang.run(compteurs[r.race_id], r.id);
+      await db.run('UPDATE representants SET rang = ? WHERE id = ?', [compteurs[r.race_id], r.id]);
     }
   }
-  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_representants_race_rang ON representants(race_id, rang)');
+  await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_representants_race_rang ON representants(race_id, rang)');
 
-  // --- v2 : migration depuis "runes" (ancienne version) ---
-  if (tableExiste(db, 'runes') && !tableExiste(db, 'allegiances') && !tableExiste(db, 'allegeances')) {
-    db.exec('ALTER TABLE runes RENAME TO allegiances');
+  // Migration depuis "runes" (ancienne version)
+  if ((await tableExiste(db, 'runes')) && !(await tableExiste(db, 'allegiances')) && !(await tableExiste(db, 'allegeances'))) {
+    await db.exec('ALTER TABLE runes RENAME TO allegiances');
   }
-  if (tableExiste(db, 'representants_rune') && !tableExiste(db, 'representants_allegiance') && !tableExiste(db, 'representants_allegeance')) {
-    db.exec('ALTER TABLE representants_rune RENAME TO representants_allegiance');
+  if ((await tableExiste(db, 'representants_rune')) && !(await tableExiste(db, 'representants_allegiance')) && !(await tableExiste(db, 'representants_allegeance'))) {
+    await db.exec('ALTER TABLE representants_rune RENAME TO representants_allegiance');
   }
-  if (tableExiste(db, 'representants_allegiance') && colonneExiste(db, 'representants_allegiance', 'rune_id')) {
-    db.exec('ALTER TABLE representants_allegiance RENAME COLUMN rune_id TO allegiance_id');
+  if ((await tableExiste(db, 'representants_allegiance')) && (await colonneExiste(db, 'representants_allegiance', 'rune_id'))) {
+    await db.exec('ALTER TABLE representants_allegiance RENAME COLUMN rune_id TO allegiance_id');
   }
-  if (tableExiste(db, 'joueur_runes') && !tableExiste(db, 'joueur_allegiances') && !tableExiste(db, 'joueur_allegeances')) {
-    db.exec('ALTER TABLE joueur_runes RENAME TO joueur_allegiances');
+  if ((await tableExiste(db, 'joueur_runes')) && !(await tableExiste(db, 'joueur_allegiances')) && !(await tableExiste(db, 'joueur_allegeances'))) {
+    await db.exec('ALTER TABLE joueur_runes RENAME TO joueur_allegiances');
   }
-  if (tableExiste(db, 'joueur_allegiances') && colonneExiste(db, 'joueur_allegiances', 'rune_id')) {
-    db.exec('ALTER TABLE joueur_allegiances RENAME COLUMN rune_id TO allegiance_id');
+  if ((await tableExiste(db, 'joueur_allegiances')) && (await colonneExiste(db, 'joueur_allegiances', 'rune_id'))) {
+    await db.exec('ALTER TABLE joueur_allegiances RENAME COLUMN rune_id TO allegiance_id');
   }
-  db.exec('DROP INDEX IF EXISTS idx_repr_rune');
-  db.exec('DROP INDEX IF EXISTS idx_joueur_runes');
+  await db.exec('DROP INDEX IF EXISTS idx_repr_rune');
+  await db.exec('DROP INDEX IF EXISTS idx_joueur_runes');
 
-  // --- Correction orthographe : allegiances → allegeances ---
-  if (tableExiste(db, 'allegiances') && !tableExiste(db, 'allegeances')) {
-    db.exec('ALTER TABLE allegiances RENAME TO allegeances');
+  // Correction orthographe : allegiances → allegeances
+  if ((await tableExiste(db, 'allegiances')) && !(await tableExiste(db, 'allegeances'))) {
+    await db.exec('ALTER TABLE allegiances RENAME TO allegeances');
   }
-  if (tableExiste(db, 'representants_allegiance') && !tableExiste(db, 'representants_allegeance')) {
-    db.exec('ALTER TABLE representants_allegiance RENAME TO representants_allegeance');
+  if ((await tableExiste(db, 'representants_allegiance')) && !(await tableExiste(db, 'representants_allegeance'))) {
+    await db.exec('ALTER TABLE representants_allegiance RENAME TO representants_allegeance');
   }
-  if (tableExiste(db, 'representants_allegeance') && colonneExiste(db, 'representants_allegeance', 'allegiance_id')) {
-    db.exec('ALTER TABLE representants_allegeance RENAME COLUMN allegiance_id TO allegeance_id');
+  if ((await tableExiste(db, 'representants_allegeance')) && (await colonneExiste(db, 'representants_allegeance', 'allegiance_id'))) {
+    await db.exec('ALTER TABLE representants_allegeance RENAME COLUMN allegiance_id TO allegeance_id');
   }
-  if (tableExiste(db, 'joueur_allegiances') && !tableExiste(db, 'joueur_allegeances')) {
-    db.exec('ALTER TABLE joueur_allegiances RENAME TO joueur_allegeances');
+  if ((await tableExiste(db, 'joueur_allegiances')) && !(await tableExiste(db, 'joueur_allegeances'))) {
+    await db.exec('ALTER TABLE joueur_allegiances RENAME TO joueur_allegeances');
   }
-  if (tableExiste(db, 'joueur_allegeances') && colonneExiste(db, 'joueur_allegeances', 'allegiance_id')) {
-    db.exec('ALTER TABLE joueur_allegeances RENAME COLUMN allegiance_id TO allegeance_id');
+  if ((await tableExiste(db, 'joueur_allegeances')) && (await colonneExiste(db, 'joueur_allegeances', 'allegiance_id'))) {
+    await db.exec('ALTER TABLE joueur_allegeances RENAME COLUMN allegiance_id TO allegeance_id');
   }
 
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS allegeances (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nom TEXT NOT NULL UNIQUE,
@@ -268,8 +251,6 @@ function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_repr_allegeance ON representants_allegeance(allegeance_id);
     CREATE INDEX IF NOT EXISTS idx_joueur_allegeances ON joueur_allegeances(joueur_id);
 
-    -- Grille d'allegeance : une seule grille par allegeance × partie, partagee entre tous
-    -- les porteurs de cette allegeance (preparation a la synchronisation cooperative).
     CREATE TABLE IF NOT EXISTS grille_allegeance (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       allegeance_id INTEGER NOT NULL,
@@ -287,67 +268,65 @@ function initDatabase() {
       UNIQUE (allegeance_id, partie_id, rang, position)
     );
 
-    CREATE INDEX IF NOT EXISTS idx_grille_allegeance ON grille_allegeance(allegeance_id, partie_id);
+    CREATE INDEX IF NOT EXISTS idx_grille_allegeance ON grille_allegeance(allegeance_id, partie_id)
   `);
 
-  // v2 : niveau (entier) revient dans les objectifs — pool unique race+allegeance
-  assurerColonne(db, 'objectifs', 'niveau', 'INTEGER');
+  await assurerColonne(db, 'objectifs', 'niveau', 'INTEGER');
+  await assurerColonne(db, 'parties', 'nb_representants_race', 'INTEGER NOT NULL DEFAULT 2');
+  await assurerColonne(db, 'parties', 'config_objectifs_race', "TEXT NOT NULL DEFAULT '[2,2,2]'");
 
-  // v2 : configuration de partie (representants actifs et nb d'objectifs par rang)
-  assurerColonne(db, 'parties', 'nb_representants_race', 'INTEGER NOT NULL DEFAULT 2');
-  assurerColonne(db, 'parties', 'config_objectifs_race', "TEXT NOT NULL DEFAULT '[2,2,2]'");
+  if ((await colonneExiste(db, 'parties', 'nb_representants_rune')) && !(await colonneExiste(db, 'parties', 'nb_representants_allegeance'))) {
+    await db.exec('ALTER TABLE parties RENAME COLUMN nb_representants_rune TO nb_representants_allegeance');
+  }
+  if ((await colonneExiste(db, 'parties', 'config_objectifs_rune')) && !(await colonneExiste(db, 'parties', 'config_objectifs_allegeance'))) {
+    await db.exec('ALTER TABLE parties RENAME COLUMN config_objectifs_rune TO config_objectifs_allegeance');
+  }
+  await retirerColonne(db, 'parties', 'nb_representants_rune');
+  await retirerColonne(db, 'parties', 'config_objectifs_rune');
 
-  // Migration colonnes _rune → _allegeance (saute l'intermediaire _allegiance)
-  if (colonneExiste(db, 'parties', 'nb_representants_rune') && !colonneExiste(db, 'parties', 'nb_representants_allegeance')) {
-    db.exec('ALTER TABLE parties RENAME COLUMN nb_representants_rune TO nb_representants_allegeance');
+  if ((await colonneExiste(db, 'parties', 'nb_representants_allegiance')) && !(await colonneExiste(db, 'parties', 'nb_representants_allegeance'))) {
+    await db.exec('ALTER TABLE parties RENAME COLUMN nb_representants_allegiance TO nb_representants_allegeance');
   }
-  if (colonneExiste(db, 'parties', 'config_objectifs_rune') && !colonneExiste(db, 'parties', 'config_objectifs_allegeance')) {
-    db.exec('ALTER TABLE parties RENAME COLUMN config_objectifs_rune TO config_objectifs_allegeance');
+  if ((await colonneExiste(db, 'parties', 'config_objectifs_allegiance')) && !(await colonneExiste(db, 'parties', 'config_objectifs_allegeance'))) {
+    await db.exec('ALTER TABLE parties RENAME COLUMN config_objectifs_allegiance TO config_objectifs_allegeance');
   }
-  retirerColonne(db, 'parties', 'nb_representants_rune');
-  retirerColonne(db, 'parties', 'config_objectifs_rune');
+  await retirerColonne(db, 'parties', 'nb_representants_allegiance');
+  await retirerColonne(db, 'parties', 'config_objectifs_allegiance');
 
-  // Migration colonnes _allegiance → _allegeance (correction orthographe)
-  if (colonneExiste(db, 'parties', 'nb_representants_allegiance') && !colonneExiste(db, 'parties', 'nb_representants_allegeance')) {
-    db.exec('ALTER TABLE parties RENAME COLUMN nb_representants_allegiance TO nb_representants_allegeance');
-  }
-  if (colonneExiste(db, 'parties', 'config_objectifs_allegiance') && !colonneExiste(db, 'parties', 'config_objectifs_allegeance')) {
-    db.exec('ALTER TABLE parties RENAME COLUMN config_objectifs_allegiance TO config_objectifs_allegeance');
-  }
-  retirerColonne(db, 'parties', 'nb_representants_allegiance');
-  retirerColonne(db, 'parties', 'config_objectifs_allegiance');
-
-  assurerColonne(db, 'parties', 'nb_representants_allegeance', 'INTEGER NOT NULL DEFAULT 2');
-  assurerColonne(db, 'parties', 'config_objectifs_allegeance', "TEXT NOT NULL DEFAULT '[2,2,2]'");
-  assurerColonne(db, 'parties', 'config_niveaux_race', "TEXT NOT NULL DEFAULT '[[null,null],[null,null],[null,null]]'");
-  assurerColonne(db, 'parties', 'config_niveaux_allegeance', "TEXT NOT NULL DEFAULT '[[null,null],[null,null],[null,null]]'");
-  assurerColonne(db, 'allegeances', 'texte_hub', 'TEXT');
-  assurerColonne(db, 'allegeances', 'image_fond', 'TEXT');
+  await assurerColonne(db, 'parties', 'nb_representants_allegeance', 'INTEGER NOT NULL DEFAULT 2');
+  await assurerColonne(db, 'parties', 'config_objectifs_allegeance', "TEXT NOT NULL DEFAULT '[2,2,2]'");
+  await assurerColonne(db, 'parties', 'config_niveaux_race', "TEXT NOT NULL DEFAULT '[[null,null],[null,null],[null,null]]'");
+  await assurerColonne(db, 'parties', 'config_niveaux_allegeance', "TEXT NOT NULL DEFAULT '[[null,null],[null,null],[null,null]]'");
+  await assurerColonne(db, 'allegeances', 'texte_hub', 'TEXT');
+  await assurerColonne(db, 'allegeances', 'image_fond', 'TEXT');
 
   const parametresParDefaut = {
     tableau_de_bord_actif: 'false',
     condition_dernier_rep_allegeance: 'false',
     message_condition_allegeance: ''
   };
-  const insererParametre = db.prepare('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)');
   for (const [cle, valeur] of Object.entries(parametresParDefaut)) {
-    insererParametre.run(cle, valeur);
+    await db.run('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)', [cle, valeur]);
   }
 
   const bcrypt = require('bcrypt');
-  const adminExiste = db.prepare('SELECT id FROM admin WHERE id = 1').get();
+  const adminExiste = await db.get('SELECT id FROM admin WHERE id = 1');
   if (!adminExiste) {
     const hash = bcrypt.hashSync('admin123', 10);
-    db.prepare('INSERT INTO admin (id, password_hash) VALUES (1, ?)').run(hash);
+    await db.run('INSERT INTO admin (id, password_hash) VALUES (1, ?)', [hash]);
     console.log('Mot de passe admin par defaut initialise (admin123)');
   }
 
-  console.log(`Base de donnees initialisee : ${DB_PATH}`);
-  db.close();
+  console.log('Base de donnees initialisee');
 }
 
+// Permet d'appeler directement : node database/init.js
 if (require.main === module) {
-  initDatabase();
+  (async () => {
+    const db = await creerDb();
+    await initDatabase(db);
+    process.exit(0);
+  })().catch((err) => { console.error(err); process.exit(1); });
 }
 
 module.exports = { initDatabase, DB_PATH };

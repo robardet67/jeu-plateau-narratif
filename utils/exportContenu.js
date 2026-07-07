@@ -1,34 +1,31 @@
 const fs = require('fs');
 const path = require('path');
-const db = require('../database/db');
 
 const CHEMIN_EXPORT = path.join(__dirname, '..', 'database', 'contenu-export.json');
 
-// Regenere un instantane JSON (versionne sur GitHub) du contenu edite dans l'admin :
-// races, representants, dialogues, objectifs et images de scenario. La base SQLite
-// elle-meme reste hors de git (elle contient aussi les parties/joueurs en cours,
-// qui changeraient a chaque coup de jeu) ; ce fichier est la seule trace du texte
-// saisi qui soit reellement sauvegardee sur GitHub.
-function regenererExportContenu() {
+// Regenere l'instantane JSON versionne sur GitHub (races, representants, dialogues,
+// objectifs, allegeances, scenario). db est passe en parametre pour eviter l'import
+// circulaire et supporter les deux backends (local et Turso).
+async function regenererExportContenu(db) {
+  const [races, representants, dialogues, objectifs, allegeances, representants_allegeance, scenario_images] = await Promise.all([
+    db.all('SELECT id, nom, image_fond, created_at FROM races ORDER BY id'),
+    db.all('SELECT id, race_id, rang, nom, description, image_depart, image_sourire, created_at FROM representants ORDER BY race_id, rang'),
+    db.all('SELECT id, representant_id, contexte, texte, created_at FROM dialogues ORDER BY id'),
+    db.all('SELECT id, description, niveau, created_at FROM objectifs ORDER BY id'),
+    db.all('SELECT id, nom, portrait, created_at FROM allegeances ORDER BY id'),
+    db.all('SELECT id, allegeance_id, rang, nom, image_depart, image_sourire, dialogue, created_at FROM representants_allegeance ORDER BY allegeance_id, rang'),
+    db.all('SELECT id, ordre, image, created_at FROM scenario_images ORDER BY ordre'),
+  ]);
+
   const contenu = {
     genere_le: new Date().toISOString(),
-    races: db.prepare('SELECT id, nom, image_fond, created_at FROM races ORDER BY id').all(),
-    representants: db
-      .prepare(
-        'SELECT id, race_id, rang, nom, description, image_depart, image_sourire, created_at FROM representants ORDER BY race_id, rang'
-      )
-      .all(),
-    dialogues: db
-      .prepare('SELECT id, representant_id, contexte, texte, created_at FROM dialogues ORDER BY id')
-      .all(),
-    objectifs: db
-      .prepare('SELECT id, description, niveau, created_at FROM objectifs ORDER BY id')
-      .all(),
-    allegeances: db.prepare('SELECT id, nom, portrait, created_at FROM allegeances ORDER BY id').all(),
-    representants_allegeance: db
-      .prepare('SELECT id, allegeance_id, rang, nom, image_depart, image_sourire, dialogue, created_at FROM representants_allegeance ORDER BY allegeance_id, rang')
-      .all(),
-    scenario_images: db.prepare('SELECT id, ordre, image, created_at FROM scenario_images ORDER BY ordre').all()
+    races,
+    representants,
+    dialogues,
+    objectifs,
+    allegeances,
+    representants_allegeance,
+    scenario_images,
   };
 
   fs.writeFileSync(CHEMIN_EXPORT, JSON.stringify(contenu, null, 2), 'utf-8');

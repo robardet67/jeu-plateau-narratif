@@ -3,27 +3,26 @@
 // Le rang N+1 se deverrouille quand tous les objectifs du rang N sont valides.
 // Tous les objectifs demarrent 'ouvert' (aucun etat ferme).
 
-function obtenirParametre(db, cle) {
-  const ligne = db.prepare('SELECT valeur FROM parametres WHERE cle = ?').get(cle);
+async function obtenirParametre(db, cle) {
+  const ligne = await db.get('SELECT valeur FROM parametres WHERE cle = ?', [cle]);
   return ligne ? ligne.valeur : null;
 }
 
-function compterValide(db, joueurId) {
-  return db
-    .prepare("SELECT COUNT(*) AS n FROM grille_objectifs WHERE joueur_id = ? AND statut = 'valide'")
-    .get(joueurId).n;
+async function compterValide(db, joueurId) {
+  const row = await db.get("SELECT COUNT(*) AS n FROM grille_objectifs WHERE joueur_id = ? AND statut = 'valide'", [joueurId]);
+  return row.n;
 }
 
-function lireConfigPartie(db, partieId) {
-  const partie = db.prepare('SELECT * FROM parties WHERE id = ?').get(partieId);
+async function lireConfigPartie(db, partieId) {
+  const partie = await db.get('SELECT * FROM parties WHERE id = ?', [partieId]);
   if (!partie) return { nbRepRace: 3, configObj: [2, 2, 2] };
   let configObj;
   try { configObj = JSON.parse(partie.config_objectifs_race || '[2,2,2]'); } catch { configObj = [2, 2, 2]; }
   return { nbRepRace: partie.nb_representants_race ?? 3, configObj };
 }
 
-function lireConfigPartieAllegeance(db, partieId) {
-  const partie = db.prepare('SELECT * FROM parties WHERE id = ?').get(partieId);
+async function lireConfigPartieAllegeance(db, partieId) {
+  const partie = await db.get('SELECT * FROM parties WHERE id = ?', [partieId]);
   if (!partie) return { nbRepAlleg: 2, configObjAlleg: [2, 2, 2] };
   let configObjAlleg;
   try { configObjAlleg = JSON.parse(partie.config_objectifs_allegeance || '[2,2,2]'); } catch { configObjAlleg = [2, 2, 2]; }
@@ -32,225 +31,225 @@ function lireConfigPartieAllegeance(db, partieId) {
 
 // ------ GRILLE DE RACE (par joueur) ------
 
-function estJoueurTermine(db, joueurId) {
-  const joueur = db.prepare('SELECT * FROM joueurs WHERE id = ?').get(joueurId);
+async function estJoueurTermine(db, joueurId) {
+  const joueur = await db.get('SELECT * FROM joueurs WHERE id = ?', [joueurId]);
   if (!joueur) return false;
 
-  // Condition 1 : tous les objectifs de race valides par ce joueur
-  const { nbRepRace, configObj } = lireConfigPartie(db, joueur.partie_id);
+  const { nbRepRace, configObj } = await lireConfigPartie(db, joueur.partie_id);
   const requisRace = configObj.slice(0, nbRepRace).reduce((s, n) => s + n, 0);
-  if (compterValide(db, joueurId) < requisRace) return false;
+  if ((await compterValide(db, joueurId)) < requisRace) return false;
 
-  // Condition 2 : toutes les allegeances du joueur completement validees (peu importe qui a valide)
-  const { nbRepAlleg, configObjAlleg } = lireConfigPartieAllegeance(db, joueur.partie_id);
+  const { nbRepAlleg, configObjAlleg } = await lireConfigPartieAllegeance(db, joueur.partie_id);
   const requisAlleg = configObjAlleg.slice(0, nbRepAlleg).reduce((s, n) => s + n, 0);
 
-  const allegeanceIds = db
-    .prepare('SELECT allegeance_id FROM joueur_allegeances WHERE joueur_id = ?')
-    .all(joueurId)
+  const allegeanceIds = (await db.all('SELECT allegeance_id FROM joueur_allegeances WHERE joueur_id = ?', [joueurId]))
     .map((r) => r.allegeance_id);
 
   for (const allegeanceId of allegeanceIds) {
-    const { n: valideAlleg } = db
-      .prepare(
-        "SELECT COUNT(*) AS n FROM grille_allegeance WHERE allegeance_id = ? AND partie_id = ? AND statut = 'valide'"
-      )
-      .get(allegeanceId, joueur.partie_id);
-    if (valideAlleg < requisAlleg) return false;
+    const row = await db.get(
+      "SELECT COUNT(*) AS n FROM grille_allegeance WHERE allegeance_id = ? AND partie_id = ? AND statut = 'valide'",
+      [allegeanceId, joueur.partie_id]
+    );
+    if (row.n < requisAlleg) return false;
   }
 
   return true;
 }
 
-function assurerLigneGrille(db, joueurId, partieId, rang, position, statutParDefaut) {
-  const existante = db
-    .prepare('SELECT * FROM grille_objectifs WHERE joueur_id = ? AND rang = ? AND position = ?')
-    .get(joueurId, rang, position);
+async function assurerLigneGrille(db, joueurId, partieId, rang, position, statutParDefaut) {
+  const existante = await db.get(
+    'SELECT * FROM grille_objectifs WHERE joueur_id = ? AND rang = ? AND position = ?',
+    [joueurId, rang, position]
+  );
 
   if (existante) {
     if (existante.statut === 'masque' && statutParDefaut !== 'masque') {
-      db.prepare('UPDATE grille_objectifs SET statut = ? WHERE id = ?').run(statutParDefaut, existante.id);
+      await db.run('UPDATE grille_objectifs SET statut = ? WHERE id = ?', [statutParDefaut, existante.id]);
       return { ...existante, statut: statutParDefaut };
     }
     return existante;
   }
 
-  const dejaUtilises = db
-    .prepare('SELECT objectif_id FROM grille_objectifs WHERE partie_id = ?')
-    .all(partieId)
+  const dejaUtilises = (await db.all('SELECT objectif_id FROM grille_objectifs WHERE partie_id = ?', [partieId]))
     .map((r) => r.objectif_id);
   const exclusion = dejaUtilises.length ? dejaUtilises : [0];
   const placeholders = exclusion.map(() => '?').join(',');
-  const objectif =
-    db
-      .prepare(`SELECT * FROM objectifs WHERE id NOT IN (${placeholders}) ORDER BY RANDOM() LIMIT 1`)
-      .get(...exclusion) || db.prepare('SELECT * FROM objectifs ORDER BY RANDOM() LIMIT 1').get();
+
+  let objectif = await db.get(
+    `SELECT * FROM objectifs WHERE id NOT IN (${placeholders}) ORDER BY RANDOM() LIMIT 1`,
+    exclusion
+  );
+  if (!objectif) objectif = await db.get('SELECT * FROM objectifs ORDER BY RANDOM() LIMIT 1');
   if (!objectif) return null;
 
-  const resultat = db
-    .prepare(
-      'INSERT INTO grille_objectifs (joueur_id, partie_id, rang, position, objectif_id, statut) VALUES (?, ?, ?, ?, ?, ?)'
-    )
-    .run(joueurId, partieId, rang, position, objectif.id, statutParDefaut);
+  const r = await db.run(
+    'INSERT INTO grille_objectifs (joueur_id, partie_id, rang, position, objectif_id, statut) VALUES (?, ?, ?, ?, ?, ?)',
+    [joueurId, partieId, rang, position, objectif.id, statutParDefaut]
+  );
 
-  return db.prepare('SELECT * FROM grille_objectifs WHERE id = ?').get(resultat.lastInsertRowid);
+  return db.get('SELECT * FROM grille_objectifs WHERE id = ?', [r.lastInsertRowid]);
 }
 
-function deverrouillerRang(db, joueurId, partieId, rang) {
-  const { configObj } = lireConfigPartie(db, partieId);
+async function deverrouillerRang(db, joueurId, partieId, rang) {
+  const { configObj } = await lireConfigPartie(db, partieId);
   const nbPositions = configObj[rang - 1] ?? 2;
   for (let pos = 1; pos <= nbPositions; pos++) {
-    assurerLigneGrille(db, joueurId, partieId, rang, pos, 'ouvert');
+    await assurerLigneGrille(db, joueurId, partieId, rang, pos, 'ouvert');
   }
 }
 
-function verifierDeverrouillages(db, joueurId, partieId) {
-  const { nbRepRace, configObj } = lireConfigPartie(db, partieId);
+async function verifierDeverrouillages(db, joueurId, partieId) {
+  const { nbRepRace, configObj } = await lireConfigPartie(db, partieId);
   for (let rang = 1; rang <= nbRepRace - 1; rang++) {
     const nbPositions = configObj[rang - 1] ?? 2;
-    const { n: valides } = db
-      .prepare("SELECT COUNT(*) AS n FROM grille_objectifs WHERE joueur_id = ? AND rang = ? AND statut = 'valide'")
-      .get(joueurId, rang);
-    if (valides >= nbPositions) {
-      deverrouillerRang(db, joueurId, partieId, rang + 1);
+    const row = await db.get(
+      "SELECT COUNT(*) AS n FROM grille_objectifs WHERE joueur_id = ? AND rang = ? AND statut = 'valide'",
+      [joueurId, rang]
+    );
+    if (row.n >= nbPositions) {
+      await deverrouillerRang(db, joueurId, partieId, rang + 1);
     }
   }
 }
 
-function validerObjectif(db, { joueurId, ligneId }) {
-  const ligne = db.prepare('SELECT * FROM grille_objectifs WHERE id = ? AND joueur_id = ?').get(ligneId, joueurId);
+async function validerObjectif(db, { joueurId, ligneId }) {
+  const ligne = await db.get('SELECT * FROM grille_objectifs WHERE id = ? AND joueur_id = ?', [ligneId, joueurId]);
   if (!ligne) throw new Error('Case de grille introuvable');
-  if (ligne.statut !== 'ouvert') throw new Error("Cet objectif doit etre ouvert pour etre valide");
+  if (ligne.statut !== 'ouvert') throw new Error('Cet objectif doit etre ouvert pour etre valide');
 
-  db.prepare("UPDATE grille_objectifs SET statut = 'valide', completed_at = datetime('now') WHERE id = ?").run(ligne.id);
+  await db.run(
+    "UPDATE grille_objectifs SET statut = 'valide', completed_at = datetime('now') WHERE id = ?",
+    [ligne.id]
+  );
 
-  return { ligne, partieTerminee: estJoueurTermine(db, joueurId), partieId: ligne.partie_id };
+  return { ligne, partieTerminee: await estJoueurTermine(db, joueurId), partieId: ligne.partie_id };
 }
 
 // ------ GRILLE D'ALLEGEANCE (partagee entre porteurs) ------
 
-function deverrouillerRangAllegeance(db, allegeanceId, partieId, rang) {
-  const { configObjAlleg } = lireConfigPartieAllegeance(db, partieId);
+async function deverrouillerRangAllegeance(db, allegeanceId, partieId, rang) {
+  const { configObjAlleg } = await lireConfigPartieAllegeance(db, partieId);
   const nbPositions = configObjAlleg[rang - 1] ?? 2;
   for (let pos = 1; pos <= nbPositions; pos++) {
-    const existante = db
-      .prepare(
-        'SELECT * FROM grille_allegeance WHERE allegeance_id = ? AND partie_id = ? AND rang = ? AND position = ?'
-      )
-      .get(allegeanceId, partieId, rang, pos);
+    const existante = await db.get(
+      'SELECT * FROM grille_allegeance WHERE allegeance_id = ? AND partie_id = ? AND rang = ? AND position = ?',
+      [allegeanceId, partieId, rang, pos]
+    );
     if (existante && existante.statut === 'masque') {
-      db.prepare("UPDATE grille_allegeance SET statut = 'ouvert' WHERE id = ?").run(existante.id);
+      await db.run("UPDATE grille_allegeance SET statut = 'ouvert' WHERE id = ?", [existante.id]);
     }
   }
 }
 
-function verifierDeverrouillagesAllegeance(db, allegeanceId, partieId) {
-  const { nbRepAlleg, configObjAlleg } = lireConfigPartieAllegeance(db, partieId);
+async function verifierDeverrouillagesAllegeance(db, allegeanceId, partieId) {
+  const { nbRepAlleg, configObjAlleg } = await lireConfigPartieAllegeance(db, partieId);
   for (let rang = 1; rang <= nbRepAlleg - 1; rang++) {
     const nbPositions = configObjAlleg[rang - 1] ?? 2;
-    const { n: valides } = db
-      .prepare(
-        "SELECT COUNT(*) AS n FROM grille_allegeance WHERE allegeance_id = ? AND partie_id = ? AND rang = ? AND statut = 'valide'"
-      )
-      .get(allegeanceId, partieId, rang);
-    if (valides >= nbPositions) {
-      deverrouillerRangAllegeance(db, allegeanceId, partieId, rang + 1);
+    const row = await db.get(
+      "SELECT COUNT(*) AS n FROM grille_allegeance WHERE allegeance_id = ? AND partie_id = ? AND rang = ? AND statut = 'valide'",
+      [allegeanceId, partieId, rang]
+    );
+    if (row.n >= nbPositions) {
+      await deverrouillerRangAllegeance(db, allegeanceId, partieId, rang + 1);
     }
   }
 }
 
-function validerObjectifAllegeance(db, { allegeanceId, partieId, ligneId, joueurId }) {
-  const ligne = db
-    .prepare('SELECT * FROM grille_allegeance WHERE id = ? AND allegeance_id = ? AND partie_id = ?')
-    .get(ligneId, allegeanceId, partieId);
-  if (!ligne) throw new Error("Case de grille allegeance introuvable");
-  if (ligne.statut !== 'ouvert') throw new Error("Cet objectif doit etre ouvert pour etre valide");
+async function validerObjectifAllegeance(db, { allegeanceId, partieId, ligneId, joueurId }) {
+  const ligne = await db.get(
+    'SELECT * FROM grille_allegeance WHERE id = ? AND allegeance_id = ? AND partie_id = ?',
+    [ligneId, allegeanceId, partieId]
+  );
+  if (!ligne) throw new Error('Case de grille allegeance introuvable');
+  if (ligne.statut !== 'ouvert') throw new Error('Cet objectif doit etre ouvert pour etre valide');
 
-  db.prepare(
-    "UPDATE grille_allegeance SET statut = 'valide', completed_at = datetime('now'), completed_by_joueur_id = ? WHERE id = ?"
-  ).run(joueurId, ligne.id);
+  await db.run(
+    "UPDATE grille_allegeance SET statut = 'valide', completed_at = datetime('now'), completed_by_joueur_id = ? WHERE id = ?",
+    [joueurId, ligne.id]
+  );
 
   return { ligne };
 }
 
-function obtenirEtatAllegeance(db, allegeanceId, partieId) {
-  const allegeance = db.prepare('SELECT * FROM allegeances WHERE id = ?').get(allegeanceId);
+async function obtenirEtatAllegeance(db, allegeanceId, partieId) {
+  const allegeance = await db.get('SELECT * FROM allegeances WHERE id = ?', [allegeanceId]);
   if (!allegeance) return null;
 
-  const { nbRepAlleg, configObjAlleg } = lireConfigPartieAllegeance(db, partieId);
+  const { nbRepAlleg, configObjAlleg } = await lireConfigPartieAllegeance(db, partieId);
 
-  const rangsDebloquesSet = new Set(
-    db
-      .prepare(
-        "SELECT DISTINCT rang FROM grille_allegeance WHERE allegeance_id = ? AND partie_id = ? AND statut != 'masque'"
-      )
-      .all(allegeanceId, partieId)
-      .map((r) => r.rang)
+  const rangsDebloquesRows = await db.all(
+    "SELECT DISTINCT rang FROM grille_allegeance WHERE allegeance_id = ? AND partie_id = ? AND statut != 'masque'",
+    [allegeanceId, partieId]
   );
+  const rangsDebloquesSet = new Set(rangsDebloquesRows.map((r) => r.rang));
 
-  const rangs = Array.from({ length: nbRepAlleg }, (_, idx) => {
+  const rangs = [];
+  for (let idx = 0; idx < nbRepAlleg; idx++) {
     const rang = idx + 1;
     const nbPositions = configObjAlleg[idx] ?? 2;
     const deverrouille = rangsDebloquesSet.has(rang);
 
     if (!deverrouille) {
-      // Inclut le representant pour permettre l'affichage grise cote client
-      const representantBloque = db
-        .prepare('SELECT id, nom, image_depart, image_sourire FROM representants_allegeance WHERE allegeance_id = ? AND rang = ?')
-        .get(allegeanceId, rang);
-      return { rang, deverrouille: false, representant: representantBloque || null, cases: [], toutesLesCasesValidees: false };
+      const representantBloque = await db.get(
+        'SELECT id, nom, image_depart, image_sourire FROM representants_allegeance WHERE allegeance_id = ? AND rang = ?',
+        [allegeanceId, rang]
+      );
+      rangs.push({ rang, deverrouille: false, representant: representantBloque || null, cases: [], toutesLesCasesValidees: false });
+      continue;
     }
 
-    const representant = db
-      .prepare('SELECT * FROM representants_allegeance WHERE allegeance_id = ? AND rang = ?')
-      .get(allegeanceId, rang);
+    const representant = await db.get(
+      'SELECT * FROM representants_allegeance WHERE allegeance_id = ? AND rang = ?',
+      [allegeanceId, rang]
+    );
+    const lignes = await db.all(
+      'SELECT * FROM grille_allegeance WHERE allegeance_id = ? AND partie_id = ? AND rang = ?',
+      [allegeanceId, partieId, rang]
+    );
 
-    const lignes = db
-      .prepare('SELECT * FROM grille_allegeance WHERE allegeance_id = ? AND partie_id = ? AND rang = ?')
-      .all(allegeanceId, partieId, rang);
-
-    const cases = Array.from({ length: nbPositions }, (_, posIdx) => {
+    const cases = [];
+    for (let posIdx = 0; posIdx < nbPositions; posIdx++) {
       const position = posIdx + 1;
       const ligne = lignes.find((l) => l.position === position);
       if (!ligne || ligne.statut === 'masque') {
-        return { id: ligne ? ligne.id : null, position, statut: 'masque', objectif: null };
+        cases.push({ id: ligne ? ligne.id : null, position, statut: 'masque', objectif: null });
+        continue;
       }
-      const objectif = db.prepare('SELECT * FROM objectifs WHERE id = ?').get(ligne.objectif_id);
-      return { id: ligne.id, position, statut: ligne.statut, objectif };
-    });
+      const objectif = await db.get('SELECT * FROM objectifs WHERE id = ?', [ligne.objectif_id]);
+      cases.push({ id: ligne.id, position, statut: ligne.statut, objectif });
+    }
 
-    return {
+    rangs.push({
       rang,
       deverrouille: true,
       representant: representant || null,
       cases,
-      toutesLesCasesValidees: cases.length > 0 && cases.every((c) => c.statut === 'valide')
-    };
-  });
+      toutesLesCasesValidees: cases.length > 0 && cases.every((c) => c.statut === 'valide'),
+    });
+  }
 
   const requis = configObjAlleg.slice(0, nbRepAlleg).reduce((s, n) => s + n, 0);
-  const { n: totalValide } = db
-    .prepare(
-      "SELECT COUNT(*) AS n FROM grille_allegeance WHERE allegeance_id = ? AND partie_id = ? AND statut = 'valide'"
-    )
-    .get(allegeanceId, partieId);
+  const rowTotal = await db.get(
+    "SELECT COUNT(*) AS n FROM grille_allegeance WHERE allegeance_id = ? AND partie_id = ? AND statut = 'valide'",
+    [allegeanceId, partieId]
+  );
 
   return {
     allegeanceId,
-    totalValide,
-    toutesValidees: requis === 0 || totalValide >= requis,
-    rangs
+    totalValide: rowTotal.n,
+    toutesValidees: requis === 0 || rowTotal.n >= requis,
+    rangs,
   };
 }
 
 // ------ ETAT JOUEUR COMPLET (race + allegeances) ------
 
-function obtenirEtatJoueur(db, joueurId) {
-  const joueur = db.prepare('SELECT * FROM joueurs WHERE id = ?').get(joueurId);
+async function obtenirEtatJoueur(db, joueurId) {
+  const joueur = await db.get('SELECT * FROM joueurs WHERE id = ?', [joueurId]);
   if (!joueur) return null;
 
-  const race = joueur.race_id ? db.prepare('SELECT * FROM races WHERE id = ?').get(joueur.race_id) : null;
-  const partie = joueur.partie_id ? db.prepare('SELECT * FROM parties WHERE id = ?').get(joueur.partie_id) : null;
+  const race = joueur.race_id ? await db.get('SELECT * FROM races WHERE id = ?', [joueur.race_id]) : null;
+  const partie = joueur.partie_id ? await db.get('SELECT * FROM parties WHERE id = ?', [joueur.partie_id]) : null;
 
   let configObj, nbRepRace;
   try { configObj = JSON.parse(partie?.config_objectifs_race || '[2,2,2]'); } catch { configObj = [2, 2, 2]; }
@@ -260,35 +259,38 @@ function obtenirEtatJoueur(db, joueurId) {
   try { configObjAlleg = JSON.parse(partie?.config_objectifs_allegeance || '[2,2,2]'); } catch { configObjAlleg = [2, 2, 2]; }
   nbRepAlleg = partie?.nb_representants_allegeance ?? 2;
 
-  const total = compterValide(db, joueurId);
+  const total = await compterValide(db, joueurId);
 
-  const rangsDebloquesSet = new Set(
-    db
-      .prepare("SELECT DISTINCT rang FROM grille_objectifs WHERE joueur_id = ? AND statut != 'masque'")
-      .all(joueurId)
-      .map((r) => r.rang)
+  const rangsDebloquesRows = await db.all(
+    "SELECT DISTINCT rang FROM grille_objectifs WHERE joueur_id = ? AND statut != 'masque'",
+    [joueurId]
   );
+  const rangsDebloquesSet = new Set(rangsDebloquesRows.map((r) => r.rang));
 
-  const conditionActive = obtenirParametre(db, 'condition_dernier_rep_allegeance') === 'true';
-  const messageCondition = obtenirParametre(db, 'message_condition_allegeance') ||
+  const conditionActive = (await obtenirParametre(db, 'condition_dernier_rep_allegeance')) === 'true';
+  const messageCondition =
+    (await obtenirParametre(db, 'message_condition_allegeance')) ||
     "Terminez l'ensemble de vos quetes d'allegeance pour debloquer l'acces a ce personnage.";
 
-  const rangs = Array.from({ length: nbRepRace }, (_, idx) => {
+  const rangs = [];
+  for (let idx = 0; idx < nbRepRace; idx++) {
     const rang = idx + 1;
     const nbPositions = configObj[idx] ?? 2;
     let deverrouille = rangsDebloquesSet.has(rang) && !!race;
     let bloqueParConditionAllegeance = false;
 
     if (deverrouille && conditionActive && rang === nbRepRace && joueur.partie_id) {
-      const allegeancesJoueur = db
-        .prepare('SELECT allegeance_id FROM joueur_allegeances WHERE joueur_id = ?')
-        .all(joueurId);
+      const allegeancesJoueur = await db.all('SELECT allegeance_id FROM joueur_allegeances WHERE joueur_id = ?', [joueurId]);
       if (allegeancesJoueur.length > 0) {
-        const toutesValides = allegeancesJoueur.every((ja) => {
-          const etatAlleg = obtenirEtatAllegeance(db, ja.allegeance_id, joueur.partie_id);
-          if (!etatAlleg || etatAlleg.rangs.length === 0) return true;
-          return etatAlleg.rangs.every((r) => r.toutesLesCasesValidees);
-        });
+        let toutesValides = true;
+        for (const ja of allegeancesJoueur) {
+          const etatAlleg = await obtenirEtatAllegeance(db, ja.allegeance_id, joueur.partie_id);
+          if (!etatAlleg || etatAlleg.rangs.length === 0) continue;
+          if (!etatAlleg.rangs.every((r) => r.toutesLesCasesValidees)) {
+            toutesValides = false;
+            break;
+          }
+        }
         if (!toutesValides) {
           deverrouille = false;
           bloqueParConditionAllegeance = true;
@@ -297,61 +299,60 @@ function obtenirEtatJoueur(db, joueurId) {
     }
 
     if (!deverrouille) {
-      // Inclut le representant (sans dialogues) pour permettre l'affichage grise cote client
       const representantBloque = race
-        ? db.prepare('SELECT id, nom, image_depart, image_sourire FROM representants WHERE race_id = ? AND rang = ?').get(race.id, rang)
+        ? await db.get('SELECT id, nom, image_depart, image_sourire FROM representants WHERE race_id = ? AND rang = ?', [race.id, rang])
         : null;
-      return { rang, deverrouille: false, bloqueParConditionAllegeance, representant: representantBloque || null, cases: [], toutesLesCasesValidees: false };
+      rangs.push({ rang, deverrouille: false, bloqueParConditionAllegeance, representant: representantBloque || null, cases: [], toutesLesCasesValidees: false });
+      continue;
     }
 
     const representant = race
-      ? db.prepare('SELECT * FROM representants WHERE race_id = ? AND rang = ?').get(race.id, rang)
+      ? await db.get('SELECT * FROM representants WHERE race_id = ? AND rang = ?', [race.id, rang])
       : null;
 
-    const lignes = db
-      .prepare('SELECT * FROM grille_objectifs WHERE joueur_id = ? AND rang = ?')
-      .all(joueurId, rang);
+    const lignes = await db.all('SELECT * FROM grille_objectifs WHERE joueur_id = ? AND rang = ?', [joueurId, rang]);
 
-    const cases = Array.from({ length: nbPositions }, (_, posIdx) => {
+    const cases = [];
+    for (let posIdx = 0; posIdx < nbPositions; posIdx++) {
       const position = posIdx + 1;
       const ligne = lignes.find((l) => l.position === position);
       if (!ligne || ligne.statut === 'masque') {
-        return { id: ligne ? ligne.id : null, position, statut: 'masque', objectif: null };
+        cases.push({ id: ligne ? ligne.id : null, position, statut: 'masque', objectif: null });
+        continue;
       }
-      const objectif = db.prepare('SELECT * FROM objectifs WHERE id = ?').get(ligne.objectif_id);
-      return { id: ligne.id, position, statut: ligne.statut, objectif };
-    });
+      const objectif = await db.get('SELECT * FROM objectifs WHERE id = ?', [ligne.objectif_id]);
+      cases.push({ id: ligne.id, position, statut: ligne.statut, objectif });
+    }
 
     let dialogues = [];
     if (representant) {
-      dialogues = db
-        .prepare('SELECT * FROM dialogues WHERE representant_id = ?')
-        .all(representant.id)
-        .map((d) => ({ ...d, texte: d.texte.replaceAll('{nom}', joueur.pseudo) }));
+      const rows = await db.all('SELECT * FROM dialogues WHERE representant_id = ?', [representant.id]);
+      dialogues = rows.map((d) => ({ ...d, texte: d.texte.replaceAll('{nom}', joueur.pseudo) }));
     }
 
-    return {
+    rangs.push({
       rang,
       deverrouille: true,
       representant: representant ? { ...representant, dialogues } : null,
       cases,
-      toutesLesCasesValidees: cases.length > 0 && cases.every((c) => c.statut === 'valide')
-    };
-  });
+      toutesLesCasesValidees: cases.length > 0 && cases.every((c) => c.statut === 'valide'),
+    });
+  }
 
-  // Allegeances du joueur avec leur etat de grille
-  const allegeancesBase = db
-    .prepare(
-      'SELECT a.id, a.nom, a.portrait, a.texte_hub, a.image_fond FROM joueur_allegeances ja JOIN allegeances a ON a.id = ja.allegeance_id WHERE ja.joueur_id = ?'
-    )
-    .all(joueurId);
+  const allegeancesBase = await db.all(
+    'SELECT a.id, a.nom, a.portrait, a.texte_hub, a.image_fond FROM joueur_allegeances ja JOIN allegeances a ON a.id = ja.allegeance_id WHERE ja.joueur_id = ?',
+    [joueurId]
+  );
 
-  const allegeances = joueur.partie_id
-    ? allegeancesBase.map((a) => {
-        const etat = obtenirEtatAllegeance(db, a.id, joueur.partie_id);
-        return { id: a.id, nom: a.nom, portrait: a.portrait, texte_hub: a.texte_hub || null, image_fond: a.image_fond || null, ...(etat || {}) };
-      })
-    : allegeancesBase;
+  const allegeances = [];
+  if (joueur.partie_id) {
+    for (const a of allegeancesBase) {
+      const etat = await obtenirEtatAllegeance(db, a.id, joueur.partie_id);
+      allegeances.push({ id: a.id, nom: a.nom, portrait: a.portrait, texte_hub: a.texte_hub || null, image_fond: a.image_fond || null, ...(etat || {}) });
+    }
+  } else {
+    allegeances.push(...allegeancesBase);
+  }
 
   return {
     joueurId,
@@ -363,57 +364,46 @@ function obtenirEtatJoueur(db, joueurId) {
     imagePortraitRace: race ? (race.image_portrait || null) : null,
     texteHubRace: race ? (race.texte_hub || null) : null,
     totalValide: total,
-    partieTerminee: estJoueurTermine(db, joueurId),
+    partieTerminee: await estJoueurTermine(db, joueurId),
     config: { nbRepRace, configObjectifs: configObj, nbRepAlleg, configObjectifsAlleg: configObjAlleg },
     messageConditionAllegeance: messageCondition,
     allegeances,
-    rangs
+    rangs,
   };
 }
 
-// Calcule le classement final d'une partie.
-// Critère 1 : quêtes achevées (race + allégeance) — un rang est "achevé" quand
-//   toutes ses cases sont validées. Les quêtes d'allégeance comptent pour chaque porteur.
-// Critère 2 (départage) : total d'objectifs validés (race + allégeance).
-// Critère 3 (égalité parfaite) : rang partagé (2 joueurs ex-aequo 2e → suivant = 4e).
-function calculerClassement(db, partieId) {
-  const joueurs = db.prepare('SELECT id, pseudo FROM joueurs WHERE partie_id = ?').all(partieId);
+async function calculerClassement(db, partieId) {
+  const joueurs = await db.all('SELECT id, pseudo FROM joueurs WHERE partie_id = ?', [partieId]);
   if (!joueurs.length) return [];
 
-  // Rangs de race entièrement validés par joueur
-  const quetesRaceRows = db
-    .prepare(
-      `SELECT joueur_id, rang FROM grille_objectifs WHERE partie_id = ?
-       GROUP BY joueur_id, rang
-       HAVING COUNT(*) > 0 AND COUNT(*) = SUM(CASE WHEN statut = 'valide' THEN 1 ELSE 0 END)`
-    )
-    .all(partieId);
+  const quetesRaceRows = await db.all(
+    `SELECT joueur_id, rang FROM grille_objectifs WHERE partie_id = ?
+     GROUP BY joueur_id, rang
+     HAVING COUNT(*) > 0 AND COUNT(*) = SUM(CASE WHEN statut = 'valide' THEN 1 ELSE 0 END)`,
+    [partieId]
+  );
   const quetesRaceParJoueur = {};
   for (const r of quetesRaceRows) {
     quetesRaceParJoueur[r.joueur_id] = (quetesRaceParJoueur[r.joueur_id] || 0) + 1;
   }
 
-  // Rangs d'allégeance entièrement validés (partagés entre porteurs)
-  const quetesAllegRows = db
-    .prepare(
-      `SELECT allegeance_id, rang FROM grille_allegeance WHERE partie_id = ?
-       GROUP BY allegeance_id, rang
-       HAVING COUNT(*) > 0 AND COUNT(*) = SUM(CASE WHEN statut = 'valide' THEN 1 ELSE 0 END)`
-    )
-    .all(partieId);
+  const quetesAllegRows = await db.all(
+    `SELECT allegeance_id, rang FROM grille_allegeance WHERE partie_id = ?
+     GROUP BY allegeance_id, rang
+     HAVING COUNT(*) > 0 AND COUNT(*) = SUM(CASE WHEN statut = 'valide' THEN 1 ELSE 0 END)`,
+    [partieId]
+  );
   const quetesAllegParAllegeance = {};
   for (const r of quetesAllegRows) {
     quetesAllegParAllegeance[r.allegeance_id] = (quetesAllegParAllegeance[r.allegeance_id] || 0) + 1;
   }
 
-  // Allégeances détenues par chaque joueur de la partie
   const joueurIds = joueurs.map((j) => j.id);
   const allegeancesRows = joueurIds.length
-    ? db
-        .prepare(
-          `SELECT joueur_id, allegeance_id FROM joueur_allegeances WHERE joueur_id IN (${joueurIds.map(() => '?').join(',')})`
-        )
-        .all(...joueurIds)
+    ? await db.all(
+        `SELECT joueur_id, allegeance_id FROM joueur_allegeances WHERE joueur_id IN (${joueurIds.map(() => '?').join(',')})`,
+        joueurIds
+      )
     : [];
   const allegeancesParJoueur = {};
   for (const r of allegeancesRows) {
@@ -421,25 +411,20 @@ function calculerClassement(db, partieId) {
     allegeancesParJoueur[r.joueur_id].push(r.allegeance_id);
   }
 
-  // Objectifs race validés par joueur
-  const raceValidesRows = db
-    .prepare(
-      `SELECT joueur_id, COUNT(*) AS n FROM grille_objectifs WHERE partie_id = ? AND statut = 'valide' GROUP BY joueur_id`
-    )
-    .all(partieId);
+  const raceValidesRows = await db.all(
+    `SELECT joueur_id, COUNT(*) AS n FROM grille_objectifs WHERE partie_id = ? AND statut = 'valide' GROUP BY joueur_id`,
+    [partieId]
+  );
   const raceValidesParJoueur = {};
   for (const r of raceValidesRows) raceValidesParJoueur[r.joueur_id] = r.n;
 
-  // Objectifs allégeance validés (par allegeance_id, partagés entre porteurs)
-  const allegValidesRows = db
-    .prepare(
-      `SELECT allegeance_id, COUNT(*) AS n FROM grille_allegeance WHERE partie_id = ? AND statut = 'valide' GROUP BY allegeance_id`
-    )
-    .all(partieId);
+  const allegValidesRows = await db.all(
+    `SELECT allegeance_id, COUNT(*) AS n FROM grille_allegeance WHERE partie_id = ? AND statut = 'valide' GROUP BY allegeance_id`,
+    [partieId]
+  );
   const allegValidesParAllegeance = {};
   for (const r of allegValidesRows) allegValidesParAllegeance[r.allegeance_id] = r.n;
 
-  // Score par joueur
   const scores = joueurs.map((j) => {
     const allegeances = allegeancesParJoueur[j.id] || [];
     const quetes =
@@ -477,5 +462,5 @@ module.exports = {
   validerObjectifAllegeance,
   obtenirEtatAllegeance,
   obtenirEtatJoueur,
-  calculerClassement
+  calculerClassement,
 };
