@@ -29,17 +29,28 @@ async function brancheCourante() {
 
 async function cibleDePush() {
   const token = process.env.GITHUB_TOKEN;
-  if (!token) return 'origin';
+  if (!token) {
+    console.log('[GIT BACKUP] cibleDePush: GITHUB_TOKEN absent → fallback origin (pas d\'auth)');
+    return 'origin';
+  }
 
   let urlDistante;
   try {
     urlDistante = (await executer('git', ['config', '--get', 'remote.origin.url'])).trim();
-  } catch {
+    console.log('[GIT BACKUP] cibleDePush: remote.origin.url =', urlDistante);
+  } catch (err) {
+    console.log('[GIT BACKUP] cibleDePush: impossible de lire remote.origin.url →', err.message, '→ fallback origin');
     return 'origin';
   }
-  if (!urlDistante.startsWith('https://')) return 'origin';
 
+  if (!urlDistante.startsWith('https://')) {
+    console.log('[GIT BACKUP] cibleDePush: URL non-HTTPS (SSH ou autre) → fallback origin (token inutilisable sur SSH)');
+    return 'origin';
+  }
+
+  // URL authentifiee construite — on ne logue pas le token, seulement la forme de l'URL
   const sansProtocole = urlDistante.replace('https://', '');
+  console.log('[GIT BACKUP] cibleDePush: URL authentifiee construite → https://x-access-token:***@' + sansProtocole);
   return `https://x-access-token:${token}@${sansProtocole}`;
 }
 
@@ -100,6 +111,8 @@ async function commiterEtPousser(db, message) {
     return { pushed: true };
   } catch (erreur) {
     const msg = erreur.message || '';
+    // Log brut en premier — c'est le message exact de git/GitHub, avant tout remapping
+    console.error('[GIT BACKUP] ERREUR BRUTE GIT :', msg);
     const estErreurAcces =
       msg.includes('Could not read from remote') ||
       msg.includes('not appear to be a git repository') ||
@@ -108,7 +121,7 @@ async function commiterEtPousser(db, message) {
     const raison = estErreurAcces
       ? "Push GitHub echoue : configurez GITHUB_TOKEN dans les variables d'environnement du serveur"
       : msg;
-    console.error('[GIT BACKUP] FAILED :', raison);
+    console.error('[GIT BACKUP] FAILED (raison affichee admin) :', raison);
     return { pushed: false, raison };
   }
 }
