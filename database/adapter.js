@@ -17,13 +17,15 @@ function filtrerStmts(sql) {
     });
 }
 
-// Convertit une Row libsql en objet JS ordinaire en utilisant rs.columns comme cle.
+// Convertit une Row libsql en objet JS ordinaire.
+// rs.columns est un Array<string> dans @libsql/client : chaque element
+// est directement le nom de la colonne (pas un objet { name, type }).
 function rowVersObjet(row, columns) {
   const obj = {};
   for (const col of columns) {
-    const v = row[col.name];
+    const v = row[col];
     // libsql renvoie des BigInt pour INTEGER ; on normalise en Number.
-    obj[col.name] = typeof v === 'bigint' ? Number(v) : v;
+    obj[col] = typeof v === 'bigint' ? Number(v) : v;
   }
   return obj;
 }
