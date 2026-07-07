@@ -267,11 +267,7 @@ button:hover {
 
 /* --- Tableau de bord --- */
 
-.contenu-tableau-de-bord {
-  display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-}
+/* contenu-tableau-de-bord hérite de .classement-final — pas de styles supplémentaires */
 
 .bloc-joueur-tableau {
   min-width: 260px;
@@ -361,7 +357,7 @@ button:hover {
 .ligne-classement {
   display: grid;
   grid-template-columns: 2rem 2.5rem 1fr;
-  grid-template-rows: auto auto;
+  grid-template-rows: auto auto auto;
   align-items: center;
   gap: 0 0.5rem;
   background: rgba(255,255,255,0.05);
@@ -369,8 +365,74 @@ button:hover {
   padding: 0.6rem 1rem;
 }
 
+.ligne-classement-premier {
+  background: rgba(202, 165, 77, 0.07);
+  border: 1px solid rgba(202, 165, 77, 0.25);
+}
+
 .ligne-classement .portrait-vignette {
   grid-row: 1 / 3;
+}
+
+/* Badges gagnant / égalité */
+.badge-classement {
+  display: inline-block;
+  font-size: 0.65rem;
+  border-radius: 0.25rem;
+  padding: 0.1em 0.45em;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.badge-gagnant {
+  background: rgba(202, 165, 77, 0.2);
+  color: #caa54d;
+}
+
+.badge-egalite {
+  background: rgba(140, 140, 220, 0.15);
+  color: #a0a4e8;
+}
+
+/* Détail repliable dans le dashboard */
+.tdb-detail {
+  grid-column: 1 / -1;
+  margin-top: 0.3rem;
+}
+
+.tdb-detail summary {
+  font-size: 0.75rem;
+  color: rgba(232, 228, 240, 0.5);
+  cursor: pointer;
+  list-style: none;
+  padding: 0.2rem 0.3rem;
+  border-radius: 0.25rem;
+  transition: color 0.12s, background 0.12s;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tdb-detail summary:hover {
+  color: #e8e4f0;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tdb-detail summary::before {
+  content: '▶';
+  font-size: 0.5rem;
+  display: inline-block;
+  transition: transform 0.15s;
+}
+
+.tdb-detail[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.tdb-detail-corps {
+  padding: 0.5rem 0.35rem 0.1rem;
 }
 
 .rang-final {

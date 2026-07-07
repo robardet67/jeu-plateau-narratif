@@ -229,9 +229,12 @@
       </div>
 
       <div id="partie-suivi" class="carte cachee">
-        <h2>Suivi en cours de partie</h2>
+        <h2>Suivi de partie</h2>
         <ul id="liste-suivi-joueurs" class="liste-elements"></ul>
-        <button id="btn-terminer-partie" class="bouton-danger">Terminer la partie manuellement</button>
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.75rem">
+          <button id="btn-terminer-partie" class="bouton-danger">Terminer la partie</button>
+          <button id="btn-rouvrir-partie" class="bouton-principal cachee">↩ Rouvrir la partie</button>
+        </div>
       </div>
     </section>
   </div>

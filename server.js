@@ -764,9 +764,10 @@ app.get('/api/parties/:code/tableau-de-bord', gerer(async (req, res) => {
   const partie = await db.get('SELECT * FROM parties WHERE code = ?', [req.params.code.toUpperCase()]);
   if (!partie) return res.status(404).json({ error: 'Partie introuvable' });
 
+  const classement = await calculerClassement(db, partie.id);
   const joueurs = await db.all('SELECT id FROM joueurs WHERE partie_id = ?', [partie.id]);
 
-  const resultat = [];
+  const detail = [];
   for (const j of joueurs) {
     const etat = await obtenirEtatJoueur(db, j.id);
     if (!etat) continue;
@@ -795,15 +796,30 @@ app.get('/api/parties/:code/tableau-de-bord', gerer(async (req, res) => {
       )
     );
 
-    resultat.push({
+    detail.push({
       joueurId: etat.joueurId,
-      pseudo: etat.pseudo,
       raceNom: etat.raceNom,
       imagePortraitRace: etat.imagePortraitRace || null,
       quetes: [...quetesRace, ...quetesAllegeance],
       objectifsValides: [...objRace, ...objAllegeance],
     });
   }
+
+  // Fusionne classement (rang + scores) avec detail (quetes/objectifs)
+  const resultat = classement.map((entree) => {
+    const d = detail.find((x) => x.joueurId === entree.id) || {};
+    return {
+      joueurId: entree.id,
+      pseudo: entree.pseudo,
+      rang: entree.rang,
+      nbQuetes: entree.quetes,
+      nbValides: entree.valides,
+      imagePortraitRace: entree.imagePortrait || d.imagePortraitRace || null,
+      raceNom: d.raceNom || null,
+      quetes: d.quetes || [],
+      objectifsValides: d.objectifsValides || [],
+    };
+  });
 
   res.json(resultat);
 }));
@@ -1039,6 +1055,15 @@ app.post('/api/admin/partie-active/terminer', exigerAdmin, gerer(async (req, res
   res.json({ ok: true, classement });
 }));
 
+app.post('/api/admin/partie-active/rouvrir', exigerAdmin, gerer(async (req, res) => {
+  const partie = await db.get("SELECT * FROM parties WHERE statut = 'terminee' ORDER BY id DESC LIMIT 1");
+  if (!partie) return res.status(404).json({ error: 'Aucune partie terminee a rouvrir' });
+
+  await db.run("UPDATE parties SET statut = 'en_cours' WHERE id = ?", [partie.id]);
+  io.to(partie.code).emit('partie_rouverte', { message: 'La partie a ete rouverte par le maitre du jeu.' });
+  res.json({ ok: true });
+}));
+
 app.get('/api/admin/partie-active/suivi', exigerAdmin, gerer(async (req, res) => {
   const partie = await obtenirPartieActive();
   if (!partie) return res.status(404).json({ error: 'Aucune partie active' });
@@ -1124,6 +1149,14 @@ io.on('connection', (socket) => {
 
   socket.on('grille_ouvrir', async ({ joueurId, ligneId }) => {
     try {
+      const joueurOuvrir = await db.get('SELECT partie_id FROM joueurs WHERE id = ?', [joueurId]);
+      if (joueurOuvrir) {
+        const partieOuvrir = await db.get('SELECT statut FROM parties WHERE id = ?', [joueurOuvrir.partie_id]);
+        if (partieOuvrir?.statut === 'terminee') {
+          return socket.emit('notification', { message: 'La partie est terminee, les actions sont bloquees.' });
+        }
+      }
+
       const ligne = await db.get('SELECT * FROM grille_objectifs WHERE id = ? AND joueur_id = ?', [ligneId, joueurId]);
       if (!ligne || ligne.statut !== 'ferme') return;
 
@@ -1136,6 +1169,14 @@ io.on('connection', (socket) => {
 
   socket.on('grille_valider', async ({ joueurId, ligneId }) => {
     try {
+      const joueurValider = await db.get('SELECT partie_id FROM joueurs WHERE id = ?', [joueurId]);
+      if (joueurValider) {
+        const partieValider = await db.get('SELECT statut FROM parties WHERE id = ?', [joueurValider.partie_id]);
+        if (partieValider?.statut === 'terminee') {
+          return socket.emit('notification', { message: 'La partie est terminee, les actions sont bloquees.' });
+        }
+      }
+
       let resultat;
       try {
         resultat = await validerObjectif(db, { joueurId, ligneId });
@@ -1162,6 +1203,11 @@ io.on('connection', (socket) => {
 
   socket.on('grille_valider_allegeance', async ({ joueurId, allegeanceId, partieId, ligneId }) => {
     try {
+      const partieAlleg = await db.get('SELECT statut FROM parties WHERE id = ?', [partieId]);
+      if (partieAlleg?.statut === 'terminee') {
+        return socket.emit('notification', { message: 'La partie est terminee, les actions sont bloquees.' });
+      }
+
       const lienJoueur = await db.get(
         'SELECT * FROM joueur_allegeances WHERE joueur_id = ? AND allegeance_id = ?',
         [joueurId, allegeanceId]

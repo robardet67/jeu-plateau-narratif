@@ -585,43 +585,56 @@ async function afficherTableauDeBord() {
   const conteneur = document.getElementById('contenu-tableau-de-bord');
   conteneur.innerHTML = '';
 
-  donnees.forEach((joueurInfo) => {
-    const nbQuetes = joueurInfo.quetes.length;
-    const nbValides = joueurInfo.objectifsValides.length;
+  const gagnants = donnees.filter((j) => j.rang === 1);
+  const isEgalite = gagnants.length > 1;
 
-    const listeQuetes = nbQuetes > 0
+  donnees.forEach((joueurInfo) => {
+    const portrait = joueurInfo.imagePortraitRace
+      ? `<img src="${joueurInfo.imagePortraitRace}" alt="${joueurInfo.raceNom || ''}" class="portrait-vignette" />`
+      : '<span class="portrait-vignette portrait-vignette-vide">&#127775;</span>';
+
+    const quetesLabel = joueurInfo.nbQuetes === 1 ? '1 quête achevée' : `${joueurInfo.nbQuetes} quêtes achevées`;
+    const validesLabel = joueurInfo.nbValides === 1 ? '1 objectif validé' : `${joueurInfo.nbValides} objectifs validés`;
+
+    let badge = '';
+    if (joueurInfo.rang === 1) {
+      badge = isEgalite
+        ? '<span class="badge-classement badge-egalite">Égalité</span>'
+        : '<span class="badge-classement badge-gagnant">★ Gagnant·e</span>';
+    }
+
+    const listeQuetes = joueurInfo.quetes.length > 0
       ? `<ul class="tdb-quetes">${joueurInfo.quetes.map((q) => {
           const suffixe = q.type === 'allegeance' ? ` <span class="tdb-alleg-tag">${q.nomAllegeance}</span>` : '';
           return `<li>Quête de ${q.nomRepresentant}${suffixe} : <strong>Validée</strong></li>`;
         }).join('')}</ul>`
       : '<p class="tdb-vide">Aucune quête achevée</p>';
 
-    const listeObjectifs = nbValides > 0
+    const listeObjectifs = joueurInfo.objectifsValides.length > 0
       ? `<ul class="tdb-objectifs">${joueurInfo.objectifsValides.map((o) => {
-          const src = o.type === 'allegeance'
-            ? ` <span class="tdb-alleg-tag">${o.nomAllegeance}</span>`
-            : '';
+          const src = o.type === 'allegeance' ? ` <span class="tdb-alleg-tag">${o.nomAllegeance}</span>` : '';
           return `<li>${o.description}${src}</li>`;
         }).join('')}</ul>`
       : '<p class="tdb-vide">Aucun objectif validé</p>';
 
-    const raceLabel = joueurInfo.raceNom ? ` — ${joueurInfo.raceNom}` : '';
-    const quetesLabel = nbQuetes === 1 ? '1 quête achevée' : `${nbQuetes} quêtes achevées`;
-    const portraitTdb = joueurInfo.imagePortraitRace
-      ? `<img src="${joueurInfo.imagePortraitRace}" alt="${joueurInfo.raceNom || ''}" class="portrait-vignette" />`
-      : '<span class="portrait-vignette portrait-vignette-vide">&#127775;</span>';
-
-    const bloc = document.createElement('div');
-    bloc.className = 'carte bloc-joueur-tableau';
-    bloc.innerHTML = `
-      <h3 class="tdb-joueur-nom">${portraitTdb}${joueurInfo.pseudo}<span class="tdb-race">${raceLabel}</span></h3>
-      <p class="tdb-nb-quetes">${quetesLabel}</p>
-      <h4 class="tdb-section-titre">Quêtes</h4>
-      ${listeQuetes}
-      <h4 class="tdb-section-titre">Objectifs validés</h4>
-      ${listeObjectifs}
+    const item = document.createElement('li');
+    item.className = 'ligne-classement' + (joueurInfo.rang === 1 ? ' ligne-classement-premier' : '');
+    item.innerHTML = `
+      <span class="rang-final">${joueurInfo.rang}.</span>
+      ${portrait}
+      <span class="pseudo-final">${joueurInfo.pseudo}${badge}</span>
+      <span class="score-final">${quetesLabel} · ${validesLabel}</span>
+      <details class="tdb-detail">
+        <summary>Voir le détail</summary>
+        <div class="tdb-detail-corps">
+          <h4 class="tdb-section-titre">Quêtes</h4>
+          ${listeQuetes}
+          <h4 class="tdb-section-titre">Objectifs validés</h4>
+          ${listeObjectifs}
+        </div>
+      </details>
     `;
-    conteneur.appendChild(bloc);
+    conteneur.appendChild(item);
   });
 
   afficherVue('ecran-tableau-de-bord');
@@ -796,16 +809,25 @@ document.getElementById('btn-retour-accueil-fin').addEventListener('click', () =
 
 function afficherFinDePartie({ classement }) {
   const liste = document.getElementById('classement-final');
+  const gagnants = classement.filter((j) => j.rang === 1);
+  const isEgalite = gagnants.length > 1;
+
   liste.innerHTML = classement.map((j) => {
     const quetesLabel = j.quetes === 1 ? 'quête achevée' : 'quêtes achevées';
     const validesLabel = j.valides === 1 ? 'objectif validé' : 'objectifs validés';
     const portraitClas = j.imagePortrait
       ? `<img src="${j.imagePortrait}" alt="" class="portrait-vignette" />`
       : '<span class="portrait-vignette portrait-vignette-vide">&#127775;</span>';
-    return `<li class="ligne-classement">
+    let badge = '';
+    if (j.rang === 1) {
+      badge = isEgalite
+        ? '<span class="badge-classement badge-egalite">Égalité</span>'
+        : '<span class="badge-classement badge-gagnant">★ Gagnant·e</span>';
+    }
+    return `<li class="ligne-classement${j.rang === 1 ? ' ligne-classement-premier' : ''}">
       <span class="rang-final">${j.rang}.</span>
       ${portraitClas}
-      <span class="pseudo-final">${j.pseudo}</span>
+      <span class="pseudo-final">${j.pseudo}${badge}</span>
       <span class="score-final">${j.quetes} ${quetesLabel} · ${j.valides} ${validesLabel}</span>
     </li>`;
   }).join('');
@@ -891,3 +913,8 @@ socket.on('scenario_maj', () => {
 
 socket.on('partie_terminee', afficherFinDePartie);
 socket.on('partie_annulee', ({ message }) => { alert(message); window.location.href = '/'; });
+socket.on('partie_rouverte', ({ message }) => afficherNotification(message));
+
+socket.on('tableau_de_bord_maj', () => {
+  if (vueActuelleId() === 'ecran-tableau-de-bord') afficherTableauDeBord();
+});

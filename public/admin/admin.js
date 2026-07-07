@@ -886,7 +886,12 @@ async function chargerPartieActive() {
 
   document.getElementById('partie-aucune').classList.toggle('cachee', partie.active);
   document.getElementById('partie-configuration').classList.toggle('cachee', !partie.active || partie.statut !== 'en_attente');
-  document.getElementById('partie-suivi').classList.toggle('cachee', !partie.active || partie.statut !== 'en_cours');
+  const suiviVisible = partie.active && (partie.statut === 'en_cours' || partie.statut === 'terminee');
+  document.getElementById('partie-suivi').classList.toggle('cachee', !suiviVisible);
+  if (suiviVisible) {
+    document.getElementById('btn-terminer-partie').classList.toggle('cachee', partie.statut !== 'en_cours');
+    document.getElementById('btn-rouvrir-partie').classList.toggle('cachee', partie.statut !== 'terminee');
+  }
 
   if (intervalSuivi) {
     clearInterval(intervalSuivi);
@@ -1178,6 +1183,12 @@ document.getElementById('btn-creer-partie-active').addEventListener('click', asy
 document.getElementById('btn-terminer-partie').addEventListener('click', async () => {
   if (!confirm('Terminer la partie manuellement pour tous les joueurs ?')) return;
   await requeteJSON('/api/admin/partie-active/terminer', { method: 'POST' });
+  await chargerPartieActive();
+});
+
+document.getElementById('btn-rouvrir-partie').addEventListener('click', async () => {
+  if (!confirm('Rouvrir la partie ? Les joueurs pourront a nouveau valider des objectifs.')) return;
+  await requeteJSON('/api/admin/partie-active/rouvrir', { method: 'POST' });
   await chargerPartieActive();
 });
 
