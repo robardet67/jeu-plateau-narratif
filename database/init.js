@@ -4,8 +4,14 @@ const { creerDb, DB_PATH } = require('./db');
 // --- Helpers de migration (async) ---
 
 async function colonneExiste(db, table, colonne) {
-  const lignes = await db.all(`PRAGMA table_info(${table})`);
-  return lignes.some((c) => c.name === colonne);
+  // pragma_table_info() en syntaxe table-valued function est mieux supportee
+  // par Turso HTTP que l'instruction PRAGMA classique (qui renvoie parfois
+  // un resultat vide dans ce mode et fausse le test d'existence).
+  const row = await db.get(
+    `SELECT COUNT(*) AS n FROM pragma_table_info('${table}') WHERE name = ?`,
+    [colonne]
+  );
+  return row ? Number(row.n) > 0 : false;
 }
 
 async function tableExiste(db, table) {
@@ -15,13 +21,23 @@ async function tableExiste(db, table) {
 
 async function assurerColonne(db, table, colonne, definitionSql) {
   if (!(await colonneExiste(db, table, colonne))) {
-    await db.exec(`ALTER TABLE ${table} ADD COLUMN ${colonne} ${definitionSql}`);
+    try {
+      await db.exec(`ALTER TABLE ${table} ADD COLUMN ${colonne} ${definitionSql}`);
+    } catch (err) {
+      // Ignore si la colonne existe deja : protege contre les rares cas ou
+      // pragma_table_info ne refleterait pas encore l'etat reel (base Turso fraiche).
+      if (!err.message || !err.message.includes('duplicate column name')) throw err;
+    }
   }
 }
 
 async function retirerColonne(db, table, colonne) {
   if (await colonneExiste(db, table, colonne)) {
-    await db.exec(`ALTER TABLE ${table} DROP COLUMN ${colonne}`);
+    try {
+      await db.exec(`ALTER TABLE ${table} DROP COLUMN ${colonne}`);
+    } catch (err) {
+      if (!err.message || !err.message.includes('no such column')) throw err;
+    }
   }
 }
 
