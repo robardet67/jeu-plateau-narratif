@@ -319,7 +319,8 @@ async function initDatabase(db) {
   const parametresParDefaut = {
     tableau_de_bord_actif: 'false',
     condition_dernier_rep_allegeance: 'false',
-    message_condition_allegeance: ''
+    message_condition_allegeance: '',
+    keep_alive_actif: 'false',
   };
   for (const [cle, valeur] of Object.entries(parametresParDefaut)) {
     await db.run('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)', [cle, valeur]);

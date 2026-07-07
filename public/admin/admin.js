@@ -852,6 +852,7 @@ async function chargerParametres() {
   document.getElementById('case-condition-allegeance').checked = parametres.condition_dernier_rep_allegeance;
   document.getElementById('texte-message-condition').value = parametres.message_condition_allegeance || '';
   document.getElementById('section-message-condition').classList.toggle('cachee', !parametres.condition_dernier_rep_allegeance);
+  await chargerKeepAlive();
 }
 
 async function envoyerParametre(cle, valeur) {
@@ -874,6 +875,39 @@ document.getElementById('case-condition-allegeance').addEventListener('change', 
 
 document.getElementById('texte-message-condition').addEventListener('change', (e) => {
   envoyerParametre('message_condition_allegeance', e.target.value);
+});
+
+// --- Keep-Alive serveur ---
+
+let keepAliveActif = false;
+
+function mettreAJourBoutonKeepAlive(actif) {
+  keepAliveActif = actif;
+  document.getElementById('keep-alive-statut').textContent = actif ? '● Actif' : '○ Inactif';
+  document.getElementById('keep-alive-statut').style.color = actif ? '#16a34a' : '#6b7280';
+  document.getElementById('btn-toggle-keep-alive').textContent = actif ? 'Désactiver' : 'Activer';
+  document.getElementById('btn-toggle-keep-alive').className = actif ? 'bouton-danger' : 'bouton-principal';
+}
+
+async function chargerKeepAlive() {
+  const data = await requeteJSON('/api/admin/keep-alive');
+  mettreAJourBoutonKeepAlive(data.actif);
+}
+
+document.getElementById('btn-toggle-keep-alive').addEventListener('click', async () => {
+  const errEl = document.getElementById('keep-alive-erreur');
+  errEl.classList.add('cachee');
+  try {
+    const data = await requeteJSON('/api/admin/keep-alive', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actif: !keepAliveActif }),
+    });
+    mettreAJourBoutonKeepAlive(data.actif);
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.remove('cachee');
+  }
 });
 
 // --- Salle d'attente / lancement de partie ---

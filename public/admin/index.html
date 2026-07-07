@@ -181,6 +181,20 @@
             style="width:100%" />
         </div>
       </div>
+      <div class="carte">
+        <h2>Keep-Alive serveur</h2>
+        <p class="astuce">
+          Quand actif, le serveur s'envoie un ping toutes les 11 minutes pour eviter la mise
+          en veille automatique de Render (plan gratuit, seuil : 15 min sans trafic).
+          Ce reglage est stocke en base de donnees et persiste meme apres un redemarrage du serveur.
+          Seul un administrateur peut l'activer ou le desactiver.
+        </p>
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+          <span id="keep-alive-statut" style="font-weight:600"></span>
+          <button id="btn-toggle-keep-alive" class="bouton-principal">...</button>
+        </div>
+        <p id="keep-alive-erreur" class="message-erreur cachee"></p>
+      </div>
     </section>
 
     <section id="onglet-partie" class="contenu-onglet cachee">

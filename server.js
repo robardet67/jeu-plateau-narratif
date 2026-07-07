@@ -123,6 +123,22 @@ app.get('/api/admin/session', (req, res) => {
   res.json({ connecte: !!(req.session && req.session.estAdmin) });
 });
 
+app.get('/api/ping', (req, res) => {
+  res.json({ ok: true });
+});
+
+app.get('/api/admin/keep-alive', exigerAdmin, gerer(async (req, res) => {
+  const row = await db.get("SELECT valeur FROM parametres WHERE cle = 'keep_alive_actif'");
+  res.json({ actif: row?.valeur === 'true' });
+}));
+
+app.post('/api/admin/keep-alive', exigerAdmin, gerer(async (req, res) => {
+  const { actif } = req.body;
+  if (typeof actif !== 'boolean') return res.status(400).json({ error: 'actif doit etre un booleen' });
+  await db.run("UPDATE parametres SET valeur = ? WHERE cle = 'keep_alive_actif'", [actif ? 'true' : 'false']);
+  res.json({ ok: true, actif });
+}));
+
 app.post('/api/admin/mot-de-passe', exigerAdmin, gerer(async (req, res) => {
   const { ancien, nouveau } = req.body;
   const admin = await db.get('SELECT * FROM admin WHERE id = 1');
@@ -1325,6 +1341,22 @@ app.use((err, req, res, next) => {
     server.listen(PORT, () => {
       console.log(`Serveur demarre sur le port ${PORT}`);
     });
+
+    const KEEP_ALIVE_URL = process.env.RENDER_EXTERNAL_URL || null;
+    const KEEP_ALIVE_INTERVALLE = 11 * 60 * 1000;
+
+    setInterval(async () => {
+      if (!KEEP_ALIVE_URL) return;
+      try {
+        const row = await db.get("SELECT valeur FROM parametres WHERE cle = 'keep_alive_actif'");
+        if (row?.valeur !== 'true') return;
+        await fetch(`${KEEP_ALIVE_URL}/api/ping`, { signal: AbortSignal.timeout(10000) });
+        console.log('[keep-alive] ping ok');
+      } catch (err) {
+        console.warn('[keep-alive] ping echec :', err.message);
+      }
+    }, KEEP_ALIVE_INTERVALLE);
+
   } catch (err) {
     console.error('Erreur fatale au demarrage :', err);
     process.exit(1);
