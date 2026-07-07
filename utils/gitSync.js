@@ -1,3 +1,5 @@
+'use strict';
+
 const { execFile } = require('child_process');
 const path = require('path');
 const { regenererExportContenu } = require('./exportContenu');
@@ -11,6 +13,18 @@ function executer(commande, args) {
       resolve(stdout);
     });
   });
+}
+
+async function brancheCourante() {
+  try {
+    const nom = (await executer('git', ['rev-parse', '--abbrev-ref', 'HEAD'])).trim();
+    // En detached HEAD, git retourne "HEAD" — on tombe sur le fallback
+    if (nom && nom !== 'HEAD') return nom;
+  } catch {
+    // ignore
+  }
+  // Fallback configurable via variable d'env, puis "main"
+  return process.env.GIT_BRANCH || 'main';
 }
 
 async function cibleDePush() {
@@ -31,15 +45,24 @@ async function cibleDePush() {
 
 // db est passe en parametre pour supporter les deux backends (local et Turso).
 async function commiterEtPousser(db, message) {
+  console.log('[GIT BACKUP] START :', message);
+
   // Regenere le fichier d'export JSON (toujours, meme si le push est desactive).
   await regenererExportContenu(db);
 
-  if (process.env.AUTO_GIT_PUSH === 'false') {
+  const autoPushEnv = process.env.AUTO_GIT_PUSH;
+  console.log('[GIT BACKUP] AUTO_GIT_PUSH =', autoPushEnv !== undefined ? autoPushEnv : '(non defini — push active)');
+
+  if (autoPushEnv === 'false') {
+    console.log('[GIT BACKUP] Push desactive par AUTO_GIT_PUSH=false. Images non sauvegardees sur GitHub.');
     return { pushed: false, raison: 'synchronisation desactivee (AUTO_GIT_PUSH=false)' };
   }
 
+  console.log('[GIT BACKUP] GITHUB_TOKEN present :', !!process.env.GITHUB_TOKEN);
+
   try {
     await executer('git', ['add', '-A']);
+    console.log('[GIT BACKUP] git add -A OK');
 
     const nomAuteur = process.env.GIT_AUTHOR_NAME || 'Jeu Plateau Narratif (admin)';
     const emailAuteur = process.env.GIT_AUTHOR_EMAIL || 'admin@jeu-plateau-narratif.local';
@@ -50,12 +73,17 @@ async function commiterEtPousser(db, message) {
         '-c', `user.email=${emailAuteur}`,
         'commit', '-m', message,
       ]);
+      console.log('[GIT BACKUP] git commit OK');
     } catch (erreurCommit) {
       if (/nothing to commit/i.test(erreurCommit.message)) {
+        console.log('[GIT BACKUP] Rien a commiter — aucun fichier modifie detecte par git.');
         return { pushed: false, raison: 'aucun fichier a synchroniser' };
       }
       throw erreurCommit;
     }
+
+    const branche = await brancheCourante();
+    console.log('[GIT BACKUP] Branche cible du push :', branche);
 
     let cible;
     try {
@@ -63,8 +91,12 @@ async function commiterEtPousser(db, message) {
     } catch {
       cible = 'origin';
     }
+    // Ne jamais afficher le token : on indique seulement si l'URL est authentifiee
+    console.log('[GIT BACKUP] Remote authentifie :', cible !== 'origin');
 
-    await executer('git', ['push', cible, 'HEAD:main']);
+    console.log('[GIT BACKUP] GIT PUSH START → HEAD:', branche);
+    await executer('git', ['push', cible, `HEAD:${branche}`]);
+    console.log('[GIT BACKUP] GIT PUSH SUCCESS');
     return { pushed: true };
   } catch (erreur) {
     const msg = erreur.message || '';
@@ -76,7 +108,7 @@ async function commiterEtPousser(db, message) {
     const raison = estErreurAcces
       ? "Push GitHub echoue : configurez GITHUB_TOKEN dans les variables d'environnement du serveur"
       : msg;
-    console.error('Erreur de synchronisation GitHub :', msg);
+    console.error('[GIT BACKUP] FAILED :', raison);
     return { pushed: false, raison };
   }
 }
