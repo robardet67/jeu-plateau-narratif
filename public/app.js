@@ -112,7 +112,7 @@ async function ouvrirModalCreation() {
     const carte = document.createElement('div');
     carte.className = 'carte-choix-race' + (prise ? ' indisponible' : '');
     carte.dataset.id = race.id;
-    const image = race.representant1?.image_depart;
+    const image = race.image_portrait || race.representant1?.image_depart;
     carte.innerHTML = `
       ${image ? `<img src="${image}" alt="${race.nom}" />` : '<div class="placeholder-race">&#127775;</div>'}
       <div class="nom-choix">${race.nom}</div>
@@ -607,11 +607,14 @@ async function afficherTableauDeBord() {
 
     const raceLabel = joueurInfo.raceNom ? ` — ${joueurInfo.raceNom}` : '';
     const quetesLabel = nbQuetes === 1 ? '1 quête achevée' : `${nbQuetes} quêtes achevées`;
+    const portraitTdb = joueurInfo.imagePortraitRace
+      ? `<img src="${joueurInfo.imagePortraitRace}" alt="${joueurInfo.raceNom || ''}" class="portrait-vignette" />`
+      : '<span class="portrait-vignette portrait-vignette-vide">&#127775;</span>';
 
     const bloc = document.createElement('div');
     bloc.className = 'carte bloc-joueur-tableau';
     bloc.innerHTML = `
-      <h3 class="tdb-joueur-nom">${joueurInfo.pseudo}<span class="tdb-race">${raceLabel}</span></h3>
+      <h3 class="tdb-joueur-nom">${portraitTdb}${joueurInfo.pseudo}<span class="tdb-race">${raceLabel}</span></h3>
       <p class="tdb-nb-quetes">${quetesLabel}</p>
       <h4 class="tdb-section-titre">Quêtes</h4>
       ${listeQuetes}
@@ -796,8 +799,12 @@ function afficherFinDePartie({ classement }) {
   liste.innerHTML = classement.map((j) => {
     const quetesLabel = j.quetes === 1 ? 'quête achevée' : 'quêtes achevées';
     const validesLabel = j.valides === 1 ? 'objectif validé' : 'objectifs validés';
+    const portraitClas = j.imagePortrait
+      ? `<img src="${j.imagePortrait}" alt="" class="portrait-vignette" />`
+      : '<span class="portrait-vignette portrait-vignette-vide">&#127775;</span>';
     return `<li class="ligne-classement">
       <span class="rang-final">${j.rang}.</span>
+      ${portraitClas}
       <span class="pseudo-final">${j.pseudo}</span>
       <span class="score-final">${j.quetes} ${quetesLabel} · ${j.valides} ${validesLabel}</span>
     </li>`;

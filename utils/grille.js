@@ -373,7 +373,10 @@ async function obtenirEtatJoueur(db, joueurId) {
 }
 
 async function calculerClassement(db, partieId) {
-  const joueurs = await db.all('SELECT id, pseudo FROM joueurs WHERE partie_id = ?', [partieId]);
+  const joueurs = await db.all(
+    'SELECT j.id, j.pseudo, r.image_portrait FROM joueurs j LEFT JOIN races r ON r.id = j.race_id WHERE j.partie_id = ?',
+    [partieId]
+  );
   if (!joueurs.length) return [];
 
   const quetesRaceRows = await db.all(
@@ -433,7 +436,7 @@ async function calculerClassement(db, partieId) {
     const valides =
       (raceValidesParJoueur[j.id] || 0) +
       allegeances.reduce((s, aId) => s + (allegValidesParAllegeance[aId] || 0), 0);
-    return { id: j.id, pseudo: j.pseudo, quetes, valides };
+    return { id: j.id, pseudo: j.pseudo, imagePortrait: j.image_portrait || null, quetes, valides };
   });
 
   scores.sort((a, b) => b.quetes - a.quetes || b.valides - a.valides);

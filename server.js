@@ -799,6 +799,7 @@ app.get('/api/parties/:code/tableau-de-bord', gerer(async (req, res) => {
       joueurId: etat.joueurId,
       pseudo: etat.pseudo,
       raceNom: etat.raceNom,
+      imagePortraitRace: etat.imagePortraitRace || null,
       quetes: [...quetesRace, ...quetesAllegeance],
       objectifsValides: [...objRace, ...objAllegeance],
     });

@@ -280,6 +280,26 @@ button:hover {
 
 .tdb-joueur-nom {
   margin-bottom: 0.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Portrait vignette unifié : tableau de bord + classement final */
+.portrait-vignette {
+  width: 2.5rem;   /* ~40px */
+  height: 2.5rem;
+  border-radius: 0.35rem;
+  object-fit: cover;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.portrait-vignette-vide {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .tdb-race {
@@ -340,13 +360,17 @@ button:hover {
 
 .ligne-classement {
   display: grid;
-  grid-template-columns: 2rem 1fr;
+  grid-template-columns: 2rem 2.5rem 1fr;
   grid-template-rows: auto auto;
   align-items: center;
   gap: 0 0.5rem;
   background: rgba(255,255,255,0.05);
   border-radius: 0.5rem;
   padding: 0.6rem 1rem;
+}
+
+.ligne-classement .portrait-vignette {
+  grid-row: 1 / 3;
 }
 
 .rang-final {
