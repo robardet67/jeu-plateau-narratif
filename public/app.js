@@ -11,6 +11,7 @@ let vueAvantChangement = null;
 let scenarioImages = [];
 let scenarioIndexActuel = 0;
 let parametresGlobaux = { tableau_de_bord_actif: false };
+let estAdminSession = false;
 
 async function requeteJSON(url, options = {}) {
   const reponse = await fetch(url, options);
@@ -53,6 +54,13 @@ document.querySelectorAll('.modal').forEach((modal) => {
 // --- Ouverture de la modal de creation ---
 
 document.getElementById('btn-ouvrir-commencer').addEventListener('click', ouvrirModalCreation);
+
+// Vérifie une fois si le navigateur a une session admin active (même cookie que /admin).
+// Le résultat est utilisé pour afficher ou non le bouton ⚙ organisateur.
+requeteJSON('/api/admin/session').then(({ connecte }) => {
+  estAdminSession = !!connecte;
+  document.getElementById('btn-admin-flottant').classList.toggle('cachee', !estAdminSession);
+}).catch(() => {});
 
 document.getElementById('btn-reprendre-partie').addEventListener('click', ouvrirReprendrePartie);
 
@@ -917,4 +925,61 @@ socket.on('partie_rouverte', ({ message }) => afficherNotification(message));
 
 socket.on('tableau_de_bord_maj', () => {
   if (vueActuelleId() === 'ecran-tableau-de-bord') afficherTableauDeBord();
+});
+
+// --- Panneau admin organisateur (session admin uniquement) ---
+
+const modalAdminJeu = document.getElementById('modal-admin-jeu');
+const adminJeuStatut = document.getElementById('admin-jeu-statut');
+const adminJeuErreur = document.getElementById('admin-jeu-erreur');
+const btnAdminTerminer = document.getElementById('btn-admin-terminer');
+const btnAdminRouvrir = document.getElementById('btn-admin-rouvrir');
+
+async function ouvrirPanneauAdmin() {
+  adminJeuErreur.classList.add('cachee');
+  adminJeuErreur.textContent = '';
+
+  // Recharge le statut actuel de la partie
+  const partie = await requeteJSON('/api/partie-active').catch(() => null);
+  const statut = partie?.statut ?? null;
+
+  adminJeuStatut.textContent = statut === 'en_cours'
+    ? 'Partie en cours'
+    : statut === 'terminee'
+      ? 'Partie terminée'
+      : 'Aucune partie active';
+
+  btnAdminTerminer.classList.toggle('cachee', statut !== 'en_cours');
+  btnAdminRouvrir.classList.toggle('cachee', statut !== 'terminee');
+
+  modalAdminJeu.classList.remove('cachee');
+}
+
+document.getElementById('btn-admin-flottant').addEventListener('click', ouvrirPanneauAdmin);
+document.getElementById('btn-fermer-admin-jeu').addEventListener('click', () => modalAdminJeu.classList.add('cachee'));
+modalAdminJeu.addEventListener('click', (e) => { if (e.target === modalAdminJeu) modalAdminJeu.classList.add('cachee'); });
+
+btnAdminTerminer.addEventListener('click', async () => {
+  if (!confirm('Terminer la partie pour tous les joueurs ?')) return;
+  adminJeuErreur.classList.add('cachee');
+  try {
+    await requeteJSON('/api/admin/partie-active/terminer', { method: 'POST' });
+    modalAdminJeu.classList.add('cachee');
+  } catch (err) {
+    adminJeuErreur.textContent = err.message;
+    adminJeuErreur.classList.remove('cachee');
+  }
+});
+
+btnAdminRouvrir.addEventListener('click', async () => {
+  if (!confirm('Rouvrir la partie ? Les joueurs pourront à nouveau valider des objectifs.')) return;
+  adminJeuErreur.classList.add('cachee');
+  try {
+    await requeteJSON('/api/admin/partie-active/rouvrir', { method: 'POST' });
+    modalAdminJeu.classList.add('cachee');
+    afficherNotification('Partie rouverte.');
+  } catch (err) {
+    adminJeuErreur.textContent = err.message;
+    adminJeuErreur.classList.remove('cachee');
+  }
 });

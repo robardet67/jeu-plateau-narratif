@@ -224,6 +224,25 @@
   <div id="zone-notifications" class="zone-notifications"></div>
   <div id="zone-confettis" class="zone-confettis"></div>
 
+  <!-- Bouton admin flottant (visible seulement si session admin active) -->
+  <button id="btn-admin-flottant" class="btn-admin-flottant cachee" title="Contrôles organisateur">⚙</button>
+
+  <!-- Modale contrôles organisateur -->
+  <div id="modal-admin-jeu" class="modal-overlay cachee">
+    <div class="modal-admin-contenu">
+      <div class="modal-admin-entete">
+        <span class="modal-admin-titre">Contrôles organisateur</span>
+        <button id="btn-fermer-admin-jeu" class="btn-fermer-modal">✕</button>
+      </div>
+      <p id="admin-jeu-statut" class="admin-jeu-statut"></p>
+      <div class="admin-jeu-actions">
+        <button id="btn-admin-terminer" class="bouton-danger">Terminer la partie</button>
+        <button id="btn-admin-rouvrir" class="bouton-principal cachee">↩ Rouvrir la partie</button>
+      </div>
+      <p id="admin-jeu-erreur" class="admin-jeu-erreur cachee"></p>
+    </div>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="/app.js"></script>
 </body>

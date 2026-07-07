@@ -1055,3 +1055,103 @@ button:hover {
   color: #ecd08a;
   opacity: 1;
 }
+
+/* --- Panneau admin organisateur (bouton flottant + modale) --- */
+
+.btn-admin-flottant {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  z-index: 200;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  border: none;
+  background: rgba(42, 40, 64, 0.92);
+  color: rgba(202, 165, 77, 0.85);
+  font-size: 1.15rem;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  transition: background 0.15s, color 0.15s, transform 0.12s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-admin-flottant:hover {
+  background: rgba(60, 57, 90, 0.97);
+  color: #caa54d;
+  transform: scale(1.08);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 250;
+}
+
+.modal-admin-contenu {
+  background: #2a2840;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  min-width: 280px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.modal-admin-entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-admin-titre {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #caa54d;
+}
+
+.btn-fermer-modal {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  transition: color 0.12s, background 0.12s;
+}
+
+.btn-fermer-modal:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.08);
+}
+
+.admin-jeu-statut {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.6);
+  margin: 0;
+}
+
+.admin-jeu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.admin-jeu-erreur {
+  font-size: 0.82rem;
+  color: #e57373;
+  margin: 0;
+  background: rgba(192,57,43,0.12);
+  border-radius: 0.35rem;
+  padding: 0.4rem 0.6rem;
+}
