@@ -34,23 +34,28 @@ async function cibleDePush() {
     return 'origin';
   }
 
-  let urlDistante;
-  try {
-    urlDistante = (await executer('git', ['config', '--get', 'remote.origin.url'])).trim();
-    console.log('[GIT BACKUP] cibleDePush: remote.origin.url =', urlDistante);
-  } catch (err) {
-    console.log('[GIT BACKUP] cibleDePush: impossible de lire remote.origin.url →', err.message, '→ fallback origin');
-    return 'origin';
+  // GITHUB_REPO_URL prioritaire : contourne l'absence de remote git sur Render
+  let urlDistante = process.env.GITHUB_REPO_URL || null;
+  if (urlDistante) {
+    console.log('[GIT BACKUP] cibleDePush: GITHUB_REPO_URL =', urlDistante);
+  } else {
+    // Fallback : lire la config git locale
+    try {
+      urlDistante = (await executer('git', ['config', '--get', 'remote.origin.url'])).trim();
+      console.log('[GIT BACKUP] cibleDePush: remote.origin.url (git config) =', urlDistante);
+    } catch (err) {
+      console.log('[GIT BACKUP] cibleDePush: git config echoue →', err.message, '→ fallback origin sans auth');
+      return 'origin';
+    }
   }
 
   if (!urlDistante.startsWith('https://')) {
-    console.log('[GIT BACKUP] cibleDePush: URL non-HTTPS (SSH ou autre) → fallback origin (token inutilisable sur SSH)');
+    console.log('[GIT BACKUP] cibleDePush: URL non-HTTPS → fallback origin (token inutilisable sur SSH)');
     return 'origin';
   }
 
-  // URL authentifiee construite — on ne logue pas le token, seulement la forme de l'URL
   const sansProtocole = urlDistante.replace('https://', '');
-  console.log('[GIT BACKUP] cibleDePush: URL authentifiee construite → https://x-access-token:***@' + sansProtocole);
+  console.log('[GIT BACKUP] cibleDePush: URL authentifiee → https://x-access-token:***@' + sansProtocole);
   return `https://x-access-token:${token}@${sansProtocole}`;
 }
 
