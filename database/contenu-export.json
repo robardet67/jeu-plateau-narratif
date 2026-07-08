@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-08T16:28:03.981Z",
+  "genere_le": "2026-07-08T16:28:39.610Z",
   "races": [
     {
       "id": 1,
@@ -41,7 +41,7 @@
       "id": 2,
       "race_id": 1,
       "rang": 2,
-      "nom": "gobelin magicien",
+      "nom": "Grib, artificier",
       "description": "",
       "image_depart": "/uploads/1783161564747-5842177dac0cdaba.png",
       "image_sourire": "/uploads/1783161564748-657926db676bff8a.png",
