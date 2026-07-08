@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-08T15:21:52.404Z",
+  "genere_le": "2026-07-08T16:18:38.281Z",
   "races": [
     {
       "id": 1,
@@ -191,6 +191,13 @@
       "contexte": " ",
       "texte": "Un enfant de la montagne est toujours le bienvenu. Je suis heureux de voir que tu réponds encore à l'appel de notre clan, {nom}. Nos forteresses tiennent debout grâce au courage des nôtres, mais les temps exigent que chacun fasse sa part. Si tu souhaites défendre notre héritage, plusieurs missions attendent un aventurier digne de confiance.",
       "created_at": "2026-07-08 15:21:51"
+    },
+    {
+      "id": 10,
+      "representant_id": 1,
+      "contexte": "Zik le receleur",
+      "texte": "« Les ruines attirent les rêveurs, les idiots et les gens avisés ; heureusement, je sais faire la différence. Toi, {nom}, tu as l’air assez malin pour ne pas repartir les mains vides. J’ai quelques affaires délicates qui demandent du flair et un minimum de discrétion. Si tout se passe bien, chacun y trouvera son compte. »",
+      "created_at": "2026-07-08 16:18:37"
     }
   ],
   "objectifs": [
