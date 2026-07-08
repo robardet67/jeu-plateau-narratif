@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-08T16:19:07.855Z",
+  "genere_le": "2026-07-08T16:23:07.945Z",
   "races": [
     {
       "id": 1,
@@ -31,8 +31,8 @@
       "id": 1,
       "race_id": 1,
       "rang": 1,
-      "nom": "standard",
-      "description": "",
+      "nom": "Zik le receleur",
+      "description": "« Les ruines attirent les rêveurs, les idiots et les gens avisés ; heureusement, je sais faire la différence. Toi, {nom}, tu as l’air assez malin pour ne pas repartir les mains vides. J’ai quelques affaires délicates qui demandent du flair et un minimum de discrétion. Si tout se passe bien, chacun y trouvera son compte. »",
       "image_depart": "/uploads/1783161493187-07ffc2726ce27f0a.png",
       "image_sourire": "/uploads/1783161469224-316af46975e6ffc4.png",
       "created_at": "2026-07-01 13:19:22"
