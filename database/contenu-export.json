@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-08T16:28:39.610Z",
+  "genere_le": "2026-07-08T16:30:35.528Z",
   "races": [
     {
       "id": 1,
@@ -51,7 +51,7 @@
       "id": 3,
       "race_id": 1,
       "rang": 3,
-      "nom": "gobelin chef",
+      "nom": "Morga, chef de clan",
       "description": "",
       "image_depart": "/uploads/1783161583518-c551802e796569ea.png",
       "image_sourire": "/uploads/1783161583530-bf2ebec944acbb74.png",
