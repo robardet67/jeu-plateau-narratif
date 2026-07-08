@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-08T16:23:07.945Z",
+  "genere_le": "2026-07-08T16:23:36.301Z",
   "races": [
     {
       "id": 1,
@@ -129,13 +129,6 @@
     }
   ],
   "dialogues": [
-    {
-      "id": 1,
-      "representant_id": 1,
-      "contexte": "Comunauté de gobelin",
-      "texte": "Bienvenue {nom} chez les gobelin",
-      "created_at": "2026-07-01 13:21:31"
-    },
     {
       "id": 2,
       "representant_id": 2,
