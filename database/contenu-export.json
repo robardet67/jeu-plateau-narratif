@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-08T16:18:38.281Z",
+  "genere_le": "2026-07-08T16:19:07.855Z",
   "races": [
     {
       "id": 1,
@@ -198,6 +198,13 @@
       "contexte": "Zik le receleur",
       "texte": "« Les ruines attirent les rêveurs, les idiots et les gens avisés ; heureusement, je sais faire la différence. Toi, {nom}, tu as l’air assez malin pour ne pas repartir les mains vides. J’ai quelques affaires délicates qui demandent du flair et un minimum de discrétion. Si tout se passe bien, chacun y trouvera son compte. »",
       "created_at": "2026-07-08 16:18:37"
+    },
+    {
+      "id": 11,
+      "representant_id": 2,
+      "contexte": "Morga, Cheffe de bande",
+      "texte": "« Chez les gobelins, survivre est déjà une preuve d’intelligence. Tu as tenu jusque-là, {nom}, ce qui mérite au moins mon attention. J’ai besoin de quelqu’un capable d’improviser sans paniquer dès que les choses tournent mal. Montre-moi ce que tu vaux, et le clan saura s’en souvenir. »",
+      "created_at": "2026-07-08 16:19:07"
     }
   ],
   "objectifs": [
