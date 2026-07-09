@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-09T16:46:16.043Z",
+  "genere_le": "2026-07-09T16:49:00.389Z",
   "races": [
     {
       "id": 1,
@@ -191,6 +191,13 @@
       "contexte": "Morga, chef de clan",
       "texte": "« Chez les gobelins, survivre est déjà une preuve d’intelligence. Tu as tenu jusque-là, {nom}, ce qui mérite au moins mon attention. J’ai besoin de quelqu’un capable d’improviser sans paniquer dès que les choses tournent mal. Montre-moi ce que tu vaux, et le clan saura s’en souvenir. »",
       "created_at": "2026-07-08 16:31:10"
+    },
+    {
+      "id": 13,
+      "representant_id": 5,
+      "contexte": "Velyra, prêtresse",
+      "texte": "« Beaucoup craignent l'obscurité sans comprendre ce qu'elle révèle. Ton arrivée n'est sans doute pas le fruit du hasard, {nom}. Les choix que nous faisons façonnent souvent bien plus que notre réputation. J'aimerais te confier plusieurs responsabilités. »",
+      "created_at": "2026-07-09 16:48:59"
     }
   ],
   "objectifs": [
