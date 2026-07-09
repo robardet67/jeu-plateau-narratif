@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-09T17:02:37.025Z",
+  "genere_le": "2026-07-09T17:21:16.944Z",
   "races": [
     {
       "id": 1,
@@ -144,6 +144,16 @@
       "image_depart": "/uploads/1783462650915-a8952c340811e6e8.png",
       "image_sourire": "/uploads/1783462651736-d37a93feeac612cf.png",
       "created_at": "2026-07-07 22:17:33"
+    },
+    {
+      "id": 11,
+      "race_id": 5,
+      "rang": 2,
+      "nom": "Nyméa, gardienne",
+      "description": null,
+      "image_depart": "/uploads/1783617674988-2308307a703201c9.png",
+      "image_sourire": "/uploads/1783617675851-2741445f0da22cbd.png",
+      "created_at": "2026-07-09 17:21:16"
     }
   ],
   "dialogues": [
