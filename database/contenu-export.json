@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-09T16:51:56.125Z",
+  "genere_le": "2026-07-09T16:56:40.868Z",
   "races": [
     {
       "id": 1,
@@ -202,6 +202,13 @@
       "contexte": "Velyra, prêtresse",
       "texte": "« Beaucoup craignent l'obscurité sans comprendre ce qu'elle révèle. Ton arrivée n'est sans doute pas le fruit du hasard, {nom}. Les choix que nous faisons façonnent souvent bien plus que notre réputation. J'aimerais te confier plusieurs responsabilités. »",
       "created_at": "2026-07-09 16:48:59"
+    },
+    {
+      "id": 14,
+      "representant_id": 10,
+      "contexte": "Sylvia, druidesse",
+      "texte": "« Les saisons continuent leur ronde, même lorsque le monde semble vaciller. La nature récompense toujours ceux qui savent agir avec patience, {nom}. Si tu acceptes de marcher à nos côtés, ton aide sera précieuse pour les tâches qui nous attendent. »",
+      "created_at": "2026-07-09 16:56:40"
     }
   ],
   "objectifs": [
