@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-09T16:56:40.868Z",
+  "genere_le": "2026-07-09T16:57:29.897Z",
   "races": [
     {
       "id": 1,
@@ -139,8 +139,8 @@
       "id": 10,
       "race_id": 5,
       "rang": 1,
-      "nom": "f",
-      "description": null,
+      "nom": "Sylvia, druidesse",
+      "description": "",
       "image_depart": "/uploads/1783462650915-a8952c340811e6e8.png",
       "image_sourire": "/uploads/1783462651736-d37a93feeac612cf.png",
       "created_at": "2026-07-07 22:17:33"
