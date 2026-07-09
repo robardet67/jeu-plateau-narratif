@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-09T16:51:46.398Z",
+  "genere_le": "2026-07-09T16:51:56.125Z",
   "races": [
     {
       "id": 1,
@@ -36,6 +36,12 @@
       "nom": "Semi orc",
       "image_fond": null,
       "created_at": "2026-07-09 16:51:46"
+    },
+    {
+      "id": 8,
+      "nom": "Humain",
+      "image_fond": null,
+      "created_at": "2026-07-09 16:51:55"
     }
   ],
   "representants": [
