@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-09T16:49:09.935Z",
+  "genere_le": "2026-07-09T16:49:15.338Z",
   "races": [
     {
       "id": 1,
@@ -135,13 +135,6 @@
       "contexte": "La communauté d'elfe noir ",
       "texte": "Bienvenu {nom} chez les elfe noirs, nous avons une quête pour vous",
       "created_at": "2026-07-01 13:23:08"
-    },
-    {
-      "id": 6,
-      "representant_id": 5,
-      "contexte": "le temple de la magie Elfe noir",
-      "texte": "La communauté à besoin de valeureux aventurier pour l'aider dans ses quêtes.",
-      "created_at": "2026-07-01 13:23:56"
     },
     {
       "id": 7,
