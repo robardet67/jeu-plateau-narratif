@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-09T16:49:00.389Z",
+  "genere_le": "2026-07-09T16:49:09.935Z",
   "races": [
     {
       "id": 1,
@@ -135,13 +135,6 @@
       "contexte": "La communauté d'elfe noir ",
       "texte": "Bienvenu {nom} chez les elfe noirs, nous avons une quête pour vous",
       "created_at": "2026-07-01 13:23:08"
-    },
-    {
-      "id": 5,
-      "representant_id": 5,
-      "contexte": "comunauté d 'elfes noirs",
-      "texte": "bienvenu chez les elfe noirs magicien",
-      "created_at": "2026-07-01 13:23:29"
     },
     {
       "id": 6,
