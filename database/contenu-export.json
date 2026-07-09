@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-09T17:00:59.141Z",
+  "genere_le": "2026-07-09T17:02:37.025Z",
   "races": [
     {
       "id": 1,
@@ -10,7 +10,7 @@
     {
       "id": 2,
       "nom": "Elfe noir",
-      "image_fond": "/uploads/1782912281584-1d204ba93e9df42e.png",
+      "image_fond": "/uploads/1783616555692-ec4ecef9c2c6a41d.png",
       "created_at": "2026-07-01 13:19:04"
     },
     {
