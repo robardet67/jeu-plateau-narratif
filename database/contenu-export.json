@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-10T00:19:06.658Z",
+  "genere_le": "2026-07-10T00:19:47.169Z",
   "races": [
     {
       "id": 1,
@@ -16,7 +16,7 @@
     {
       "id": 3,
       "nom": "Orc",
-      "image_fond": null,
+      "image_fond": "/uploads/1783642785987-7626d5b76a668b23.jpg",
       "created_at": "2026-07-04 12:13:13"
     },
     {
