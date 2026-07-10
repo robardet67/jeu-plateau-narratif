@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-10T01:01:07.009Z",
+  "genere_le": "2026-07-10T01:01:53.729Z",
   "races": [
     {
       "id": 1,
@@ -912,6 +912,16 @@
       "image_sourire": "/uploads/1783645265144-8e348c7cac0f48fa.png",
       "dialogue": null,
       "created_at": "2026-07-10 01:01:05"
+    },
+    {
+      "id": 9,
+      "allegeance_id": 3,
+      "rang": 2,
+      "nom": "Wynéa",
+      "image_depart": "/uploads/1783645312822-9f1fee491b455677.png",
+      "image_sourire": "/uploads/1783645313223-3f624df4aefbe35d.png",
+      "dialogue": null,
+      "created_at": "2026-07-10 01:01:53"
     }
   ],
   "scenario_images": [
