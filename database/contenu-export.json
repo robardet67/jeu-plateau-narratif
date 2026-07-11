@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T10:45:42.353Z",
+  "genere_le": "2026-07-11T10:50:41.105Z",
   "races": [
     {
       "id": 2,
@@ -136,6 +136,13 @@
       "contexte": "Vaelyra, Ombrelame",
       "texte": "« Dans les ombres, notre clan d’elfes noirs survit par la ruse, la maîtrise et le silence. {nom}, accomplissez ma quête et prouvez votre valeur, car seuls les plus déterminés peuvent préserver l’avenir de notre peuple. »",
       "created_at": "2026-07-11 10:43:31"
+    },
+    {
+      "id": 19,
+      "representant_id": 16,
+      "contexte": "Nyssara, Conseiller",
+      "texte": "« Depuis que Vorgul nous a tourné le dos, notre clan d’elfes noirs avance dans l’ombre, guidé par la méfiance et la nécessité de survivre. {nom}, montre ta maîtrise des ombres et accomplis ce qui doit l’être pour préserver l’avenir de notre peuple. »",
+      "created_at": "2026-07-11 10:50:40"
     }
   ],
   "objectifs": [
