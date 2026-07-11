@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T09:17:48.989Z",
+  "genere_le": "2026-07-11T09:17:56.665Z",
   "races": [
     {
       "id": 2,
@@ -650,12 +650,6 @@
   ],
   "allegeances": [
     {
-      "id": 2,
-      "nom": "Rune d'Acier",
-      "portrait": "/uploads/1783640414108-b470acc1aab69ece.png",
-      "created_at": "2026-07-03 08:47:20"
-    },
-    {
       "id": 3,
       "nom": "Rune de Pierre",
       "portrait": "/uploads/1783640813075-3fca6b3b441193a4.png",
@@ -663,36 +657,6 @@
     }
   ],
   "representants_allegeance": [
-    {
-      "id": 4,
-      "allegeance_id": 2,
-      "rang": 1,
-      "nom": "standard ",
-      "image_depart": "/uploads/1783167067932-97fb6fe023019813.png",
-      "image_sourire": "/uploads/1783167067933-3120fae8ff23f7fa.png",
-      "dialogue": "rune d'argent",
-      "created_at": "2026-07-04 08:31:29"
-    },
-    {
-      "id": 6,
-      "allegeance_id": 2,
-      "rang": 2,
-      "nom": "druide",
-      "image_depart": "/uploads/1783167661905-c32fd79c2002a2ec.png",
-      "image_sourire": "/uploads/1783167661906-da8bed807bfe722a.png",
-      "dialogue": null,
-      "created_at": "2026-07-04 12:21:01"
-    },
-    {
-      "id": 7,
-      "allegeance_id": 2,
-      "rang": 3,
-      "nom": "super druide",
-      "image_depart": "/uploads/1783167724809-0a3a211eab2db5bb.png",
-      "image_sourire": "/uploads/1783167724812-74bd30a0f233b924.png",
-      "dialogue": "Enfin il était temps",
-      "created_at": "2026-07-04 12:22:04"
-    },
     {
       "id": 8,
       "allegeance_id": 3,
