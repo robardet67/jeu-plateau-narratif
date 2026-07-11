@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T18:07:31.943Z",
+  "genere_le": "2026-07-11T19:39:57.971Z",
   "races": [
     {
       "id": 2,
@@ -146,6 +146,16 @@
       "image_depart": "/uploads/1783774389885-46791ba271550baa.png",
       "image_sourire": "/uploads/1783774390060-c8f3e31844e80e46.png",
       "created_at": "2026-07-11 12:52:03"
+    },
+    {
+      "id": 24,
+      "race_id": 7,
+      "rang": 1,
+      "nom": "Mééla, matronne du clan",
+      "description": "« Les grands seigneurs n’ont jamais eu la moindre considération pour notre clan, ni avant, ni depuis que la folie s’est emparée d’eux. Nous n’avons toujours pu compter que sur nous-mêmes pour survivre. {nom}, j’ai besoin de ton aide, car l’avenir des nôtres dépend de ceux qui sont prêts à le défendre. »",
+      "image_depart": "/uploads/1783798796787-4b021dbfb3d6bef9.png",
+      "image_sourire": "/uploads/1783798796802-8570221339b0c40a.png",
+      "created_at": "2026-07-11 19:39:57"
     },
     {
       "id": 21,
