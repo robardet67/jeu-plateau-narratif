@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T09:16:06.669Z",
+  "genere_le": "2026-07-11T09:17:48.989Z",
   "races": [
     {
       "id": 2,
@@ -650,12 +650,6 @@
   ],
   "allegeances": [
     {
-      "id": 1,
-      "nom": "Rune d'or",
-      "portrait": "/uploads/1783640305372-0a83e0d62dc25faa.png",
-      "created_at": "2026-07-03 08:46:38"
-    },
-    {
       "id": 2,
       "nom": "Rune d'Acier",
       "portrait": "/uploads/1783640414108-b470acc1aab69ece.png",
@@ -669,36 +663,6 @@
     }
   ],
   "representants_allegeance": [
-    {
-      "id": 1,
-      "allegeance_id": 1,
-      "rang": 1,
-      "nom": "standard",
-      "image_depart": "/uploads/1783166971625-8fecc3c8de5bd8e5.png",
-      "image_sourire": "/uploads/1783166971636-7d7120e637f6e2c0.png",
-      "dialogue": "bienvenue chez les representant de la rune",
-      "created_at": "2026-07-03 08:48:21"
-    },
-    {
-      "id": 2,
-      "allegeance_id": 1,
-      "rang": 2,
-      "nom": "druide",
-      "image_depart": "/uploads/1783167595302-bb4445da429b35c5.png",
-      "image_sourire": "/uploads/1783167595305-1c038641565c46b0.png",
-      "dialogue": "",
-      "created_at": "2026-07-03 13:12:45"
-    },
-    {
-      "id": 3,
-      "allegeance_id": 1,
-      "rang": 3,
-      "nom": "Super druide",
-      "image_depart": "/uploads/1783167620947-a5695ef934395b6b.png",
-      "image_sourire": "/uploads/1783167620950-729c48819cbc7c4e.png",
-      "dialogue": "vous etes dans le royaume de la rune d'or",
-      "created_at": "2026-07-03 18:12:10"
-    },
     {
       "id": 4,
       "allegeance_id": 2,
