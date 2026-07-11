@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T21:50:51.239Z",
+  "genere_le": "2026-07-11T23:14:35.002Z",
   "races": [
     {
       "id": 2,
@@ -1018,6 +1018,16 @@
       "image_sourire": "/uploads/1783793220298-cf29bf5fab484125.png",
       "dialogue": "« Je suis né de la scission des Runes, tout comme le furent Lamia et Dévos, ma sœur et mon frère. Depuis cet instant, je demeure l’esclave de la volonté de Vorgul, contraint par sa volonté. Mais la restauration de la Rune d’Or pourrait enfin briser les chaînes qui m’asservissent. Nos aspirations semblent converger vers le même destin : poursuis ma mission, et aide-moi à retrouver la liberté que Vorgul m’a refusée. »",
       "created_at": "2026-07-11 18:07:00"
+    },
+    {
+      "id": 17,
+      "allegeance_id": 5,
+      "rang": 1,
+      "nom": "Téréon, Pelerin maudit",
+      "image_depart": "/uploads/1783811673625-729d669f70fb293c.png",
+      "image_sourire": "/uploads/1783811673900-217066fe6de51d6f.png",
+      "dialogue": null,
+      "created_at": "2026-07-11 23:14:34"
     },
     {
       "id": 11,
