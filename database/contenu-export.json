@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T20:01:23.295Z",
+  "genere_le": "2026-07-11T20:01:50.347Z",
   "races": [
     {
       "id": 2,
@@ -22,7 +22,7 @@
     {
       "id": 6,
       "nom": "Nain",
-      "image_fond": null,
+      "image_fond": "/uploads/1783800109838-ba7a475ac921029e.webp",
       "created_at": "2026-07-09 16:51:06"
     },
     {
