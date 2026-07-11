@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T20:01:50.347Z",
+  "genere_le": "2026-07-11T20:02:05.266Z",
   "races": [
     {
       "id": 2,
@@ -40,7 +40,7 @@
     {
       "id": 9,
       "nom": "Homme lézard",
-      "image_fond": null,
+      "image_fond": "/uploads/1783800123873-7d9e349c26850fd7.jpg",
       "created_at": "2026-07-09 17:28:02"
     },
     {
