@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T13:55:37.629Z",
+  "genere_le": "2026-07-11T13:55:56.602Z",
   "races": [
     {
       "id": 2,
@@ -255,6 +255,13 @@
       "contexte": "Zuran, Shaman",
       "texte": "« J’ai entendu les esprits dans la crypte d’Azgul. Ils parlent à travers les ombres, mais peu de gobelins savent encore écouter leurs murmures. {nom}, montre ta ruse et aide notre clan avant que ceux qui ignorent les signes ne découvrent trop tard le prix de leur aveuglement. »",
       "created_at": "2026-07-11 13:54:02"
+    },
+    {
+      "id": 26,
+      "representant_id": 23,
+      "contexte": "Zalog, Grand guide de clan",
+      "texte": "« Depuis trop longtemps, notre clan survit dans la peur et le désordre, mais un véritable chef sait reconnaître ceux qui peuvent changer le destin. {nom}, prouve ta valeur et aide notre peuple à retrouver la force qui sommeille encore en lui. »",
+      "created_at": "2026-07-11 13:55:56"
     }
   ],
   "objectifs": [
