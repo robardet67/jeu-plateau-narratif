@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T10:08:00.146Z",
+  "genere_le": "2026-07-11T10:08:15.616Z",
   "races": [
     {
       "id": 2,
@@ -102,6 +102,13 @@
       "contexte": "Aelys Rosépine",
       "texte": "« Les larves de Syraya se font rares, Nous sommes inquièts pour l’avenir de notre forêt. {nom}, ton aide sera précieuse pour soutenir notre clan face aux épreuves qui menacent notre équilibre. »",
       "created_at": "2026-07-11 10:03:07"
+    },
+    {
+      "id": 17,
+      "representant_id": 14,
+      "contexte": "Douilla, Mémoire de la forêt",
+      "texte": "«Rares sont ceux qui parviennent jusqu’à moi. Votre arrivée témoigne d’une grande détermination. {nom}, les anciens murmures du peuple des Dryades ont besoin de vous : accomplissez votre mission et aidez notre clan à préserver son avenir. »",
+      "created_at": "2026-07-11 10:08:14"
     }
   ],
   "objectifs": [
