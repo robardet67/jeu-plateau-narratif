@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T14:09:43.193Z",
+  "genere_le": "2026-07-11T17:58:27.928Z",
   "races": [
     {
       "id": 2,
@@ -887,6 +887,16 @@
     }
   ],
   "representants_allegeance": [
+    {
+      "id": 14,
+      "allegeance_id": 4,
+      "rang": 1,
+      "nom": "Zircui",
+      "image_depart": "/uploads/1783792707435-30fd270f947f2f58.png",
+      "image_sourire": "/uploads/1783792707558-db3dcd470fe71424.png",
+      "dialogue": "« La Rune d’Or attire bien des convoitises, et certains suivent sa voie non par destinée, mais par intérêt. Les fragments ont un prix, et je compte bien en tirer profit avant que d’autres ne découvrent leur véritable valeur. Apporte-moi ton aide et prouve que tu sais reconnaître une opportunité lorsque l’or murmure à tes oreilles. »",
+      "created_at": "2026-07-11 17:58:27"
+    },
     {
       "id": 11,
       "allegeance_id": 6,
