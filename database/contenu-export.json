@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T09:23:45.006Z",
+  "genere_le": "2026-07-11T09:25:23.239Z",
   "races": [
     {
       "id": 2,
@@ -654,6 +654,12 @@
       "nom": "Rune d'Or",
       "portrait": "/uploads/1783761791389-97e8adf8af70ae44.png",
       "created_at": "2026-07-11 09:23:12"
+    },
+    {
+      "id": 5,
+      "nom": "Rune d'Acier",
+      "portrait": "/uploads/1783761921027-be3a6a5ea9a5c6d9.png",
+      "created_at": "2026-07-11 09:25:22"
     }
   ],
   "representants_allegeance": [],
