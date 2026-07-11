@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T10:42:21.135Z",
+  "genere_le": "2026-07-11T10:45:42.353Z",
   "races": [
     {
       "id": 2,
@@ -68,6 +68,16 @@
       "created_at": "2026-07-11 10:42:08"
     },
     {
+      "id": 16,
+      "race_id": 2,
+      "rang": 2,
+      "nom": "Nyssara, Conseiller",
+      "description": null,
+      "image_depart": "/uploads/1783766741146-e44074ed599c881e.png",
+      "image_sourire": "/uploads/1783766741333-257d9049f5332b50.png",
+      "created_at": "2026-07-11 10:45:41"
+    },
+    {
       "id": 12,
       "race_id": 5,
       "rang": 1,
@@ -119,6 +129,13 @@
       "contexte": "Douilla, Mémoire de la forêt",
       "texte": "«Rares sont ceux qui parviennent jusqu’à moi. Votre arrivée témoigne d’une grande détermination. {nom}, les anciens murmures du peuple des Dryades ont besoin de vous : accomplissez votre mission et aidez notre clan à préserver son avenir. »",
       "created_at": "2026-07-11 10:08:14"
+    },
+    {
+      "id": 18,
+      "representant_id": 15,
+      "contexte": "Vaelyra, Ombrelame",
+      "texte": "« Dans les ombres, notre clan d’elfes noirs survit par la ruse, la maîtrise et le silence. {nom}, accomplissez ma quête et prouvez votre valeur, car seuls les plus déterminés peuvent préserver l’avenir de notre peuple. »",
+      "created_at": "2026-07-11 10:43:31"
     }
   ],
   "objectifs": [
