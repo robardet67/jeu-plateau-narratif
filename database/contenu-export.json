@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T10:24:25.724Z",
+  "genere_le": "2026-07-11T10:29:26.679Z",
   "races": [
     {
       "id": 2,
@@ -753,6 +753,16 @@
       "image_sourire": "/uploads/1783765465097-a67e72c28f90d488.png",
       "dialogue": "Mes visions ont révélées un chemin vers les anciennes runes et les secrets qu’elles renferment. {nom}, accomplissez ma quête, et puisse-t-elle vous mener jusqu’à la fée de la Rune de Pierre, car elle détient peut-être la clé des secrets oubliés. »",
       "created_at": "2026-07-11 10:24:25"
+    },
+    {
+      "id": 13,
+      "allegeance_id": 6,
+      "rang": 3,
+      "nom": "Fée de la Rune de Pierre",
+      "image_depart": "/uploads/1783765764820-02163da7da9f2902.png",
+      "image_sourire": "/uploads/1783765765092-7e66ea33967db1ff.png",
+      "dialogue": "« Les trois Runes sacrées portaient autrefois la prospérité du royaume, jusqu’à ce que Vorgul les brise et laisse le chaos s’étendre. {nom}, accomplissez ma quête, et puisse votre destinée vous guider jusqu’à la Rune de Pierre, car son éveil pourrait révéler le chemin vers un nouvel âge. »",
+      "created_at": "2026-07-11 10:29:26"
     }
   ],
   "scenario_images": []
