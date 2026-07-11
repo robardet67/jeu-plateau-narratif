@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T13:53:22.294Z",
+  "genere_le": "2026-07-11T13:55:37.629Z",
   "races": [
     {
       "id": 2,
@@ -166,6 +166,16 @@
       "image_depart": "/uploads/1783778001727-b59cdfdf77bf136c.png",
       "image_sourire": "/uploads/1783778001938-c249472b52a000ee.png",
       "created_at": "2026-07-11 13:53:22"
+    },
+    {
+      "id": 23,
+      "race_id": 10,
+      "rang": 3,
+      "nom": "Zalog, Grand guide de clan",
+      "description": null,
+      "image_depart": "/uploads/1783778135676-ab2e3c3c2d0e0e2d.png",
+      "image_sourire": "/uploads/1783778135954-fe2da4545fae1957.png",
+      "created_at": "2026-07-11 13:55:37"
     }
   ],
   "dialogues": [
@@ -238,6 +248,13 @@
       "contexte": "Grizzik, Pilleur de marchand",
       "texte": "« Autrefois, Ramok était clairvoyant et veillait sur les gobelins. Depuis que Vorgul l’a corrompu, je crains qu’il ait oublié jusqu’à l’existence de notre clan. {nom}, aide-moi, car trop peu de gobelins semblent comprendre l’urgence de la situation. »",
       "created_at": "2026-07-11 13:52:43"
+    },
+    {
+      "id": 25,
+      "representant_id": 22,
+      "contexte": "Zuran, Shaman",
+      "texte": "« J’ai entendu les esprits dans la crypte d’Azgul. Ils parlent à travers les ombres, mais peu de gobelins savent encore écouter leurs murmures. {nom}, montre ta ruse et aide notre clan avant que ceux qui ignorent les signes ne découvrent trop tard le prix de leur aveuglement. »",
+      "created_at": "2026-07-11 13:54:02"
     }
   ],
   "objectifs": [
