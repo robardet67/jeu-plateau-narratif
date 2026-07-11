@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T12:50:57.221Z",
+  "genere_le": "2026-07-11T12:52:44.379Z",
   "races": [
     {
       "id": 2,
@@ -136,6 +136,16 @@
       "image_depart": "/uploads/1783774241719-d49de19470929991.png",
       "image_sourire": "/uploads/1783774242201-f1066f872bf02c83.png",
       "created_at": "2026-07-11 12:50:42"
+    },
+    {
+      "id": 20,
+      "race_id": 6,
+      "rang": 3,
+      "nom": "Thargrim, Ancien roi",
+      "description": null,
+      "image_depart": "/uploads/1783774322997-ee7a50c90cf9a13c.png",
+      "image_sourire": "/uploads/1783774323215-9b3f376cf72e9679.png",
+      "created_at": "2026-07-11 12:52:03"
     }
   ],
   "dialogues": [
@@ -194,6 +204,13 @@
       "contexte": "Gundar Barbeverte",
       "texte": "« Depuis la chute de la mine naine, je préfère m’exiler dans la forêt. Au moins, je ne croise pas ces pourritures de gobelins. {nom}, accepte de m’aider, tu serviras notre clan avec honneur et tu participeras à son retour vers la grandeur. »",
       "created_at": "2026-07-11 12:50:56"
+    },
+    {
+      "id": 23,
+      "representant_id": 20,
+      "contexte": "Thargrim, Ancien roi",
+      "texte": "« Ainsi, tu t’es montré digne aux yeux des nôtres. Nous n’avons jamais été aussi proches de restaurer l’ordre des Nains. {nom}, un dernier effort et notre peuple pourra enfin retrouver la grandeur qui lui revient. »",
+      "created_at": "2026-07-11 12:52:44"
     }
   ],
   "objectifs": [
