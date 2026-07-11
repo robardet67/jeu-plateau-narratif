@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T19:42:55.449Z",
+  "genere_le": "2026-07-11T19:44:55.901Z",
   "races": [
     {
       "id": 2,
@@ -166,6 +166,16 @@
       "image_depart": "/uploads/1783798947915-1bf3fdc5566ae71b.png",
       "image_sourire": "/uploads/1783798948745-8b5bcf8ee610cfd2.png",
       "created_at": "2026-07-11 19:42:28"
+    },
+    {
+      "id": 26,
+      "race_id": 7,
+      "rang": 3,
+      "nom": "Naouli, pilier de la révolte.",
+      "description": null,
+      "image_depart": "/uploads/1783799095320-77fbeeed115d05b8.png",
+      "image_sourire": "/uploads/1783799095544-73bc64664cc95703.png",
+      "created_at": "2026-07-11 19:44:55"
     },
     {
       "id": 21,
