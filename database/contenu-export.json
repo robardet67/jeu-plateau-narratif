@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T10:18:51.412Z",
+  "genere_le": "2026-07-11T10:24:25.724Z",
   "races": [
     {
       "id": 2,
@@ -743,6 +743,16 @@
       "image_sourire": "/uploads/1783765107488-be5000693a1c0ee9.png",
       "dialogue": "« Wynéa avait prédit votre venue, annonçant l’arrivée des adorateurs de la Rune de Pierre. {nom}, accomplissez votre mission et aidez moi à restaurer ce symbole sacré de notre foi. »",
       "created_at": "2026-07-11 10:18:28"
+    },
+    {
+      "id": 12,
+      "allegeance_id": 6,
+      "rang": 2,
+      "nom": "Wynéa, l'Oracle",
+      "image_depart": "/uploads/1783765464633-232d38067e70001e.png",
+      "image_sourire": "/uploads/1783765465097-a67e72c28f90d488.png",
+      "dialogue": "Mes visions ont révélées un chemin vers les anciennes runes et les secrets qu’elles renferment. {nom}, accomplissez ma quête, et puisse-t-elle vous mener jusqu’à la fée de la Rune de Pierre, car elle détient peut-être la clé des secrets oubliés. »",
+      "created_at": "2026-07-11 10:24:25"
     }
   ],
   "scenario_images": []
