@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T19:39:57.971Z",
+  "genere_le": "2026-07-11T19:40:26.639Z",
   "races": [
     {
       "id": 2,
@@ -272,6 +272,13 @@
       "contexte": "Zalog, Grand guide de clan",
       "texte": "« Depuis trop longtemps, notre clan gobelin survit dans la peur et le désordre. La contrebande d’acide et le pillage des marchands ne nous mèneront nulle part, car notre clan aspire à un plus grand destin. {nom}, prouve ta valeur et aide-nous à retrouver la force qui sommeille encore en nous. »",
       "created_at": "2026-07-11 13:55:56"
+    },
+    {
+      "id": 27,
+      "representant_id": 24,
+      "contexte": "Mééla, matronne du clan",
+      "texte": "« Les grands seigneurs n’ont jamais eu la moindre considération pour notre clan, ni avant, ni depuis que la folie s’est emparée d’eux. Nous n’avons toujours pu compter que sur nous-mêmes pour survivre. {nom}, j’ai besoin de ton aide, car l’avenir des nôtres dépend de ceux qui sont prêts à le défendre. »",
+      "created_at": "2026-07-11 19:40:25"
     }
   ],
   "objectifs": [
