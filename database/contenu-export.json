@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T19:44:55.901Z",
+  "genere_le": "2026-07-11T19:45:07.082Z",
   "races": [
     {
       "id": 2,
@@ -306,6 +306,13 @@
       "contexte": "Kando, mercenaire",
       "texte": "« Il n’y a aucune honte à servir les intérêts du royaume, tant que l’or permet d’assurer l’avenir de notre clan. J’ai plus de missions que de temps pour les accomplir, {nom}. Viens-moi en aide, et sers une cause qui mérite que l’on se batte pour elle. »",
       "created_at": "2026-07-11 19:42:55"
+    },
+    {
+      "id": 29,
+      "representant_id": 26,
+      "contexte": "Naouli, pilier de la révolte.",
+      "texte": "« Certains d’entre nous mettent leur épée au service du royaume, d’autres préfèrent vivre dans le déni d’un monde déchu. Pour moi, la chute des grands seigneurs est une opportunité pour notre clan. {nom}, achève ma mission, et les Semi-Orcs pourront enfin aspirer à la grandeur qu’ils méritent. »",
+      "created_at": "2026-07-11 19:45:06"
     }
   ],
   "objectifs": [
