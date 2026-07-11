@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T10:53:58.566Z",
+  "genere_le": "2026-07-11T10:54:23.770Z",
   "races": [
     {
       "id": 2,
@@ -153,6 +153,13 @@
       "contexte": "Nyssara, Conseiller",
       "texte": "« Depuis que Vorgul nous a tourné le dos, notre clan d’elfes noirs avance dans l’ombre, guidé par la méfiance et la nécessité de survivre. {nom}, montre ta maîtrise des ombres et accomplis ce qui doit l’être pour préserver l’avenir de notre peuple. »",
       "created_at": "2026-07-11 10:50:40"
+    },
+    {
+      "id": 20,
+      "representant_id": 17,
+      "contexte": "Kaelthar, Haut-Sang des Ombres",
+      "texte": "« Rares sont ceux dont les pas franchissent le voile qui protège notre demeure, et encore plus rares sont ceux qui en ressortent dignes. {nom}, tu as atteint notre sanctuaire ; que tes actes révèlent si les ombres t’ont choisi. »",
+      "created_at": "2026-07-11 10:54:23"
     }
   ],
   "objectifs": [
