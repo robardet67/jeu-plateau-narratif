@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T23:16:29.133Z",
+  "genere_le": "2026-07-11T23:18:42.804Z",
   "races": [
     {
       "id": 2,
@@ -1038,6 +1038,16 @@
       "image_sourire": "/uploads/1783811788136-c840a94f33aa377d.png",
       "dialogue": "« Depuis la scission des Runes, le Conseil des mages se tient comme le dernier Ordre du royaume, gardien des savoirs que le chaos n’a pas encore engloutis. Nous sommes persuadés que la Rune d’Acier porte encore l’écho de son pouvoir, et que c’est elle qui doit être restaurée. Aide-nous à préserver cet héritage avant qu’il ne sombre définitivement dans l’oubli. »",
       "created_at": "2026-07-11 23:16:28"
+    },
+    {
+      "id": 19,
+      "allegeance_id": 5,
+      "rang": 3,
+      "nom": "Yuna, eprit de la nuit",
+      "image_depart": "/uploads/1783811921750-9b61f8e40cbf5880.png",
+      "image_sourire": "/uploads/1783811921889-a3e5706ce3af181c.png",
+      "dialogue": "« Les cryptes abritent bien des reliques, mais je n’y ai trouvé aucun fragment de Rune. Alors je les ai maudites, non pour apaiser ma colère, mais pour qu’aucun détour ne soit pardonnable à ceux qui ont prêté allégeance à la Rune d’Acier. Joins-toi à moi : l’éclat de la Rune est encore présent en toi. »\r\n",
+      "created_at": "2026-07-11 23:18:42"
     },
     {
       "id": 11,
