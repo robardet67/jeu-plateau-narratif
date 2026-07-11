@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T21:48:23.599Z",
+  "genere_le": "2026-07-11T21:50:51.239Z",
   "races": [
     {
       "id": 2,
@@ -357,6 +357,13 @@
       "contexte": "Kragol, maraudeur",
       "texte": "« notre clan avance sans guide dans un monde où les anciennes lois ne protègent plus personne. Les Runes brisées ont changé notre destin, mais elles n’ont pas brisé notre volonté. {nom}, montre ta valeur et aide-nous à forger un nouvel avenir. »",
       "created_at": "2026-07-11 21:29:40"
+    },
+    {
+      "id": 32,
+      "representant_id": 29,
+      "contexte": "Morga Œil-des-Esprits  ",
+      "texte": "« Yuna, l’esprit de la nuit, m’a révélé que les larmes des dieux coulent sur les joues de deux des seigneurs déchus. Si de ces larmes peut renaître l’espoir, alors {nom}, tu ne dois reculer devant rien pour les retrouver. »",
+      "created_at": "2026-07-11 21:50:50"
     }
   ],
   "objectifs": [
