@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T21:22:54.186Z",
+  "genere_le": "2026-07-11T21:27:29.446Z",
   "races": [
     {
       "id": 2,
@@ -96,6 +96,16 @@
       "image_depart": "/uploads/1783804844818-27fa601409fdc5cf.png",
       "image_sourire": "/uploads/1783804845151-4243f5c71b492008.png",
       "created_at": "2026-07-11 21:20:45"
+    },
+    {
+      "id": 28,
+      "race_id": 3,
+      "rang": 2,
+      "nom": "Kragol, maraudeur",
+      "description": null,
+      "image_depart": "/uploads/1783805248619-05f84a3e45be8aa8.png",
+      "image_sourire": "/uploads/1783805248931-020b431d11bd9120.png",
+      "created_at": "2026-07-11 21:27:29"
     },
     {
       "id": 12,
