@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T12:52:44.379Z",
+  "genere_le": "2026-07-11T12:53:11.206Z",
   "races": [
     {
       "id": 2,
@@ -142,9 +142,9 @@
       "race_id": 6,
       "rang": 3,
       "nom": "Thargrim, Ancien roi",
-      "description": null,
-      "image_depart": "/uploads/1783774322997-ee7a50c90cf9a13c.png",
-      "image_sourire": "/uploads/1783774323215-9b3f376cf72e9679.png",
+      "description": "",
+      "image_depart": "/uploads/1783774389885-46791ba271550baa.png",
+      "image_sourire": "/uploads/1783774390060-c8f3e31844e80e46.png",
       "created_at": "2026-07-11 12:52:03"
     }
   ],
