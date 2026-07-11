@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T18:01:35.148Z",
+  "genere_le": "2026-07-11T18:07:01.422Z",
   "races": [
     {
       "id": 2,
@@ -906,6 +906,16 @@
       "image_sourire": "/uploads/1783792871516-80baf78b01a97a47.png",
       "dialogue": "« Ainsi, tu suis la voie de la Rune d’Or. Nombreux sont ceux qui ont tenté sa restauration, mais tous ont échoué. J’ai enfin compris que pour y parvenir, il faudra s’allier aux démons nés lors de la scission des Runes… car tous ne sont pas aussi fidèles à Vorgul qu’ils le paraissent. Suis ma quête, et tu rencontreras peut-être Naalo, le démon le plus réceptif à notre cause. »",
       "created_at": "2026-07-11 18:01:13"
+    },
+    {
+      "id": 16,
+      "allegeance_id": 4,
+      "rang": 3,
+      "nom": "Naalo démon de la cupidité",
+      "image_depart": "/uploads/1783793220237-977981c696f15620.png",
+      "image_sourire": "/uploads/1783793220298-cf29bf5fab484125.png",
+      "dialogue": "« Je suis né de la scission des Runes, tout comme le furent Lamia et Dévos, ma sœur et mon frère. Depuis cet instant, je demeure l’esclave de la volonté de Vorgul, contraint par sa volonté. Mais la restauration de la Rune d’Or pourrait enfin briser les chaînes qui m’asservissent. Nos aspirations semblent converger vers le même destin : poursuis ma mission, et aide-moi à retrouver la liberté que Vorgul m’a refusée. »",
+      "created_at": "2026-07-11 18:07:00"
     },
     {
       "id": 11,
