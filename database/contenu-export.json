@@ -1,12 +1,6 @@
 {
-  "genere_le": "2026-07-11T09:09:43.836Z",
+  "genere_le": "2026-07-11T09:11:52.810Z",
   "races": [
-    {
-      "id": 1,
-      "nom": "Gobelin",
-      "image_fond": "/uploads/1783642934853-4db4f81ff94b1ce7.jpg",
-      "created_at": "2026-07-01 13:18:59"
-    },
     {
       "id": 2,
       "nom": "Elfe noir",
@@ -52,36 +46,6 @@
   ],
   "representants": [
     {
-      "id": 1,
-      "race_id": 1,
-      "rang": 1,
-      "nom": "Zik le receleur",
-      "description": "« Les ruines attirent les rêveurs, les idiots et les gens avisés ; heureusement, je sais faire la différence. Toi, {nom}, tu as l’air assez malin pour ne pas repartir les mains vides. J’ai quelques affaires délicates qui demandent du flair et un minimum de discrétion. Si tout se passe bien, chacun y trouvera son compte. »",
-      "image_depart": "/uploads/1783161493187-07ffc2726ce27f0a.png",
-      "image_sourire": "/uploads/1783161469224-316af46975e6ffc4.png",
-      "created_at": "2026-07-01 13:19:22"
-    },
-    {
-      "id": 2,
-      "race_id": 1,
-      "rang": 2,
-      "nom": "Grib, artificier",
-      "description": "",
-      "image_depart": "/uploads/1783161564747-5842177dac0cdaba.png",
-      "image_sourire": "/uploads/1783161564748-657926db676bff8a.png",
-      "created_at": "2026-07-01 13:19:45"
-    },
-    {
-      "id": 3,
-      "race_id": 1,
-      "rang": 3,
-      "nom": "Morga, chef de clan",
-      "description": "",
-      "image_depart": "/uploads/1783161583518-c551802e796569ea.png",
-      "image_sourire": "/uploads/1783161583530-bf2ebec944acbb74.png",
-      "created_at": "2026-07-01 13:20:00"
-    },
-    {
       "id": 7,
       "race_id": 3,
       "rang": 1,
@@ -112,36 +76,7 @@
       "created_at": "2026-07-04 12:18:59"
     }
   ],
-  "dialogues": [
-    {
-      "id": 8,
-      "representant_id": 3,
-      "contexte": "Le royaume des gobelins",
-      "texte": "Vous voilà enfin {nom}, nous avons une quête pour vous !",
-      "created_at": "2026-07-04 10:40:58"
-    },
-    {
-      "id": 10,
-      "representant_id": 1,
-      "contexte": "Zik le receleur",
-      "texte": "« Les ruines attirent les rêveurs, les idiots et les gens avisés ; heureusement, je sais faire la différence. Toi, {nom}, tu as l’air assez malin pour ne pas repartir les mains vides. J’ai quelques affaires délicates qui demandent du flair et un minimum de discrétion. Si tout se passe bien, chacun y trouvera son compte. »",
-      "created_at": "2026-07-08 16:18:37"
-    },
-    {
-      "id": 11,
-      "representant_id": 2,
-      "contexte": "Grib, artificier",
-      "texte": "« Ramok adore brouiller les plans, alors j’en prépare toujours trois à la fois. C’est fatigant, mais très efficace, {nom}. Il me manque justement quelqu’un pour tester quelques idées, porter deux ou trois choses, et éviter que tout explose trop vite. Ne t’inquiète pas : probablement rien de mortel. »",
-      "created_at": "2026-07-08 16:19:07"
-    },
-    {
-      "id": 12,
-      "representant_id": 3,
-      "contexte": "Morga, chef de clan",
-      "texte": "« Chez les gobelins, survivre est déjà une preuve d’intelligence. Tu as tenu jusque-là, {nom}, ce qui mérite au moins mon attention. J’ai besoin de quelqu’un capable d’improviser sans paniquer dès que les choses tournent mal. Montre-moi ce que tu vaux, et le clan saura s’en souvenir. »",
-      "created_at": "2026-07-08 16:31:10"
-    }
-  ],
+  "dialogues": [],
   "objectifs": [
     {
       "id": 171,
