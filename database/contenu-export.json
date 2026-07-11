@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T09:18:28.672Z",
+  "genere_le": "2026-07-11T09:23:12.860Z",
   "races": [
     {
       "id": 2,
@@ -648,26 +648,14 @@
       "created_at": "2026-07-03 14:03:25"
     }
   ],
-  "allegeances": [],
-  "representants_allegeance": [],
-  "scenario_images": [
-    {
-      "id": 2,
-      "ordre": 1,
-      "image": "/uploads/1782912297041-f95675aa046a97c3.png",
-      "created_at": "2026-07-01 13:24:57"
-    },
-    {
-      "id": 3,
-      "ordre": 2,
-      "image": "/uploads/1782912302393-17a909321bd5d2a0.png",
-      "created_at": "2026-07-01 13:25:02"
-    },
+  "allegeances": [
     {
       "id": 4,
-      "ordre": 3,
-      "image": "/uploads/1782912311294-e490a1d3f182f114.png",
-      "created_at": "2026-07-01 13:25:11"
+      "nom": "Rune d'Or",
+      "portrait": "/uploads/1783761791389-97e8adf8af70ae44.png",
+      "created_at": "2026-07-11 09:23:12"
     }
-  ]
+  ],
+  "representants_allegeance": [],
+  "scenario_images": []
 }
