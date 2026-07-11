@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-11T10:11:12.389Z",
+  "genere_le": "2026-07-11T10:18:29.409Z",
   "races": [
     {
       "id": 2,
@@ -733,6 +733,17 @@
       "created_at": "2026-07-11 09:28:32"
     }
   ],
-  "representants_allegeance": [],
+  "representants_allegeance": [
+    {
+      "id": 11,
+      "allegeance_id": 6,
+      "rang": 1,
+      "nom": "Dourka, l'exilée",
+      "image_depart": "/uploads/1783765107298-b3caf56a3902eee0.png",
+      "image_sourire": "/uploads/1783765107488-be5000693a1c0ee9.png",
+      "dialogue": "« Wynéa avait prédit votre venue, annonçant l’arrivée des adorateurs de la Rune de Pierre. {nom}, accomplissez votre mission et aidez moi à restaurer ce symbole sacré de notre foi. »",
+      "created_at": "2026-07-11 10:18:28"
+    }
+  ],
   "scenario_images": []
 }
