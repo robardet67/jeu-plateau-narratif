@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-12T23:54:17.637Z",
+  "genere_le": "2026-07-12T23:56:51.707Z",
   "races": [
     {
       "id": 2,
@@ -370,494 +370,986 @@
     {
       "id": 1309,
       "description": "Obtenir une recompense en explorant les marais (lieu 1)",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1310,
       "description": "Obtenir une recompense en explorant les marais (lieu 1)",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1311,
       "description": "Faire usage dun cristal",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1312,
       "description": "Disposer de 10 Or au village",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1313,
       "description": "Boire une potion de soin",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1314,
       "description": "Fabriquer une potion de confusion",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1315,
       "description": "Fabriquer une potion dacide",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1316,
       "description": "Fabriquer une potion dacide",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1317,
       "description": "Obtenir une recompense en explorant le domaine (lieu 5)",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1318,
       "description": "Obtenir une recompense en explorant le domaine (lieu 5)",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1319,
       "description": "Obtenir une recompense en explorant le domaine (lieu 5)",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1320,
       "description": "Obtenir une recompense en explorant le poste de garde (lieu 9)",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1321,
       "description": "Obtenir une recompense en explorant le poste de garde (lieu 9)",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1322,
       "description": "Obtenir une recompense en explorant le poste de garde (lieu 9)",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1323,
       "description": "Obtenir une recompense en explorant les ruines (lieu 6)",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1324,
       "description": "Obtenir une recompense en explorant les ruines (lieu 6)",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1325,
       "description": "Obtenir une recompense en explorant les ruines (lieu 6)",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1326,
       "description": "Porter un bouclier ou une armure",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1327,
       "description": "Porter un plan ou un parchemin",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1328,
       "description": "Ouvrir une porte ou un coffre",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1329,
       "description": "Obtenir des renseignements sur la Foret (lieu 2)",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1330,
       "description": "Obtenir des renseignements sur le Donjon (lieu 4)",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1331,
       "description": "Obtenir des renseignements sur la Mine Naine (lieu 7)",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1332,
       "description": "Porter une relique (carte violette)",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1333,
       "description": "Disposer de deux critaux",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1334,
       "description": "Rencontrer une b�te",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1335,
       "description": "Obtenir un objet rare",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1336,
       "description": "Obtenir un objet rare",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1337,
       "description": "Obtenir un objet rare",
-      "niveau": 1,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1338,
       "description": "Vaincre un monstre",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1339,
       "description": "Vaincre un monstre",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1340,
       "description": "Vaincre un monstre",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1341,
       "description": "Livrer une arme ou un bouclier au poste de garde (Lieu 9)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1342,
       "description": "Livrer une arme ou un bouclier au dolmen (Lieu 5)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:16"
     },
     {
       "id": 1343,
       "description": "Livrer une arme ou un bouclier dans les marais (Lieu 1)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1344,
       "description": "Livrer une arme ou un bouclier dans les ruines (Lieu 6)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1345,
       "description": "Livrer une arme ou une armure au poste de garde (Lieu 9)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1346,
       "description": "Livrer une arme ou une armure au dolmen (Lieu 5)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1347,
       "description": "Livrer une arme ou une armure dans les marais (Lieu 1)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1348,
       "description": "Livrer une arme ou une armure dans les ruines (Lieu 6)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1349,
       "description": "Livrer une armure ou un bouclier au poste de garde (Lieu 9)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1350,
       "description": "Livrer une armure ou un bouclier au dolmen (Lieu 5)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1351,
       "description": "Livrer une armure ou un bouclier dans les marais (Lieu 1)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1352,
       "description": "Livrer une armure ou un bouclier dans les ruines (Lieu 6)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1353,
       "description": "Livrer une relique (carte violette) au poste de garde (Lieu 9)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1354,
       "description": "Livrer une relique (carte violette) au dolmen (Lieu 5)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1355,
       "description": "Livrer une relique (carte violette) dans les marais (Lieu 1)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1356,
       "description": "Livrer une relique (carte violette) dans les ruines (Lieu 6)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1357,
       "description": "Obtenir une recompense en explorant la Foret (lieu 2)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1358,
       "description": "Obtenir une recompense en explorant la Foret (lieu 2)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1359,
       "description": "Obtenir une recompense en explorant la Foret (lieu 2)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1360,
       "description": "Obtenir une recompense en explorant le donjon (lieu 4)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1361,
       "description": "Obtenir une recompense en explorant le donjon (lieu 4)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1362,
       "description": "Obtenir une recompense en explorant le donjon (lieu 4)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1363,
       "description": "Obtenir une recompense en explorant la mine naine (lieu 7)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1364,
       "description": "Obtenir une recompense en explorant la mine naine (lieu 7)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1365,
       "description": "Obtenir une recompense en explorant la mine naine (lieu 7)",
-      "niveau": 2,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1366,
       "description": "Livrer un Objet Legendaire dans la Mine Naine (lieu 7)",
-      "niveau": 3,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1367,
       "description": "Livrer un Objet Legendaire au poste de garde (Lieu 9)",
-      "niveau": 3,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1368,
       "description": "Livrer un Objet Legendaire au dolmen (Lieu 5)",
-      "niveau": 3,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1369,
       "description": "Livrer un Objet Legendaire dans les marais (Lieu 1)",
-      "niveau": 3,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1370,
       "description": "Livrer un Objet Legendaire dans les ruines (Lieu 6)",
-      "niveau": 3,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1371,
       "description": "Livrer un Objet Legendaire dans la Foret (Lieu 2)",
-      "niveau": 3,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1372,
       "description": "Livrer un Objet Legendaire au donjon (Lieu 4)",
-      "niveau": 3,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1373,
       "description": "Boire une larme des dieux ou tuer un joueur avec une larme des demons",
-      "niveau": 3,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1374,
       "description": "Boire une larme des dieux ou tuer un joueur avec une larme des demons",
-      "niveau": 3,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1375,
       "description": "Livrer 3 reliques au donjon (Lieu 4)",
-      "niveau": 3,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1376,
       "description": "Livrer 3 reliques dans la Mine Naine (Lieu 7)",
-      "niveau": 3,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1377,
       "description": "Livrer 3 reliques dans la Foret (Lieu 2)",
-      "niveau": 3,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1378,
       "description": "Livrer 3 armes au donjon (Lieu 4)",
-      "niveau": 3,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1379,
       "description": "Livrer 3 armes dans la Mine Naine (Lieu 7)",
-      "niveau": 3,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1380,
       "description": "Livrer 3 armes dans la Foret (Lieu 2)",
-      "niveau": 3,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1381,
       "description": "Retrouver un fragment de votre Rune",
-      "niveau": 4,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1382,
       "description": "Retrouver un fragment de votre Rune",
-      "niveau": 4,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1383,
       "description": "Retrouver un fragment de votre Rune",
-      "niveau": 4,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1384,
       "description": "Retrouver un fragment de votre Rune",
-      "niveau": 4,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1385,
       "description": "Retrouver un fragment de votre Rune",
-      "niveau": 4,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1386,
       "description": "Restaurer votre Rune � l'aide des 2 fragments",
-      "niveau": 5,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1387,
       "description": "Restaurer votre Rune � l'aide des 2 fragments",
-      "niveau": 5,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1388,
       "description": "Restaurer votre Rune � l'aide des 2 fragments",
-      "niveau": 5,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1389,
       "description": "Restaurer votre Rune � l'aide des 2 fragments",
-      "niveau": 5,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
     },
     {
       "id": 1390,
       "description": "Restaurer votre Rune � l'aide des 2 fragments",
-      "niveau": 5,
+      "niveau": null,
       "created_at": "2026-07-12 23:54:17"
+    },
+    {
+      "id": 1391,
+      "description": "Obtenir une recompense en explorant les marais (lieu 1)",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1392,
+      "description": "Obtenir une recompense en explorant les marais (lieu 1)",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1393,
+      "description": "Faire usage dun cristal",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1394,
+      "description": "Disposer de 10 Or au village",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1395,
+      "description": "Boire une potion de soin",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1396,
+      "description": "Fabriquer une potion de confusion",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1397,
+      "description": "Fabriquer une potion dacide",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1398,
+      "description": "Fabriquer une potion dacide",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1399,
+      "description": "Obtenir une recompense en explorant le domaine (lieu 5)",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1400,
+      "description": "Obtenir une recompense en explorant le domaine (lieu 5)",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1401,
+      "description": "Obtenir une recompense en explorant le domaine (lieu 5)",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1402,
+      "description": "Obtenir une recompense en explorant le poste de garde (lieu 9)",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1403,
+      "description": "Obtenir une recompense en explorant le poste de garde (lieu 9)",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1404,
+      "description": "Obtenir une recompense en explorant le poste de garde (lieu 9)",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1405,
+      "description": "Obtenir une recompense en explorant les ruines (lieu 6)",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1406,
+      "description": "Obtenir une recompense en explorant les ruines (lieu 6)",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1407,
+      "description": "Obtenir une recompense en explorant les ruines (lieu 6)",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1408,
+      "description": "Porter un bouclier ou une armure",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1409,
+      "description": "Porter un plan ou un parchemin",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1410,
+      "description": "Ouvrir une porte ou un coffre",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1411,
+      "description": "Obtenir des renseignements sur la Foret (lieu 2)",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1412,
+      "description": "Obtenir des renseignements sur le Donjon (lieu 4)",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1413,
+      "description": "Obtenir des renseignements sur la Mine Naine (lieu 7)",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1414,
+      "description": "Porter une relique (carte violette)",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1415,
+      "description": "Disposer de deux critaux",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1416,
+      "description": "Rencontrer une b�te",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1417,
+      "description": "Obtenir un objet rare",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1418,
+      "description": "Obtenir un objet rare",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1419,
+      "description": "Obtenir un objet rare",
+      "niveau": 1,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1420,
+      "description": "Vaincre un monstre",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1421,
+      "description": "Vaincre un monstre",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1422,
+      "description": "Vaincre un monstre",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:49"
+    },
+    {
+      "id": 1423,
+      "description": "Livrer une arme ou un bouclier au poste de garde (Lieu 9)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1424,
+      "description": "Livrer une arme ou un bouclier au dolmen (Lieu 5)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1425,
+      "description": "Livrer une arme ou un bouclier dans les marais (Lieu 1)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1426,
+      "description": "Livrer une arme ou un bouclier dans les ruines (Lieu 6)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1427,
+      "description": "Livrer une arme ou une armure au poste de garde (Lieu 9)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1428,
+      "description": "Livrer une arme ou une armure au dolmen (Lieu 5)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1429,
+      "description": "Livrer une arme ou une armure dans les marais (Lieu 1)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1430,
+      "description": "Livrer une arme ou une armure dans les ruines (Lieu 6)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1431,
+      "description": "Livrer une armure ou un bouclier au poste de garde (Lieu 9)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1432,
+      "description": "Livrer une armure ou un bouclier au dolmen (Lieu 5)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1433,
+      "description": "Livrer une armure ou un bouclier dans les marais (Lieu 1)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1434,
+      "description": "Livrer une armure ou un bouclier dans les ruines (Lieu 6)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1435,
+      "description": "Livrer une relique (carte violette) au poste de garde (Lieu 9)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1436,
+      "description": "Livrer une relique (carte violette) au dolmen (Lieu 5)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1437,
+      "description": "Livrer une relique (carte violette) dans les marais (Lieu 1)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1438,
+      "description": "Livrer une relique (carte violette) dans les ruines (Lieu 6)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1439,
+      "description": "Obtenir une recompense en explorant la Foret (lieu 2)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1440,
+      "description": "Obtenir une recompense en explorant la Foret (lieu 2)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1441,
+      "description": "Obtenir une recompense en explorant la Foret (lieu 2)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1442,
+      "description": "Obtenir une recompense en explorant le donjon (lieu 4)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1443,
+      "description": "Obtenir une recompense en explorant le donjon (lieu 4)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1444,
+      "description": "Obtenir une recompense en explorant le donjon (lieu 4)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1445,
+      "description": "Obtenir une recompense en explorant la mine naine (lieu 7)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1446,
+      "description": "Obtenir une recompense en explorant la mine naine (lieu 7)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1447,
+      "description": "Obtenir une recompense en explorant la mine naine (lieu 7)",
+      "niveau": 2,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1448,
+      "description": "Livrer un Objet Legendaire dans la Mine Naine (lieu 7)",
+      "niveau": 3,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1449,
+      "description": "Livrer un Objet Legendaire au poste de garde (Lieu 9)",
+      "niveau": 3,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1450,
+      "description": "Livrer un Objet Legendaire au dolmen (Lieu 5)",
+      "niveau": 3,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1451,
+      "description": "Livrer un Objet Legendaire dans les marais (Lieu 1)",
+      "niveau": 3,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1452,
+      "description": "Livrer un Objet Legendaire dans les ruines (Lieu 6)",
+      "niveau": 3,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1453,
+      "description": "Livrer un Objet Legendaire dans la Foret (Lieu 2)",
+      "niveau": 3,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1454,
+      "description": "Livrer un Objet Legendaire au donjon (Lieu 4)",
+      "niveau": 3,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1455,
+      "description": "Boire une larme des dieux ou tuer un joueur avec une larme des demons",
+      "niveau": 3,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1456,
+      "description": "Boire une larme des dieux ou tuer un joueur avec une larme des demons",
+      "niveau": 3,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1457,
+      "description": "Livrer 3 reliques au donjon (Lieu 4)",
+      "niveau": 3,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1458,
+      "description": "Livrer 3 reliques dans la Mine Naine (Lieu 7)",
+      "niveau": 3,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1459,
+      "description": "Livrer 3 reliques dans la Foret (Lieu 2)",
+      "niveau": 3,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1460,
+      "description": "Livrer 3 armes au donjon (Lieu 4)",
+      "niveau": 3,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1461,
+      "description": "Livrer 3 armes dans la Mine Naine (Lieu 7)",
+      "niveau": 3,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1462,
+      "description": "Livrer 3 armes dans la Foret (Lieu 2)",
+      "niveau": 3,
+      "created_at": "2026-07-12 23:56:50"
+    },
+    {
+      "id": 1463,
+      "description": "Retrouver un fragment de votre Rune",
+      "niveau": 4,
+      "created_at": "2026-07-12 23:56:51"
+    },
+    {
+      "id": 1464,
+      "description": "Retrouver un fragment de votre Rune",
+      "niveau": 4,
+      "created_at": "2026-07-12 23:56:51"
+    },
+    {
+      "id": 1465,
+      "description": "Retrouver un fragment de votre Rune",
+      "niveau": 4,
+      "created_at": "2026-07-12 23:56:51"
+    },
+    {
+      "id": 1466,
+      "description": "Retrouver un fragment de votre Rune",
+      "niveau": 4,
+      "created_at": "2026-07-12 23:56:51"
+    },
+    {
+      "id": 1467,
+      "description": "Retrouver un fragment de votre Rune",
+      "niveau": 4,
+      "created_at": "2026-07-12 23:56:51"
+    },
+    {
+      "id": 1468,
+      "description": "Restaurer votre Rune � l'aide des 2 fragments",
+      "niveau": 5,
+      "created_at": "2026-07-12 23:56:51"
+    },
+    {
+      "id": 1469,
+      "description": "Restaurer votre Rune � l'aide des 2 fragments",
+      "niveau": 5,
+      "created_at": "2026-07-12 23:56:51"
+    },
+    {
+      "id": 1470,
+      "description": "Restaurer votre Rune � l'aide des 2 fragments",
+      "niveau": 5,
+      "created_at": "2026-07-12 23:56:51"
+    },
+    {
+      "id": 1471,
+      "description": "Restaurer votre Rune � l'aide des 2 fragments",
+      "niveau": 5,
+      "created_at": "2026-07-12 23:56:51"
+    },
+    {
+      "id": 1472,
+      "description": "Restaurer votre Rune � l'aide des 2 fragments",
+      "niveau": 5,
+      "created_at": "2026-07-12 23:56:51"
     }
   ],
   "allegeances": [
