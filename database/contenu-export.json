@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-13T22:57:08.472Z",
+  "genere_le": "2026-07-13T22:57:43.972Z",
   "races": [
     {
       "id": 2,
@@ -972,5 +972,12 @@
       "created_at": "2026-07-11 10:29:26"
     }
   ],
-  "scenario_images": []
+  "scenario_images": [
+    {
+      "id": 5,
+      "ordre": 1,
+      "image": "/uploads/1783983462988-d5fbe18270816580.png",
+      "created_at": "2026-07-13 22:57:43"
+    }
+  ]
 }
