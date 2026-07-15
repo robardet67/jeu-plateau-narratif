@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-15T23:22:38.647Z",
+  "genere_le": "2026-07-15T23:24:48.879Z",
   "races": [
     {
       "id": 2,
@@ -216,6 +216,16 @@
       "image_depart": "/uploads/1784157757555-50ad06ab29ecad8a.png",
       "image_sourire": "/uploads/1784157757901-e0807e88cc92e27a.png",
       "created_at": "2026-07-15 23:18:14"
+    },
+    {
+      "id": 31,
+      "race_id": 9,
+      "rang": 2,
+      "nom": "Nahhaz, Chaman du clan",
+      "description": null,
+      "image_depart": "/uploads/1784157886909-1079472716648a05.png",
+      "image_sourire": "/uploads/1784157887582-92b75fce5681d61d.png",
+      "created_at": "2026-07-15 23:24:48"
     },
     {
       "id": 21,
