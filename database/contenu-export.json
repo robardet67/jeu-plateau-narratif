@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-15T23:18:15.258Z",
+  "genere_le": "2026-07-15T23:22:38.647Z",
   "races": [
     {
       "id": 2,
@@ -212,9 +212,9 @@
       "race_id": 9,
       "rang": 1,
       "nom": "Aklok, Jeune tirailleur",
-      "description": null,
-      "image_depart": "/uploads/1784157493716-d37c9327e5a936f4.png",
-      "image_sourire": "/uploads/1784157494533-1e58fb0d350f3f3a.png",
+      "description": "",
+      "image_depart": "/uploads/1784157757555-50ad06ab29ecad8a.png",
+      "image_sourire": "/uploads/1784157757901-e0807e88cc92e27a.png",
       "created_at": "2026-07-15 23:18:14"
     },
     {
