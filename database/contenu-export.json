@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-07-31T21:10:05.766Z",
+  "genere_le": "2026-07-31T22:15:25.241Z",
   "races": [
     {
       "id": 2,
@@ -408,6 +408,13 @@
       "contexte": "departsourire Rang 2 - Nahhaz, Chaman du clan",
       "texte": "Syraya ne veille plus sur nous. Sa chute compromet grandement la survie de notre clan.\n\nLes anciens esprits n'accordent leur faveur qu'à ceux qui honorent leur volonté. Accomplis les épreuves qu'ils t'imposeront, et peut-être accepteront-ils de préserver notre clan.",
       "created_at": "2026-07-31 21:10:05"
+    },
+    {
+      "id": 35,
+      "representant_id": 32,
+      "contexte": "Kla, Prêtre du conseil des mages",
+      "texte": "Enfin te voilà, {nom}. Les anciens esprits ont observé chacun de tes pas, et ton courage a résonné jusqu'au Conseil des Mages.\n\nNotre clan réclame un héritage qui nous a été refusé depuis trop longtemps. Tu t'es montré digne de le retrouver.",
+      "created_at": "2026-07-31 22:15:24"
     }
   ],
   "objectifs": [
